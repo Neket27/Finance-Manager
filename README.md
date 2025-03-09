@@ -1,1 +1,1 @@
-# FFinance Manager
+# Finance Manager
