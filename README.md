@@ -1,1 +1,1 @@
-# y_lab
+# FFinance Manager
