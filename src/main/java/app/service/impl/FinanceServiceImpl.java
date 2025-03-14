@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация сервиса управления финансами.
+ */
 public class FinanceServiceImpl implements FinanceService {
 
     private final Logger log = LoggerFactory.getLogger(FinanceServiceImpl.class);
@@ -38,6 +41,16 @@ public class FinanceServiceImpl implements FinanceService {
     private final TransactionMapper transactionMapper;
     private final NotificationService notificationService;
 
+    /**
+     * Конструктор сервиса финансов.
+     *
+     * @param financeRepository    репозиторий финансов
+     * @param userService          сервис пользователей
+     * @param transactionService   сервис транзакций
+     * @param financeMapper        маппер финансов
+     * @param transactionMapper    маппер транзакций
+     * @param notificationService  сервис уведомлений
+     */
     public FinanceServiceImpl(FinanceRepository financeRepository, UserService userService, TransactionService transactionService, FinanceMapper financeMapper, TransactionMapper transactionMapper, NotificationService notificationService) {
         this.financeRepository = financeRepository;
         this.userService = userService;
@@ -47,6 +60,12 @@ public class FinanceServiceImpl implements FinanceService {
         this.notificationService = notificationService;
     }
 
+    /**
+     * Добавляет транзакцию пользователю.
+     *
+     * @param dto данные для создания транзакции
+     * @return созданная транзакция
+     */
     @Override
     public TransactionDto addTransactionUser(CreateTransactionDto dto) {
         TransactionDto transaction = transactionService.create(dto);
@@ -59,6 +78,13 @@ public class FinanceServiceImpl implements FinanceService {
         return transaction;
     }
 
+    /**
+     * Обновляет текущие накопления пользователя в зависимости от типа транзакции.
+     *
+     * @param finance финансовые данные пользователя
+     * @param amount  сумма транзакции
+     * @param type    тип транзакции (доход/расход)
+     */
     private void updateCurrentSavings(Finance finance, double amount, TypeTransaction type) {
 
         if (type == TypeTransaction.PROFIT) {
@@ -72,6 +98,11 @@ public class FinanceServiceImpl implements FinanceService {
         }
     }
 
+    /**
+     * Проверяет превышение месячного бюджета.
+     *
+     * @param email email пользователя
+     */
     @Override
     public void checkExpenseLimit(String email) {
         UserDto user = userService.getUserByEmail(email);
@@ -88,12 +119,28 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
 
+    /**
+     * Рассчитывает процент выполнения накоплений относительно цели.
+     *
+     * @param email email пользователя
+     * @return процент выполнения цели
+     */
     @Override
     public double getProgressTowardsGoal(String email) {
         FinanceDto finance = getFinance(email);
         return (finance.currentSavings() / finance.savingsGoal()) * 100;
     }
 
+    /**
+     * Фильтрует транзакции по заданным параметрам.
+     *
+     * @param startDate     начальная дата
+     * @param endDate       конечная дата
+     * @param category      категория
+     * @param typeTransaction тип транзакции (доход/расход)
+     * @param email         email пользователя
+     * @return отфильтрованный список транзакций
+     */
     @Override
     public List<TransactionDto> filterTransactions(Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email) {
         UserDto user = userService.getUserByEmail(email);
@@ -141,7 +188,12 @@ public class FinanceServiceImpl implements FinanceService {
                 .sum();
     }
 
-
+    /**
+     * Удаляет транзакцию пользователя.
+     *
+     * @param id идентификатор транзакции
+     * @return true, если удаление прошло успешно, иначе false
+     */
     @Override
     public boolean removeTransactionUser(Long id) {
         UserDto user = userService.getUserByEmail(UserContext.getCurrentUser().email());
@@ -157,6 +209,13 @@ public class FinanceServiceImpl implements FinanceService {
         }
     }
 
+    /**
+     * Редактирует существующую транзакцию.
+     *
+     * @param updateTransactionDto данные для обновления транзакции
+     * @return обновленная транзакция
+     * @throws EditException если редактирование не удалось
+     */
     @Override
     public TransactionDto editTransaction(UpdateTransactionDto updateTransactionDto) {
         try {
@@ -192,6 +251,12 @@ public class FinanceServiceImpl implements FinanceService {
         return this.find(id);
     }
 
+    /**
+     * Получает финансовые данные пользователя.
+     *
+     * @param email email пользователя
+     * @return объект финансовых данных
+     */
     private FinanceDto getFinance(String email) {
         UserDto user = userService.getUserByEmail(email);
         return getFinanceById(user.financeId());

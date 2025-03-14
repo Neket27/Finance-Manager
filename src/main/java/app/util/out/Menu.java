@@ -278,6 +278,8 @@ public class Menu {
         if (isAdmin(UserContext.getCurrentUser())) {
             String emailToBlock = userInput.readString("Введите email пользователя для блокировки: ");
             if (userService.blockUser(emailToBlock)) {
+                if(UserContext.getCurrentUser().email().equals(emailToBlock))
+                    handleLoginLogout();
                 userOutput.print("Пользователь успешно заблокирован!");
             } else {
                 userOutput.print("Не удалось заблокировать пользователя. Проверьте email.");

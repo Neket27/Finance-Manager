@@ -16,19 +16,31 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Реализация сервиса управления финансовыми целями пользователя.
+ */
 public class TargetServiceImpl implements TargetService {
 
     private final Logger log = LoggerFactory.getLogger(TargetServiceImpl.class);
     private final UserService userService;
     private final FinanceService financeService;
 
-
+    /**
+     * Конструктор сервиса управления целями.
+     *
+     * @param userService    сервис пользователей
+     * @param financeService сервис финансов
+     */
     public TargetServiceImpl(UserService userService, FinanceService financeService) {
         this.financeService = financeService;
         this.userService = userService;
     }
 
-
+    /**
+     * Устанавливает месячный бюджет пользователя.
+     *
+     * @param budget сумма месячного бюджета
+     */
     @Override
     public void setMonthlyBudget(double budget) {
         Finance finance = this.findFinance(UserContext.getCurrentUser().email());
@@ -37,6 +49,11 @@ public class TargetServiceImpl implements TargetService {
         log.debug("Месячный бюджет установлен: {}", budget);
     }
 
+    /**
+     * Проверяет, превышен ли месячный бюджет пользователя.
+     *
+     * @param email электронная почта пользователя
+     */
     @Override
     public void checkBudgetExceeded(String email) {
         Finance finance = this.findFinance(UserContext.getCurrentUser().email());
@@ -54,6 +71,11 @@ public class TargetServiceImpl implements TargetService {
         }
     }
 
+    /**
+     * Генерирует финансовый отчет пользователя.
+     *
+     * @return строковое представление финансового отчета
+     */
     @Override
     public String generateFinancialReport() {
         UserDto user = userService.getUserByEmail(UserContext.getCurrentUser().email());
@@ -79,6 +101,11 @@ public class TargetServiceImpl implements TargetService {
         return reportBuilder.toString();
     }
 
+    /**
+     * Устанавливает цель накоплений пользователя.
+     *
+     * @param savingGoal сумма целевых накоплений
+     */
     @Override
     public void updateGoalSavings(double savingGoal) {
         Finance finance = this.findFinance(UserContext.getCurrentUser().email());
@@ -87,9 +114,14 @@ public class TargetServiceImpl implements TargetService {
         log.debug("Цель накопления установлена: {}", savingGoal);
     }
 
+    /**
+     * Находит финансовые данные пользователя по электронной почте.
+     *
+     * @param email электронная почта пользователя
+     * @return объект Finance, содержащий финансовые данные пользователя
+     */
     private Finance findFinance(String email) {
         UserDto user = userService.getUserByEmail(email);
         return financeService.findFinanceById(user.financeId());
     }
-
 }

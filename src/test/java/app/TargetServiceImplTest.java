@@ -1,15 +1,13 @@
 package app;
 
-import app.dto.finance.FinanceDto;
-import app.dto.transaction.CreateTransactionDto;
+import app.context.UserContext;
 import app.dto.transaction.TransactionDto;
-import app.dto.transaction.UpdateTransactionDto;
-import app.entity.Transaction;
+import app.dto.user.UserDto;
+import app.entity.Finance;
 import app.entity.TypeTransaction;
-import app.exeption.NotFoundException;
-import app.mapper.TransactionMapper;
-import app.repository.TransactionRepository;
-import app.service.impl.TransactionServiceImpl;
+import app.service.FinanceService;
+import app.service.UserService;
+import app.service.impl.TargetServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,121 +15,106 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class TransactionServiceImplTest {
+class TargetServiceImplTest {
 
     @Mock
-    private TransactionRepository transactionRepository;
+    private UserService userService;
 
     @Mock
-    private TransactionMapper transactionMapper;
+    private FinanceService financeService;
 
     @InjectMocks
-    private TransactionServiceImpl transactionService;
+    private TargetServiceImpl targetService;
 
-    private Transaction transaction;
-    private TransactionDto transactionDto;
-    private CreateTransactionDto createTransactionDto;
-    private UpdateTransactionDto updateTransactionDto;
+    @Mock
+    private UserContext userContext;
+
+    private Finance finance;
+    private UserDto userDto;
 
     @BeforeEach
     void setUp() {
-        transaction = new Transaction();
-        transaction.setId(1L);
-        transaction.setDate(Instant.now());
-        transaction.setCategory("Food");
-        transaction.setTypeTransaction(TypeTransaction.EXPENSE);
-
-        transactionDto = new TransactionDto(1L, 100.0, "Food", Instant.now(), "", TypeTransaction.EXPENSE);
-        createTransactionDto = new CreateTransactionDto(100.0, "Food", Instant.now(), "", TypeTransaction.EXPENSE);
-        updateTransactionDto = new UpdateTransactionDto(1L, 100.0, "Food", Instant.now(), "", TypeTransaction.EXPENSE);
-    }
-
-    @Test
-    void testCreateTransaction() {
-        when(transactionMapper.toEntity(any(CreateTransactionDto.class))).thenReturn(transaction);
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
-        when(transactionMapper.toDto(any(Transaction.class))).thenReturn(transactionDto);
-
-        TransactionDto result = transactionService.create(createTransactionDto);
-
-        assertNotNull(result);
-        assertEquals("Food", result.category());
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
-    }
-
-    @Test
-    void testGetTransactionById() {
-        when(transactionRepository.findById(anyLong())).thenReturn(Optional.of(transaction));
-        when(transactionMapper.toDto(any(Transaction.class))).thenReturn(transactionDto);
-
-        TransactionDto result = transactionService.getTransactionById(1L);
-
-        assertNotNull(result);
-        assertEquals(1L, result.id());
-    }
-
-    @Test
-    void testGetTransactionById_NotFound() {
-        when(transactionRepository.findById(anyLong())).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class, () -> transactionService.getTransactionById(1L));
-    }
-
-    @Test
-    void testEditTransaction() {
-        when(transactionRepository.findById(anyLong())).thenReturn(Optional.of(transaction));
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
-
-        Transaction result = transactionService.edit(updateTransactionDto);
-
-        assertNotNull(result);
-        assertEquals("Food", result.getCategory());
-    }
-
-    @Test
-    void testDeleteTransaction() {
-        doNothing().when(transactionRepository).deleteById(anyLong());
-
-        boolean result = transactionService.delete(1L);
-
-        assertTrue(result);
-        verify(transactionRepository, times(1)).deleteById(anyLong());
-    }
-
-    @Test
-    void testFindAllTransactions() {
-        FinanceDto financeDto = new FinanceDto.Builder()
-                .transactionsId(List.of(1L))
+        userDto = new UserDto.Builder()
+                .email("test@example.com")
+                .password("newPassword123")
                 .build();
-        when(transactionRepository.findById(anyLong())).thenReturn(Optional.of(transaction));
-        when(transactionMapper.toDto(any(Transaction.class))).thenReturn(transactionDto);
 
-        List<TransactionDto> transactions = transactionService.findAll(financeDto);
+        UserContext.setCurrentUser(userDto);
 
-        assertFalse(transactions.isEmpty());
+        finance = new Finance.Builder()
+                .currentSavings(5000.0)
+                .savingsGoal(10000.0)
+                .monthlyBudget(3000.0)
+                .build();
+
+        when(userService.getUserByEmail(any())).thenReturn(userDto);
+        when(financeService.findFinanceById(any())).thenReturn(finance);
     }
 
     @Test
-    void testGetFilteredTransactions() {
-        List<Long> transactionIds = List.of(1L);
-        Instant startDate = Instant.now().minusSeconds(3600);
-        Instant endDate = Instant.now().plusSeconds(3600);
+    void testSetMonthlyBudget() {
+        double newBudget = 4000.0;
+        targetService.setMonthlyBudget(newBudget);
+        assertEquals(newBudget, finance.getMonthlyBudget());
+        verify(financeService, times(1)).save(finance);
+    }
 
-        when(transactionRepository.findById(anyLong())).thenReturn(Optional.of(transaction));
-        when(transactionMapper.toDto(any(Transaction.class))).thenReturn(transactionDto);
+    @Test
+    void testCheckBudgetExceeded_NoExceed() {
+        List<TransactionDto> transactions = List.of(
+                new TransactionDto(1L, 500.0, "k1", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE),
+                new TransactionDto(2L, 1000.0, "k2", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE)
+        );
 
-        List<TransactionDto> transactions = transactionService.getFilteredTransactions(transactionIds, startDate, endDate, "Food", TypeTransaction.EXPENSE);
+        when(financeService.getTransactions(any())).thenReturn(transactions);
 
-        assertEquals(1, transactions.size());
+        assertDoesNotThrow(() -> targetService.checkBudgetExceeded(userDto.email()));
+    }
+
+    @Test
+    void testCheckBudgetExceeded_Exceeded() {
+        List<TransactionDto> transactions = List.of(
+                new TransactionDto(1L, 2000.0, "k1", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE),
+                new TransactionDto(2L, 2000.0,"k1", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE)
+        );
+
+        when(financeService.getTransactions(any())).thenReturn(transactions);
+
+        assertDoesNotThrow(() -> targetService.checkBudgetExceeded(userDto.email()));
+    }
+
+    @Test
+    void testGenerateFinancialReport() {
+        when(financeService.getProgressTowardsGoal(any())).thenReturn(50.0);
+        when(financeService.getTotalIncome(any(), any(), any())).thenReturn(8000.0);
+        when(financeService.getTotalExpenses(any(), any(), any())).thenReturn(3000.0);
+        when(financeService.getExpensesByCategory(any())).thenReturn(Map.of("Food", 1000.0, "Transport", 500.0));
+
+        String report = targetService.generateFinancialReport();
+        assertTrue(report.contains("Текущие накопления: 5000.0"));
+        assertTrue(report.contains("Цель накопления: 10000.0"));
+        assertTrue(report.contains("Прогресс к цели: 50.0%"));
+        assertTrue(report.contains("Суммарный доход за период: 8000.0"));
+        assertTrue(report.contains("Суммарные расходы за период: 3000.0"));
+        assertTrue(report.contains("Food: 1000.0"));
+        assertTrue(report.contains("Transport: 500.0"));
+    }
+
+    @Test
+    void testUpdateGoalSavings() {
+        double newGoal = 15000.0;
+        targetService.updateGoalSavings(newGoal);
+        assertEquals(newGoal, finance.getSavingsGoal());
+        verify(financeService, times(1)).save(finance);
     }
 }

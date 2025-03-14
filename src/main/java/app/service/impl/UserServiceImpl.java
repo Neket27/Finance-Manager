@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Реализация сервиса управления пользователями.
+ */
 public class UserServiceImpl implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -28,6 +31,14 @@ public class UserServiceImpl implements UserService {
     private final FinanceRepository financeRepository;
     private final FinanceMapper financeMapper;
 
+    /**
+     * Конструктор сервиса пользователей.
+     *
+     * @param userMapper        маппер пользователей
+     * @param userRepository    репозиторий пользователей
+     * @param financeRepository репозиторий финансов
+     * @param financeMapper     маппер финансов
+     */
     public UserServiceImpl(UserMapper userMapper, UserRepository userRepository, FinanceRepository financeRepository, FinanceMapper financeMapper) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
@@ -35,6 +46,14 @@ public class UserServiceImpl implements UserService {
         this.financeMapper = financeMapper;
     }
 
+    /**
+     * Создает нового пользователя.
+     *
+     * @param createUserDto объект с данными нового пользователя
+     * @param  role для первго пользователя устанавливается  Role.Admin
+     * @return DTO созданного пользователя
+     * @throws UserExistException если пользователь с таким email уже существует
+     */
     @Override
     public UserDto createUser(CreateUserDto createUserDto) {
         if (userRepository.existsByEmail(createUserDto.email()))
@@ -47,7 +66,6 @@ public class UserServiceImpl implements UserService {
         else
             user.setRole(Role.User);
 
-
         CreateFinanceDto dto = new CreateFinanceDto.Builder()
                 .currentSavings(0.0)
                 .monthlyBudget(0.0)
@@ -56,27 +74,36 @@ public class UserServiceImpl implements UserService {
                 .transactionsId(new ArrayList<>())
                 .build();
 
-
         Finance finance = financeRepository.save(financeMapper.toEntity(dto));
-
         user.setFinanceId(finance.getId());
         user = userRepository.save(user);
-
-
         return userMapper.toDto(user);
     }
 
-
+    /**
+     * Обновляет данные пользователя.
+     *
+     * @param userDto объект с обновленными данными пользователя
+     * @param email   email пользователя
+     * @return DTO обновленного пользователя
+     * @throws IllegalArgumentException если userDto равен null
+     */
     @Override
     public UserDto updateDataUser(UpdateUserDto userDto, String email) {
         if (userDto == null)
-            throw new IllegalArgumentException("User  Dto не может быть null");
+            throw new IllegalArgumentException("User Dto не может быть null");
 
         User user = this.find(email);
         user = userMapper.updateEntity(userDto, user);
         return userMapper.toDto(user);
     }
 
+    /**
+     * Удаляет пользователя по email.
+     *
+     * @param email email пользователя
+     * @return true, если удаление прошло успешно, иначе false
+     */
     @Override
     public boolean remove(String email) {
         try {
@@ -89,21 +116,46 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    /**
+     * Получает пользователя по email.
+     *
+     * @param email email пользователя
+     * @return DTO пользователя
+     * @throws NotFoundException если пользователь не найден
+     */
     @Override
     public UserDto getUserByEmail(String email) {
         return userMapper.toDto(this.find(email));
     }
 
+    /**
+     * Ищет пользователя по email.
+     *
+     * @param email email пользователя
+     * @return объект пользователя
+     * @throws NotFoundException если пользователь не найден
+     */
     private User find(String email) {
         return userRepository.findById(email)
                 .orElseThrow(() -> new NotFoundException(String.format("User with email %s not found", email)));
     }
 
+    /**
+     * Получает список всех пользователей.
+     *
+     * @return список DTO пользователей
+     */
     @Override
     public List<UserDto> list() {
         return userMapper.toListDto(userRepository.getAll());
     }
 
+    /**
+     * Блокирует пользователя по email.
+     *
+     * @param email email пользователя
+     * @return true, если блокировка прошла успешно, иначе false
+     */
     @Override
     public boolean blockUser(String email) {
         try {
@@ -118,6 +170,13 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    /**
+     * Изменяет роль пользователя.
+     *
+     * @param email email пользователя
+     * @param role  новая роль пользователя
+     * @return true, если роль успешно изменена, иначе false
+     */
     @Override
     public boolean changeUserRole(String email, Role role) {
         try {
@@ -130,5 +189,4 @@ public class UserServiceImpl implements UserService {
             return false;
         }
     }
-
 }
