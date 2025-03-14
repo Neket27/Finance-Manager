@@ -1,19 +1,19 @@
 package app.context;
 
-import app.entity.User;
+import app.dto.user.UserDto;
 
 public class UserContext {
-    private static final ThreadLocal<User> currentUser  = new ThreadLocal<>();
+    private static final ThreadLocal<UserDto> currentUser = new ThreadLocal<>();
 
-    public static void setCurrentUser (User user) {
-        currentUser .set(user);
+    public static void setCurrentUser(UserDto user) {
+        currentUser.set(user);
     }
 
-    public static User getCurrentUser () {
-        return currentUser .get();
+    public static UserDto getCurrentUser() {
+        return currentUser.get();
     }
 
     public static void clear() {
-        currentUser .remove();
+        currentUser.remove();
     }
 }

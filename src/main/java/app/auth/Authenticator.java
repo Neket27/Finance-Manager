@@ -1,6 +1,7 @@
 package app.auth;
 
 import app.config.AuthenticationConfig;
+import app.dto.user.UserDto;
 import app.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +16,20 @@ public class Authenticator {
     }
 
     public boolean checkCredentials(String email, String password) {
-        User user = authenticationConfig.getCredentials().get(email);
-        if (user == null) {
-            log.debug("User with email {} not found",email);
+        UserDto user = authenticationConfig.getCredentials().get(email);
+        if (user == null)
+            return false;
+
+        return password.equals(user.password());
+    }
+
+    public boolean clearCredentials(String email) {
+        try {
+            authenticationConfig.getCredentials().remove(email);
+            return true;
+        } catch (Exception e) {
             return false;
         }
-        return password.equals(user.getPassword());
+
     }
 }

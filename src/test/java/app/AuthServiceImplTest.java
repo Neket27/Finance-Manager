@@ -4,127 +4,115 @@ import app.auth.Authenticator;
 import app.config.AuthenticationConfig;
 import app.context.UserContext;
 import app.dto.user.CreateUserDto;
-import app.entity.User;
-import app.exeption.UserIsAlreadyLoggedInExeption;
-import app.exeption.UserNotFoundException;
-import app.mapper.UserMapper;
+import app.dto.user.UserDto;
+import app.exeption.NotFoundException;
+import app.exeption.UserIsAlreadyLoggedInException;
+import app.service.UserService;
 import app.service.impl.AuthServiceImpl;
-import app.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
 
-    private AuthServiceImpl authService;
+    @Mock
     private AuthenticationConfig authenticationConfig;
-    private Authenticator authenticator;
-    private UserMapper userMapper;
-    private UserServiceImpl userService;
 
+    @Mock
+    private Authenticator authenticator;
+
+    @Mock
+    private UserService userService;
+
+    @InjectMocks
+    private AuthServiceImpl authService;
+
+    private CreateUserDto createUserDto;
+
+    private UserDto userDto;
 
     @BeforeEach
     void setUp() {
-        authenticationConfig = mock(AuthenticationConfig.class);
-        authenticator = mock(Authenticator.class);
-        userMapper = mock(UserMapper.class);
-        userService = mock(UserServiceImpl.class);
-        authService = new AuthServiceImpl(authenticationConfig, authenticator, userMapper, userService);
-    }
+        createUserDto = new CreateUserDto("name", "test@example.com", "password123");
+        userDto = new UserDto.Builder()
+                .email("test@example.com")
+                .password("hashedPassword")
+                .build();
 
-    @BeforeEach
-    void beforeAll() {
-        UserContext.clear();
+        UserContext.setCurrentUser(null);
     }
 
     @Test
-    void testRegisterSuccess() {
-        CreateUserDto userDto = new CreateUserDto("name", "test@example.com", "password");
+    void register_Success() {
+        when(userService.createUser(createUserDto)).thenReturn(userDto);
 
-        when(userService.createUser(userDto)).thenReturn(null); // Assuming createUser  doesn't return anything
-
-        boolean result = authService.register(userDto);
+        boolean result = authService.register(createUserDto);
 
         assertTrue(result);
-        verify(userService).createUser(userDto);
+        verify(userService, times(1)).createUser(createUserDto);
     }
 
     @Test
-    void testRegisterUserAlreadyLoggedIn() {
-        CreateUserDto userDto = new CreateUserDto("name", "test@example.com", "password");
+    void register_UserAlreadyLoggedIn() {
+        doThrow(new UserIsAlreadyLoggedInException("User already logged in"))
+                .when(userService).createUser(createUserDto);
 
-        doThrow(new UserIsAlreadyLoggedInExeption("User is already logged ")).when(userService).createUser(userDto);
-
-        boolean result = authService.register(userDto);
+        boolean result = authService.register(createUserDto);
 
         assertFalse(result);
-        verify(userService).createUser(userDto);
+        verify(userService, times(1)).createUser(createUserDto);
     }
 
     @Test
-    void testLoginSuccess() {
-        String username = "name";
-        String email = "test@example.com";
-        String password = "password";
-        User user = new User.Builder().setName(username).setEmail(email).password(password).build();
+    void login_Success() {
+        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(authenticator.checkCredentials("test@example.com", "password123")).thenReturn(true);
 
-        when(userService.getUserByEmail(email)).thenReturn(user);
-        when(authenticator.checkCredentials(email, password)).thenReturn(false);
-
-        boolean result = authService.login(email, password);
+        boolean result = authService.login("test@example.com", "password123");
 
         assertTrue(result);
-        verify(authenticationConfig).addCredential(user);
-        assertEquals(user, UserContext.getCurrentUser());
+        assertEquals(userDto, UserContext.getCurrentUser());
+        verify(authenticator, times(1)).checkCredentials("test@example.com", "password123");
     }
 
     @Test
-    void testLoginSuccess2() {
-        String username = "name";
-        String email = "test@example.com";
-        String password = "password";
-        User user = new User.Builder().setName(username).setEmail(email).password(password).build();
+    void login_UserNotFound() {
+        when(userService.getUserByEmail("notfound@example.com")).thenThrow(new NotFoundException("User not found"));
 
-        when(userService.getUserByEmail(email)).thenReturn(user);
-        when(authenticator.checkCredentials(email, password)).thenReturn(true);
-
-        boolean result = authService.login(email, password);
-
-        assertTrue(result);
-        verify(authenticationConfig, never()).addCredential(user);
-        assertEquals(user, UserContext.getCurrentUser());
-    }
-
-    @Test
-    void testLoginCredentials() {
-        String username = "name";
-        String email = "test@example.com";
-        String password = "wrongpassword";
-        User user = new User.Builder().setName(username).setEmail(email).password(password).build();
-
-        when(userService.getUserByEmail(email)).thenReturn(user);
-        when(authenticator.checkCredentials(email, password)).thenReturn(false);
-
-        boolean result = authService.login(email, password);
-
-        assertTrue(result);
-        verify(authenticationConfig).addCredential(user);
-        assertEquals(user, UserContext.getCurrentUser());
-    }
-
-    @Test
-    void testLoginUserNotFound() {
-        String email = "notfound@example.com";
-        String password = "password";
-
-        when(userService.getUserByEmail(email)).thenThrow(new UserNotFoundException(String.format("User with email %s not found", email)));
-
-        boolean result = authService.login(email, password);
+        boolean result = authService.login("notfound@example.com", "password123");
 
         assertFalse(result);
-        verify(authenticationConfig, never()).addCredential(any());
         assertNull(UserContext.getCurrentUser());
+    }
+
+    @Test
+    void login_InvalidPassword() {
+        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(authenticator.checkCredentials("test@example.com", "wrongpassword")).thenReturn(false);
+        doThrow(new RuntimeException("Invalid credentials")).when(authenticationConfig).addCredential(userDto);
+
+        boolean result = authService.login("test@example.com", "wrongpassword");
+
+        assertFalse(result);
+        assertNull(UserContext.getCurrentUser());
+    }
+
+    @Test
+    void logout_Success() {
+        UserContext.setCurrentUser(userDto);
+        when(authenticator.clearCredentials("test@example.com")).thenReturn(true);
+
+        boolean result = authService.logout();
+
+        assertTrue(result);
+        assertNull(UserContext.getCurrentUser());
+        verify(authenticator, times(1)).clearCredentials("test@example.com");
     }
 }

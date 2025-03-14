@@ -1,6 +1,5 @@
 package app.dto.user;
 
-import app.entity.Finance;
 import app.entity.Role;
 
 public record UpdateUserDto(
@@ -8,19 +7,15 @@ public record UpdateUserDto(
         String email,
         String password,
         Role role,
-        Finance finance
+        Long financeId
 ) {
 
-    public UpdateUserDto(String email, String password) {
-        this(null, email, password, null, null);
-    }
-
-    public UpdateUserDto(String name, String email, String password, Role role, Finance finance) {
+    public UpdateUserDto(String name, String email, String password, Role role, Long financeId) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
-        this.finance = finance;
+        this.financeId = financeId;
     }
 
     public static class Builder {
@@ -28,7 +23,7 @@ public record UpdateUserDto(
         private String email;
         private String password;
         private Role role;
-        private Finance finance;
+        private Long financeId;
 
         public Builder name(String name) {
             this.name = name;
@@ -50,13 +45,13 @@ public record UpdateUserDto(
             return this;
         }
 
-        public Builder finance(Finance finance) {
-            this.finance = finance;
+        public Builder finance(Long financeId) {
+            this.financeId = financeId;
             return this;
         }
 
         public UpdateUserDto build() {
-            return new UpdateUserDto(name, email, password, role, finance);
+            return new UpdateUserDto(name, email, password, role, financeId);
         }
     }
 

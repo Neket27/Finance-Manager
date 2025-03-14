@@ -13,7 +13,7 @@ public class UserMapper {
     public User toEntity(CreateUserDto userDto) {
         return new User.Builder()
                 .setName(userDto.name())
-                .setEmail(userDto.email())
+                .email(userDto.email())
                 .password(userDto.password())
                 .build();
     }
@@ -23,7 +23,7 @@ public class UserMapper {
         user.setEmail(userDto.email());
         user.setPassword(userDto.password());
         user.setRole(userDto.role());
-        user.setFinance(userDto.finance());
+        user.setFinanceId(userDto.financeId());
         return user;
     }
 
@@ -34,7 +34,7 @@ public class UserMapper {
                 user.getPassword(),
                 user.isActive(),
                 user.getRole(),
-                user.getFinance());
+                user.getFinanceId());
     }
 
     public UserDto toDto(CreateUserDto userDto) {

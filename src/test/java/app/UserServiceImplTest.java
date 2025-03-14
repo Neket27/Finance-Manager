@@ -1,178 +1,163 @@
 package app;
 
+import app.dto.finance.CreateFinanceDto;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
+import app.entity.Finance;
+import app.entity.Role;
 import app.entity.User;
+import app.exeption.NotFoundException;
 import app.exeption.UserExistException;
-import app.exeption.UserNotFoundException;
+import app.mapper.FinanceMapper;
 import app.mapper.UserMapper;
+import app.repository.FinanceRepository;
 import app.repository.UserRepository;
 import app.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
-    private UserServiceImpl userService;
+    @Mock
     private UserMapper userMapper;
+
+    @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private FinanceRepository financeRepository;
+
+    @Mock
+    private FinanceMapper financeMapper;
+
+    @InjectMocks
+    private UserServiceImpl userService;
+
+    private CreateUserDto createUserDto;
+    private UpdateUserDto updateUserDto;
+    private UserDto userDto;
+    private User user;
+    private Finance finance;
 
     @BeforeEach
     void setUp() {
-        userMapper = mock(UserMapper.class);
-        userRepository = mock(UserRepository.class);
-        userService = new UserServiceImpl(userMapper, userRepository);
+        createUserDto = new CreateUserDto("name", "test@example.com", "password123");
+        updateUserDto = new UpdateUserDto("name", "test@example.com", "newPassword123", Role.User, 1L);
+        userDto = new UserDto.Builder()
+                .email("test@example.com")
+                .password("newPassword123")
+                .build();
+
+        user = new User.Builder()
+                .email("test@example.com")
+                .role(Role.User)
+                .finance(1L)
+                .build();
+
+
+        finance = new Finance.Builder()
+                .id(1L)
+                .build();
     }
 
     @Test
-    void createUserShouldReturnUserDtoWhenUserDoesNotExist() {
-        CreateUserDto createUserDto = new CreateUserDto("name", "test@example.com", "password");
-
-        User user = new User.Builder()
-                .setName("name")
-                .setEmail("test@example.com")
-                .password("password")
-                .build();
-
-
-        UserDto userDto = new UserDto.Builder()
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.existsByEmail(createUserDto.email())).thenReturn(false);
+    void createUser_Success() {
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(userRepository.getAll()).thenReturn(new ArrayList<>());
         when(userMapper.toEntity(createUserDto)).thenReturn(user);
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(financeMapper.toEntity(any(CreateFinanceDto.class))).thenReturn(finance);
+        when(financeRepository.save(finance)).thenReturn(finance);
+        when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(userDto);
 
         UserDto result = userService.createUser(createUserDto);
 
         assertNotNull(result);
-        assertEquals("test@example.com", result.email());
-        verify(userRepository).save(any(User.class));
-    }
-
-
-    @Test
-    void createUserShouldThrowUserExistExceptionWhenUserAlreadyExists() {
-        CreateUserDto createUserDto = new CreateUserDto("name", "test@example.com", "password");
-
-        when(userRepository.existsByEmail(createUserDto.email())).thenReturn(true);
-
-        UserExistException exception = assertThrows(UserExistException.class, () -> userService.createUser(createUserDto));
-        assertEquals("User with email test@example.com already exists", exception.getMessage());
+        assertEquals(userDto, result);
+        verify(userRepository, times(1)).save(user);
     }
 
     @Test
-    void updateDataUserShouldReturnUpdatedUserDtoWhenUserExists() {
-        UpdateUserDto updateUserDto = new UpdateUserDto.Builder()
-                .password("newPassword")
-                .build();
+    void createUser_UserAlreadyExists() {
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
 
-        User user = new User.Builder()
-                .setEmail("test@example.com")
-                .password("oldPassword")
-                .build();
+        assertThrows(UserExistException.class, () -> userService.createUser(createUserDto));
+    }
 
-        UserDto userDto = new UserDto.Builder()
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+    @Test
+    void updateDataUser_Success() {
+        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
         when(userMapper.updateEntity(updateUserDto, user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(userDto);
 
         UserDto result = userService.updateDataUser(updateUserDto, "test@example.com");
 
         assertNotNull(result);
-        assertEquals("test@example.com", result.email());
-        verify(userMapper).updateEntity(updateUserDto, user);
+        assertEquals(userDto, result);
+        verify(userRepository, times(1)).findById("test@example.com");
     }
 
     @Test
-    void updateDataUserShouldThrowUserNotFoundExceptionWhenUserDoesNotExist() {
-        UpdateUserDto updateUserDto = new UpdateUserDto.Builder()
-                .password("newPassword")
-                .build();
+    void updateDataUser_UserNotFound() {
+        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
 
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
-
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> userService.updateDataUser(updateUserDto, "test@example.com"));
-        assertEquals("User with email test@example.com not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> userService.updateDataUser(updateUserDto, "notfound@example.com"));
     }
 
     @Test
-    void removeShouldRemoveUserWhenUserExists() {
-        User user = new User.Builder()
-                .setEmail("test@example.com")
-                .password("passworrd")
-                .build();
+    void remove_Success() {
+        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
 
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        boolean result = userService.remove("test@example.com");
 
-        userService.remove("test@example.com");
-
-        verify(userRepository).delete(user);
+        assertTrue(result);
+        verify(userRepository, times(1)).delete(user);
     }
 
     @Test
-    void removeShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+    void remove_UserNotFound() {
+        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
 
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> userService.remove("test@example.com"));
-        assertEquals("User with email test@example.com not found", exception.getMessage());
+        boolean result = userService.remove("notfound@example.com");
+
+        assertFalse(result);
     }
 
     @Test
-    void getDataUserShouldReturnUserDtoWhenUserExists() {
-        User user = new User.Builder()
-                .setEmail("test@example.com")
-                .password("password")
-                .build();
-
-        UserDto userDto = new UserDto.Builder()
-                .email("test@example.com")
-                .build();
-
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+    void getUserByEmail_Success() {
+        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
         when(userMapper.toDto(user)).thenReturn(userDto);
 
-        UserDto result = userService.getDataUser("test@example.com");
+        UserDto result = userService.getUserByEmail("test@example.com");
 
         assertNotNull(result);
-        assertEquals("test@example.com", result.email());
-        verify(userRepository).findByEmail("test@example.com");
+        assertEquals(userDto, result);
     }
 
     @Test
-    void getDataUserShouldThrowUserNotFoundExceptionWhenUserDoesNotExist() {
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+    void getUserByEmail_UserNotFound() {
+        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
 
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> userService.getDataUser("test@example.com"));
-        assertEquals("User with email test@example.com not found", exception.getMessage());
+        assertThrows(NotFoundException.class, () -> userService.getUserByEmail("notfound@example.com"));
     }
 
     @Test
-    void listShouldReturnListOfUserDtos() {
-        User user1 = new User.Builder()
-                .setEmail("user1@example.com")
-                .password("password1")
-                .build();
-
-        User user2 = new User.Builder()
-                .setEmail("user2@example.com")
-                .password("password2")
-                .build();
-
-        List<User> users = List.of(user1, user2);
-        List<UserDto> userDtos = List.of(new UserDto("user1@example.com", "password1"), new UserDto("user2@example.com", "password2"));
+    void listUsers_Success() {
+        List<User> users = List.of(user);
+        List<UserDto> userDtos = List.of(userDto);
 
         when(userRepository.getAll()).thenReturn(users);
         when(userMapper.toListDto(users)).thenReturn(userDtos);
@@ -180,44 +165,47 @@ class UserServiceImplTest {
         List<UserDto> result = userService.list();
 
         assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals("user1@example.com", result.get(0).email());
-        assertEquals("user2@example.com", result.get(1).email());
-        verify(userRepository).getAll();
+        assertEquals(1, result.size());
+        assertEquals(userDto, result.get(0));
     }
 
     @Test
-    void blockUserShouldDeactivateUserWhenUserExists() {
-        User user = new User.Builder()
-                .setEmail("test@example.com")
-                .password("password")
-                .build();
+    void blockUser_Success() {
+        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
 
-        UserDto userDto = new UserDto.Builder()
-                .email("test@example.com")
-                .password("password")
-                .isActive(true)
-                .build();
+        boolean result = userService.blockUser("test@example.com");
 
-
-        List<UserDto> userDtoList = List.of(userDto);
-        when(userService.list()).thenReturn(userDtoList);
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-
-        boolean isBlockedUser  = userService.blockUser ("test@example.com");
-
-        assertTrue(isBlockedUser);
-        verify(userRepository).save(user);
+        assertTrue(result);
+        assertFalse(user.isActive());
+        verify(userRepository, times(1)).save(user);
     }
 
     @Test
-    void blockUserShouldLogWhenUserDoesNotExist() {
-        when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
+    void blockUser_UserNotFound() {
+        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
 
-        // Здесь вы можете использовать мок логгера, чтобы проверить, что лог был вызван с ожидаемым сообщением
-        userService.blockUser("nonexistent@example.com");
+        boolean result = userService.blockUser("notfound@example.com");
 
-        // Проверка логирования может потребовать дополнительной настройки с использованием библиотеки логирования
-        // Например, с использованием Mockito для проверки вызовов логгера
+        assertFalse(result);
+    }
+
+    @Test
+    void changeUserRole_Success() {
+        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
+
+        boolean result = userService.changeUserRole("test@example.com", Role.Admin);
+
+        assertTrue(result);
+        assertEquals(Role.Admin, user.getRole());
+        verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    void changeUserRole_UserNotFound() {
+        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
+
+        boolean result = userService.changeUserRole("notfound@example.com", Role.Admin);
+
+        assertFalse(result);
     }
 }

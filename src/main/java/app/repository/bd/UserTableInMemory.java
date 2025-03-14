@@ -1,6 +1,7 @@
-package app.repository;
+package app.repository.bd;
 
 import app.entity.User;
+import app.repository.UserRepository;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,16 +9,17 @@ import java.util.Map;
 import java.util.Optional;
 
 public class UserTableInMemory implements UserRepository {
+
     private final Map<String, User> inMemoryDatabase = new HashMap<>();
 
     @Override
-    public Optional<User> findByEmail(String key) {
-        return Optional.ofNullable(inMemoryDatabase.get(key));
+    public Optional<User> findById(String id) {
+        return Optional.ofNullable(inMemoryDatabase.get(id));
     }
 
     @Override
     public User save(User entity) {
-        inMemoryDatabase.put(entity.getEmail(), entity); // Предполагаем, что у User есть метод getEmail()
+        inMemoryDatabase.put(entity.getEmail(), entity);
         return entity;
     }
 
@@ -35,6 +37,5 @@ public class UserTableInMemory implements UserRepository {
     public Collection<User> getAll() {
         return inMemoryDatabase.values();
     }
-
 
 }

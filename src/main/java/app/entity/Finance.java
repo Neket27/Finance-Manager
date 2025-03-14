@@ -4,21 +4,32 @@ import java.util.List;
 
 public class Finance {
 
-    private final List<Transaction> transactions;
+    private Long id;
     private double monthlyBudget;
-    private double savingsGoal; // Цель накопления
-    private double currentSavings; // Текущие накопления
+    private double savingsGoal;
+    private double currentSavings;
     private double totalExpenses;
+    private final List<Long> transactionsId;
 
-    public Finance(List<Transaction> transactions) {
-        this.transactions = transactions;
-        this.monthlyBudget = 0.0;
-        this.savingsGoal = 0.0;
-        this.currentSavings = 0.0;
+    public Finance(Long id, double monthlyBudget, double savingsGoal, double currentSavings, double totalExpenses, List<Long> transactionsId) {
+        this.id = id;
+        this.monthlyBudget = monthlyBudget;
+        this.savingsGoal = savingsGoal;
+        this.currentSavings = currentSavings;
+        this.totalExpenses = totalExpenses;
+        this.transactionsId = transactionsId;
     }
 
-    public List<Transaction> getTransactions() {
-        return transactions;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public List<Long> getTransactionsId() {
+        return transactionsId;
     }
 
     public double getMonthlyBudget() {
@@ -51,6 +62,49 @@ public class Finance {
 
     public void setTotalExpenses(double totalExpenses) {
         this.totalExpenses = totalExpenses;
+    }
+
+    public static class Builder {
+        private Long id;
+        private double monthlyBudget;
+        private double savingsGoal;
+        private double currentSavings;
+        private double totalExpenses;
+        private List<Long> transactionsId;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder monthlyBudget(double monthlyBudget) {
+            this.monthlyBudget = monthlyBudget;
+            return this;
+        }
+
+        public Builder savingsGoal(double savingsGoal) {
+            this.savingsGoal = savingsGoal;
+            return this;
+        }
+
+        public Builder currentSavings(double currentSavings) {
+            this.currentSavings = currentSavings;
+            return this;
+        }
+
+        public Builder totalExpenses(double totalExpenses) {
+            this.totalExpenses = totalExpenses;
+            return this;
+        }
+
+        public Builder transactionsId(List<Long> transactionsId) {
+            this.transactionsId = transactionsId;
+            return this;
+        }
+
+        public Finance build() {
+            return new Finance(id, monthlyBudget, savingsGoal, currentSavings, totalExpenses, transactionsId);
+        }
     }
 }
 

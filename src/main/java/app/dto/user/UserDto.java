@@ -1,6 +1,5 @@
 package app.dto.user;
 
-import app.entity.Finance;
 import app.entity.Role;
 
 public record UserDto(
@@ -9,21 +8,18 @@ public record UserDto(
         String password,
         Boolean isActive,
         Role role,
-        Finance finance
+        Long financeId
 ) {
 
-    public UserDto(String name, String email, String password, Boolean isActive,Role role,Finance finance) {
+    public UserDto(String name, String email, String password, Boolean isActive, Role role, Long financeId) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.isActive = isActive;
         this.role = role;
-        this.finance = finance;
+        this.financeId = financeId;
     }
 
-    public UserDto(String email, String password) {
-        this(null, email, password, null,null, null);
-    }
 
     public static class Builder {
         private String name;
@@ -31,7 +27,7 @@ public record UserDto(
         private String password;
         private Boolean isActive;
         private Role role;
-        private Finance finance;
+        private Long financeId;
 
         public Builder isActive(Boolean isActive) {
             this.isActive = isActive;
@@ -58,13 +54,13 @@ public record UserDto(
             return this;
         }
 
-        public Builder finance(Finance finance) {
-            this.finance = finance;
+        public Builder finance(Long financeId) {
+            this.financeId = financeId;
             return this;
         }
 
         public UserDto build() {
-            return new UserDto(name, email, password,isActive,role, finance);
+            return new UserDto(name, email, password, isActive, role, financeId);
         }
     }
 }

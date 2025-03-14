@@ -1,26 +1,26 @@
 package app.config;
 
-import app.entity.User;
-import app.exeption.UserIsAlreadyLoggedInExeption;
+import app.dto.user.UserDto;
+import app.exeption.UserIsAlreadyLoggedInException;
 
 import java.util.Map;
 
 public class AuthenticationConfig {
 
-    private final Map<String, User> credentials;
+    private final Map<String, UserDto> credentials;
 
-    public AuthenticationConfig(Map<String, User> credentials) {
+    public AuthenticationConfig(Map<String, UserDto> credentials) {
         this.credentials = credentials;
     }
 
-    public void addCredential(User user) {
-        if (!credentials.containsKey(user.getEmail()))
-            credentials.put(user.getEmail(), user);
+    public void addCredential(UserDto user) {
+        if (!credentials.containsKey(user.email()))
+            credentials.put(user.email(), user);
         else
-            throw new UserIsAlreadyLoggedInExeption("Пользователь уже авторизирован");
+            throw new UserIsAlreadyLoggedInException("Пользователь уже авторизирован");
     }
 
-    public Map<String, User> getCredentials() {
+    public Map<String, UserDto> getCredentials() {
         return credentials;
     }
 }

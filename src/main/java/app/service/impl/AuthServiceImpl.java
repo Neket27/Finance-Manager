@@ -4,10 +4,9 @@ import app.auth.Authenticator;
 import app.config.AuthenticationConfig;
 import app.context.UserContext;
 import app.dto.user.CreateUserDto;
-import app.entity.User;
-import app.exeption.UserIsAlreadyLoggedInExeption;
-import app.exeption.UserNotFoundException;
-import app.mapper.UserMapper;
+import app.dto.user.UserDto;
+import app.exeption.NotFoundException;
+import app.exeption.UserIsAlreadyLoggedInException;
 import app.service.AuthService;
 import app.service.UserService;
 import org.slf4j.Logger;
@@ -18,13 +17,11 @@ public class AuthServiceImpl implements AuthService {
     private final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final AuthenticationConfig authenticationConfig;
     private final Authenticator authenticator;
-    private final UserMapper userMapper;
     private final UserService userService;
 
-    public AuthServiceImpl(AuthenticationConfig authenticationConfig, Authenticator authenticator, UserMapper userMapper, UserService userService) {
+    public AuthServiceImpl(AuthenticationConfig authenticationConfig, Authenticator authenticator, UserService userService) {
         this.authenticationConfig = authenticationConfig;
         this.authenticator = authenticator;
-        this.userMapper = userMapper;
         this.userService = userService;
     }
 
@@ -34,7 +31,7 @@ public class AuthServiceImpl implements AuthService {
             userService.createUser(userDto);
             log.debug("Registered user: " + userDto);
             return true;
-        } catch (UserIsAlreadyLoggedInExeption e) {
+        } catch (UserIsAlreadyLoggedInException e) {
             log.debug("User with email {} is already logged in", userDto.email());
             return false;
         }
@@ -42,10 +39,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean login(String email, String password) {
-        User user;
+        UserDto user;
         try {
             user = userService.getUserByEmail(email);
-        }catch (UserNotFoundException e){
+        } catch (NotFoundException e) {
             log.debug("User with email {} not found", email);
             return false;
         }
@@ -66,6 +63,13 @@ public class AuthServiceImpl implements AuthService {
             log.debug("Invalid password or email", email);
             return false;
         }
+    }
+
+    @Override
+    public boolean logout() {
+        boolean userCredentialsDeleted = authenticator.clearCredentials(UserContext.getCurrentUser().email());
+        UserContext.clear();
+        return userCredentialsDeleted;
     }
 
 }

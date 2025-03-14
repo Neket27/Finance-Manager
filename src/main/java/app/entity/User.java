@@ -1,19 +1,19 @@
 package app.entity;
 
 public class User {
-    private String name;
     private String email;
+    private String name;
     private String password;
     private boolean isActive;
     private Role role;
-    private Finance finance;
+    private Long financeId;
 
-    public Finance getFinance() {
-        return finance;
+    public Long getFinanceId() {
+        return financeId;
     }
 
-    public void setFinance(Finance finance) {
-        this.finance = finance;
+    public void setFinanceId(Long financeId) {
+        this.financeId = financeId;
     }
 
     public boolean isActive() {
@@ -25,21 +25,21 @@ public class User {
     }
 
 
-    public User(String name, String email, String password, Role role, Finance finance, boolean isActive) {
+    public User(String name, String email, String password, Role role, Long financeId, boolean isActive) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
-        this.finance = finance;
+        this.financeId = financeId;
         this.isActive = isActive;
     }
 
-    public User(String name, String email, String password, Role role, Finance finance) {
+    public User(String name, String email, String password, Role role, Long financeId) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
-        this.finance = finance;
+        this.financeId = financeId;
         this.isActive = true;
     }
 
@@ -89,7 +89,7 @@ public class User {
         private String email;
         private String password;
         private Role role;
-        private Finance finance;
+        private Long financeId;
         private boolean isActive;
 
         public Builder isActive(Boolean isActive) {
@@ -97,13 +97,13 @@ public class User {
             return this;
         }
 
-        public Builder setFinance(Finance finance) {
-            this.finance = finance;
+        public Builder finance(Long financeId) {
+            this.financeId = financeId;
             return this;
         }
 
 
-        public Builder setRole(Role role) {
+        public Builder role(Role role) {
             this.role = role;
             return this;
         }
@@ -113,7 +113,7 @@ public class User {
             return this;
         }
 
-        public Builder setEmail(String email) {
+        public Builder email(String email) {
             this.email = email;
             return this;
         }
@@ -124,7 +124,7 @@ public class User {
         }
 
         public User build() {
-            return new User(name, email, password, role,finance);
+            return new User(name, email, password, role,financeId);
         }
     }
 }
