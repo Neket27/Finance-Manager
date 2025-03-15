@@ -1,5 +1,6 @@
 package app.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Finance {
@@ -9,7 +10,16 @@ public class Finance {
     private double savingsGoal;
     private double currentSavings;
     private double totalExpenses;
-    private final List<Long> transactionsId;
+
+    public void setTransactionsId(List<Long> transactionsId) {
+        this.transactionsId = transactionsId;
+    }
+
+    private List<Long> transactionsId;
+
+    public Finance() {
+        transactionsId = new ArrayList<>();
+    }
 
     public Finance(Long id, double monthlyBudget, double savingsGoal, double currentSavings, double totalExpenses, List<Long> transactionsId) {
         this.id = id;

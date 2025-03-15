@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: your_name
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              CREATE SCHEMA IF NOT EXISTS business;
+              CREATE SCHEMA IF NOT EXISTS metadata;

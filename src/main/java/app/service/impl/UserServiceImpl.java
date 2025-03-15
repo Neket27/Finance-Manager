@@ -7,8 +7,8 @@ import app.dto.user.UserDto;
 import app.entity.Finance;
 import app.entity.Role;
 import app.entity.User;
-import app.exeption.NotFoundException;
-import app.exeption.UserExistException;
+import app.exception.NotFoundException;
+import app.exception.UserExistException;
 import app.mapper.FinanceMapper;
 import app.mapper.UserMapper;
 import app.repository.FinanceRepository;
@@ -129,14 +129,19 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Ищет пользователя по email.
+     * Ищет пользователя по id
      *
-     * @param email email пользователя
+     * @param id  пользователя
      * @return объект пользователя
      * @throws NotFoundException если пользователь не найден
      */
+    private User find(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
+    }
+
     private User find(String email) {
-        return userRepository.findById(email)
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(String.format("User with email %s not found", email)));
     }
 

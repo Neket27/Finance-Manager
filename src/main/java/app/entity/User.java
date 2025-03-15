@@ -1,12 +1,24 @@
 package app.entity;
 
 public class User {
+
+    private Long id;
     private String email;
     private String name;
     private String password;
     private boolean isActive;
     private Role role;
     private Long financeId;
+
+    public User(){}
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Long getFinanceId() {
         return financeId;
@@ -25,7 +37,8 @@ public class User {
     }
 
 
-    public User(String name, String email, String password, Role role, Long financeId, boolean isActive) {
+    public User(Long id, String name, String email, String password, Role role, Long financeId, boolean isActive) {
+        this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
@@ -85,12 +98,18 @@ public class User {
 
 
     public static class Builder {
+        private Long id;
         private String name;
         private String email;
         private String password;
         private Role role;
         private Long financeId;
         private boolean isActive;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder isActive(Boolean isActive) {
             this.isActive = isActive;
@@ -124,7 +143,7 @@ public class User {
         }
 
         public User build() {
-            return new User(name, email, password, role,financeId);
+            return new User(name, email, password, role, financeId);
         }
     }
 }

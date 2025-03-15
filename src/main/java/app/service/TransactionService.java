@@ -16,11 +16,13 @@ public interface TransactionService {
 
     Transaction edit(UpdateTransactionDto updateTransactionDto);
 
-    TransactionDto create(CreateTransactionDto dto);
+    TransactionDto create(CreateTransactionDto dto, Long financeId);
 
     boolean delete(Long id);
 
     List<TransactionDto> findAll(FinanceDto finance);
 
     List<TransactionDto> getFilteredTransactions(List<Long> transactionsId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction);
+
+    List<Transaction> getTransactionsByFinanceId(Long id);
 }

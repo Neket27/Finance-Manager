@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001_create_users_table
+      author: Nikita Kulga
+      changes:
+        - createSequence:
+            sequenceName: user_id_seq
+            startValue: 1
+            incrementBy: 1
+
+        - createTable:
+            schemaName: business
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    unique: true
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true # Уникальное ограничение для email
+              - column:
+                  name: name
+                  type: varchar(255)
+
+              - column:
+                  name: password
+                  type: varchar(255)
+
+              - column:
+                  name: is_active
+                  type: boolean
+
+              - column:
+                  name: role
+                  type: varchar(32)
+
+              - column:
+                  name: finance_id
+                  type: bigint
+

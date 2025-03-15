@@ -10,7 +10,7 @@ import app.entity.Finance;
 import app.entity.Role;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
-import app.exeption.EditException;
+import app.exception.EditException;
 import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
 import app.repository.FinanceRepository;

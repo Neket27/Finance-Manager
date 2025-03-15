@@ -1,4 +1,4 @@
-package app.exeption;
+package app.exception;
 
 public class UserExistException extends RuntimeException {
 

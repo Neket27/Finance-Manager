@@ -1,0 +1,63 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001_create_finances_table
+      author: Nikita Kulga
+      changes:
+        - createSequence:
+            sequenceName: finance_id_seq
+            startValue: 1
+            incrementBy: 1
+
+        - createTable:
+            schemaName: business
+            tableName: finances
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    unique: true
+              - column:
+                  name: monthly_budget
+                  type: double
+                  constraints:
+                    nullable: false
+              - column:
+                  name: savings_goal
+                  type: double
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_savings
+                  type: double
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_expenses
+                  type: double
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            schemaName: business
+            tableName: finance_transactions
+            columns:
+              - column:
+                  name: finance_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_finance_transactions
+                    references: business.finances(id)
+
+              - column:
+                  name: transaction_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+
+
+

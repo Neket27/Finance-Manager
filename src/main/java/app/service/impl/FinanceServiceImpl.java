@@ -9,8 +9,8 @@ import app.dto.user.UserDto;
 import app.entity.Finance;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
-import app.exeption.EditException;
-import app.exeption.NotFoundException;
+import app.exception.EditException;
+import app.exception.NotFoundException;
 import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
 import app.repository.FinanceRepository;
@@ -68,8 +68,8 @@ public class FinanceServiceImpl implements FinanceService {
      */
     @Override
     public TransactionDto addTransactionUser(CreateTransactionDto dto) {
-        TransactionDto transaction = transactionService.create(dto);
         Finance financeUser = this.find(UserContext.getCurrentUser().financeId());
+        TransactionDto transaction = transactionService.create(dto,financeUser.getId());
         financeUser.getTransactionsId().add(transaction.id());
 
         this.updateCurrentSavings(financeUser, transaction.amount(), transaction.typeTransaction());
@@ -236,9 +236,8 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     public List<TransactionDto> getTransactions(String userId) {
         UserDto user = userService.getUserByEmail(userId);
-        return this.find(user.financeId()).getTransactionsId().stream()
-                .map(transactionService::getTransactionById)
-                .toList();
+        List<Transaction> transactions = transactionService.getTransactionsByFinanceId(user.financeId());
+        return  transactionMapper.toDtoList(transactions);
     }
 
     @Override
@@ -259,7 +258,10 @@ public class FinanceServiceImpl implements FinanceService {
      */
     private FinanceDto getFinance(String email) {
         UserDto user = userService.getUserByEmail(email);
-        return getFinanceById(user.financeId());
+        Finance finance =find(user.financeId());
+        List<Transaction> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
+        finance.setTransactionsId(transactions.stream().map(Transaction::getId).collect(Collectors.toList()));
+        return  financeMapper.toDto(finance);
     }
 
 }

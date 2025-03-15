@@ -2,13 +2,14 @@ package app;
 
 import app.auth.Authenticator;
 import app.config.AuthenticationConfig;
+import app.config.LiquibaseConfig;
 import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
 import app.mapper.UserMapper;
 import app.repository.FinanceRepository;
-import app.repository.bd.FinanceTableInMemoryDatabase;
-import app.repository.bd.TransactionTableInMemory;
-import app.repository.bd.UserTableInMemory;
+import app.repository.bd.FinanceJdbcRepository;
+import app.repository.bd.TransactionJdbcRepository;
+import app.repository.bd.UserJdbcRepository;
 import app.service.AuthService;
 import app.service.FinanceService;
 import app.service.TransactionService;
@@ -27,12 +28,12 @@ public class App {
     public static void main(String[] args) {
         AuthenticationConfig authenticationConfig = new AuthenticationConfig(new HashMap<>());
         Authenticator authenticator = new Authenticator(authenticationConfig);
-        FinanceRepository financeRepository = new FinanceTableInMemoryDatabase();
+        FinanceRepository financeRepository = new FinanceJdbcRepository();
         FinanceMapper financeMapper = new FinanceMapper();
         TransactionMapper transactionMapper = new TransactionMapper();
-        UserService userService = new UserServiceImpl(new UserMapper(), new UserTableInMemory(), financeRepository, financeMapper);
+        UserService userService = new UserServiceImpl(new UserMapper(), new UserJdbcRepository(), financeRepository, financeMapper);
         AuthService authService = new AuthServiceImpl(authenticationConfig, authenticator, userService);
-        TransactionService transactionService = new TransactionServiceImpl(new TransactionTableInMemory(), transactionMapper);
+        TransactionService transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(), transactionMapper);
         FinanceService financeService = new FinanceServiceImpl(financeRepository, userService, transactionService, financeMapper, transactionMapper, new NotificationServiceImpl());
 
         UserInput userInput = new UserInput(new Scanner(System.in));
@@ -40,6 +41,7 @@ public class App {
         UserAuth userAuth = new UserAuth(userService, authService, userOutput, userInput);
         Menu menu = new Menu(userOutput, userInput, financeService, userAuth, userService, new TargetServiceImpl(userService, financeService));
 
+        LiquibaseConfig.connect();
         menu.showMenu();
 
     }

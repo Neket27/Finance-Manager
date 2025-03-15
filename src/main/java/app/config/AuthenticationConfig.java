@@ -1,7 +1,7 @@
 package app.config;
 
 import app.dto.user.UserDto;
-import app.exeption.UserIsAlreadyLoggedInException;
+import app.exception.UserIsAlreadyLoggedInException;
 
 import java.util.Map;
 

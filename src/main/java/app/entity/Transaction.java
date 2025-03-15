@@ -10,14 +10,16 @@ public class Transaction {
     private Instant date;
     private String description;
     private TypeTransaction typeTransaction;
+    private Long financeId;
 
-    public Transaction(Long id, double amount, String category, Instant date, String description, TypeTransaction isIncome) {
+    public Transaction(Long id, double amount, String category, Instant date, String description, TypeTransaction isIncome, Long financeId) {
         this.id = id;
         this.amount = amount;
         this.category = category;
         this.date = date;
         this.description = description;
         this.typeTransaction = isIncome;
+        this.financeId = financeId;
     }
     public Transaction() {}
 
@@ -27,6 +29,14 @@ public class Transaction {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getFinanceId() {
+        return financeId;
+    }
+
+    public void setFinanceId(Long financeId) {
+        this.financeId = financeId;
     }
 
     public void setDate(Instant date) {
@@ -77,9 +87,15 @@ public class Transaction {
         private Instant date;
         private String description;
         private TypeTransaction typeTransaction;
+        private Long financeId;
 
         public Builder id(Long id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder financeId(Long financeId) {
+            this.financeId = financeId;
             return this;
         }
 
@@ -109,7 +125,7 @@ public class Transaction {
         }
 
         public Transaction build() {
-            return new Transaction(id, amount, category, date, description, typeTransaction);
+            return new Transaction(id, amount, category, date, description, typeTransaction, financeId);
         }
     }
 
