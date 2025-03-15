@@ -65,18 +65,38 @@ public class UserJdbcRepository implements UserRepository {
     public User save(User entity) {
         String sql = """
                 INSERT INTO business.users (id, email, name, password, is_active, role, finance_id) 
-                VALUES (NEXTVAL('finance_id_seq'),?, ?, ?, ?, ?, ?) RETURNING id 
-                    """;
+                VALUES (?, ?, ?, ?, ?, ?, ?) 
+                ON CONFLICT (id) DO UPDATE 
+                SET email = EXCLUDED.email,
+                    name = EXCLUDED.name,
+                    password = EXCLUDED.password,
+                    is_active = EXCLUDED.is_active,
+                    role = EXCLUDED.role,
+                    finance_id = EXCLUDED.finance_id
+                RETURNING id
+                """;
 
         try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
              PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            preparedStatement.setString(1, entity.getEmail());
-            preparedStatement.setString(2, entity.getName());
-            preparedStatement.setString(3, entity.getPassword());
-            preparedStatement.setBoolean(4, entity.isActive());
-            preparedStatement.setString(5, entity.getRole().toString());
-            preparedStatement.setObject(6, entity.getFinanceId(), Types.BIGINT);
+            if (entity.getId() == null || entity.getId() == 0) {
+                try (Statement stmt = connection.createStatement();
+                     ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('transaction_id_seq')")) {
+                    if (rs.next()) {
+                        entity.setId(rs.getLong(1));
+                    } else {
+                        throw new SQLException("Unable to get next value from sequence");
+                    }
+                }
+            }
+
+            preparedStatement.setLong(1, entity.getId());
+            preparedStatement.setString(2, entity.getEmail());
+            preparedStatement.setString(3, entity.getName());
+            preparedStatement.setString(4, entity.getPassword());
+            preparedStatement.setBoolean(5, entity.isActive());
+            preparedStatement.setString(6, entity.getRole().toString());
+            preparedStatement.setLong(7, entity.getFinanceId());
 
             int affectedRows = preparedStatement.executeUpdate();
             if (affectedRows == 0) {

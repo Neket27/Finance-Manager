@@ -306,7 +306,7 @@ public class Menu {
         if (isAdmin(UserContext.getCurrentUser())) {
             String emailToAssign = userInput.readString("Введите email пользователя для назначения роли: ");
             String role = userInput.readString("Введите роль (ADMIN/USER): ");
-            if (userService.changeUserRole(emailToAssign, Role.valueOf(role.toUpperCase()))) {
+            if (userService.changeUserRole(emailToAssign, role.equalsIgnoreCase("ADMIN")?Role.Admin:Role.User)) {
                 userOutput.print("Роль успешно назначена!");
             } else {
                 userOutput.print("Не удалось назначить роль. Проверьте email и роль.");

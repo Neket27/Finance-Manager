@@ -146,7 +146,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
-                    transactions.add(mapTransaction(resultSet)); // Теперь получаем сами транзакции
+                    transactions.add(mapTransaction(resultSet));
                 }
             }
         } catch (SQLException e) {
