@@ -1,4 +1,4 @@
-package app.repository.bd;
+package app.repository.jdbc;
 
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
@@ -16,17 +16,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static app.config.DbConfig.*;
-
 public class TransactionJdbcRepository implements TransactionRepository {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionJdbcRepository.class);
+    private final Connection connection;
+
+    public TransactionJdbcRepository(Connection connectionProvider) {
+        this.connection = connectionProvider;
+    }
 
     @Override
     public Optional<Transaction> findById(Long id) {
         String sql = "SELECT * FROM business.transactions WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setLong(1, id);
 
@@ -45,25 +47,24 @@ public class TransactionJdbcRepository implements TransactionRepository {
     @Override
     public Transaction save(Transaction entity) {
         String sqlTransaction = """
-        INSERT INTO business.transactions (id, amount, category, date, description, type_transaction, finance_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?) 
-        ON CONFLICT (id) DO UPDATE 
-        SET amount = EXCLUDED.amount, 
-            category = EXCLUDED.category, 
-            date = EXCLUDED.date, 
-            description = EXCLUDED.description, 
-            type_transaction = EXCLUDED.type_transaction, 
-            finance_id = EXCLUDED.finance_id
-        RETURNING id
-        """;
+                INSERT INTO business.transactions (id, amount, category, date, description, type_transaction, finance_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?) 
+                ON CONFLICT (id) DO UPDATE 
+                SET amount = EXCLUDED.amount, 
+                    category = EXCLUDED.category, 
+                    date = EXCLUDED.date, 
+                    description = EXCLUDED.description, 
+                    type_transaction = EXCLUDED.type_transaction, 
+                    finance_id = EXCLUDED.finance_id
+                RETURNING id
+                """;
 
         String sqlFinanceTransaction = """
-        INSERT INTO business.finance_transactions (finance_id, transaction_id) 
-        VALUES (?, ?) 
-        """;
+                INSERT INTO business.finance_transactions (finance_id, transaction_id) 
+                VALUES (?, ?) 
+                """;
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatementTransaction = connection.prepareStatement(sqlTransaction, Statement.RETURN_GENERATED_KEYS);
+        try (PreparedStatement preparedStatementTransaction = connection.prepareStatement(sqlTransaction, Statement.RETURN_GENERATED_KEYS);
              PreparedStatement preparedStatementFinanceTransaction = connection.prepareStatement(sqlFinanceTransaction)) {
 
             connection.setAutoCommit(false);
@@ -104,8 +105,6 @@ public class TransactionJdbcRepository implements TransactionRepository {
         }
     }
 
-
-
     @Override
     public void delete(Transaction entity) {
         deleteById(entity.getId());
@@ -114,8 +113,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
     public void deleteById(Long id) {
         String sql = "DELETE FROM business.transactions WHERE id = ?";
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setLong(1, id);
             int affectedRows = preparedStatement.executeUpdate();
@@ -139,8 +137,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
 
         List<Transaction> transactions = new ArrayList<>();
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setLong(1, id);
 
@@ -159,7 +156,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
     @Override
     public List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
         StringBuilder sqlBuilder = new StringBuilder("""
-                        SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction
+                        SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
                         FROM business.transactions t
                         JOIN business.finance_transactions ft ON t.id = ft.transaction_id
                         WHERE ft.finance_id = ?
@@ -196,7 +193,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
 
         if (!hasFilters) {
             sqlBuilder = new StringBuilder("""
-                            SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction
+                            SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
                             FROM business.transactions t
                             JOIN business.finance_transactions ft ON t.id = ft.transaction_id
                             WHERE ft.finance_id = ?
@@ -205,8 +202,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
             parameters.add(financeId);
         }
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sqlBuilder.toString())) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sqlBuilder.toString())) {
 
             for (int i = 0; i < parameters.size(); i++) {
                 preparedStatement.setObject(i + 1, parameters.get(i));
@@ -225,14 +221,58 @@ public class TransactionJdbcRepository implements TransactionRepository {
         }
     }
 
+    @Override
+    public void deleteAllByFinanceId(Long financeId) {
+        if (financeId == null) {
+            throw new IllegalArgumentException("financeId cannot be null");
+        }
+
+        if (!hasTransactions(financeId)) {
+            log.warn("No transactions found for financeId: {}", financeId);
+            return;
+        }
+
+        String sql = "DELETE FROM business.transactions WHERE finance_id = ?";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, financeId);
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows == 0) {
+                log.warn("No transactions deleted for financeId: {}", financeId);
+                throw new ErrorDeleteSqlException("Transaction not found, nothing deleted.");
+            }
+
+            log.info("Deleted {} transactions for financeId: {}", affectedRows, financeId);
+        } catch (SQLException e) {
+            log.error("Error deleting transactions for financeId {}: {}", financeId, e.getMessage());
+            throw new ErrorDeleteSqlException("Error deleting transaction from database", e);
+        }
+    }
+
+    private boolean hasTransactions(Long financeId) {
+        String sql = "SELECT COUNT(*) FROM business.transactions WHERE finance_id = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, financeId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            log.error("Error checking transactions for financeId {}: {}", financeId, e.getMessage());
+            throw new RuntimeException("Error checking transactions from database", e);
+        }
+        return false;
+    }
 
     @Override
     public Collection<Transaction> getAll() {
         String sql = "SELECT * FROM business.transactions";
         List<Transaction> transactions = new ArrayList<>();
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
              ResultSet resultSet = preparedStatement.executeQuery()) {
 
             while (resultSet.next()) {

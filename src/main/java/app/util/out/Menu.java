@@ -62,7 +62,7 @@ public class Menu {
                     break;
                 case 4:
                     if (UserContext.getCurrentUser() != null && UserContext.getCurrentUser().isActive())
-                        filterTransactions();
+                        filterTransactions(UserContext.getCurrentUser().financeId());
                     break;
                 case 5:
                     if (UserContext.getCurrentUser() != null && UserContext.getCurrentUser().isActive())
@@ -189,13 +189,13 @@ public class Menu {
         userOutput.printTransactions(financeService.getTransactions(UserContext.getCurrentUser().email()));
     }
 
-    private void filterTransactions() {
+    private void filterTransactions(Long financeId) {
         Instant startDate = getDateFromUser("Введите начальную дату (в формате YYYY-MM-DD или оставьте пустым для всех): ");
         Instant endDate = getDateFromUser("Введите конечную дату (в формате YYYY-MM-DD или оставьте пустым для всех): ");
         String filterCategory = userInput.readString("Введите категорию (или оставьте пустым для всех): ");
         TypeTransaction filterType = getTypeTransactionFromUserInput();
 
-        List<TransactionDto> filteredTransactions = financeService.filterTransactions(startDate, endDate, filterCategory, filterType, UserContext.getCurrentUser().email());
+        List<TransactionDto> filteredTransactions = financeService.filterTransactions(financeId,startDate, endDate, filterCategory, filterType, UserContext.getCurrentUser().email());
         userOutput.print("Отфильтрованные транзакции:");
         userOutput.printTransactions(filteredTransactions);
     }

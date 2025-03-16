@@ -1,7 +1,6 @@
-package app;
+package app.unit;
 
 import app.auth.Authenticator;
-import app.config.AuthenticationConfig;
 import app.context.UserContext;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
@@ -23,9 +22,6 @@ import static org.mockito.Mockito.*;
 class AuthServiceImplTest {
 
     @Mock
-    private AuthenticationConfig authenticationConfig;
-
-    @Mock
     private Authenticator authenticator;
 
     @Mock
@@ -35,7 +31,6 @@ class AuthServiceImplTest {
     private AuthServiceImpl authService;
 
     private CreateUserDto createUserDto;
-
     private UserDto userDto;
 
     @BeforeEach
@@ -51,32 +46,41 @@ class AuthServiceImplTest {
 
     @Test
     void register_Success() {
+        // Arrange
         when(userService.createUser(createUserDto)).thenReturn(userDto);
 
+        // Act
         boolean result = authService.register(createUserDto);
 
+        // Assert
         assertTrue(result);
         verify(userService, times(1)).createUser(createUserDto);
     }
 
     @Test
     void register_UserAlreadyLoggedIn() {
-        doThrow(new UserIsAlreadyLoggedInException("User already logged in"))
+        // Arrange
+        doThrow(new UserIsAlreadyLoggedInException("User  already logged in"))
                 .when(userService).createUser(createUserDto);
 
+        // Act
         boolean result = authService.register(createUserDto);
 
+        // Assert
         assertFalse(result);
         verify(userService, times(1)).createUser(createUserDto);
     }
 
     @Test
     void login_Success() {
+        // Arrange
         when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
         when(authenticator.checkCredentials("test@example.com", "password123")).thenReturn(true);
 
+        // Act
         boolean result = authService.login("test@example.com", "password123");
 
+        // Assert
         assertTrue(result);
         assertEquals(userDto, UserContext.getCurrentUser());
         verify(authenticator, times(1)).checkCredentials("test@example.com", "password123");
@@ -84,33 +88,41 @@ class AuthServiceImplTest {
 
     @Test
     void login_UserNotFound() {
-        when(userService.getUserByEmail("notfound@example.com")).thenThrow(new NotFoundException("User not found"));
+        // Arrange
+        when(userService.getUserByEmail("notfound@example.com")).thenThrow(new NotFoundException("User  not found"));
 
+        // Act
         boolean result = authService.login("notfound@example.com", "password123");
 
+        // Assert
         assertFalse(result);
         assertNull(UserContext.getCurrentUser());
     }
 
     @Test
     void login_InvalidPassword() {
+        // Arrange
         when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
         when(authenticator.checkCredentials("test@example.com", "wrongpassword")).thenReturn(false);
-        doThrow(new RuntimeException("Invalid credentials")).when(authenticationConfig).addCredential(userDto);
 
+        // Act
         boolean result = authService.login("test@example.com", "wrongpassword");
 
+        // Assert
         assertFalse(result);
         assertNull(UserContext.getCurrentUser());
     }
 
     @Test
     void logout_Success() {
+        // Arrange
         UserContext.setCurrentUser(userDto);
         when(authenticator.clearCredentials("test@example.com")).thenReturn(true);
 
+        // Act
         boolean result = authService.logout();
 
+        // Assert
         assertTrue(result);
         assertNull(UserContext.getCurrentUser());
         verify(authenticator, times(1)).clearCredentials("test@example.com");

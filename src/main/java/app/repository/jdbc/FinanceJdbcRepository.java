@@ -1,4 +1,4 @@
-package app.repository.bd;
+package app.repository.jdbc;
 
 import app.entity.Finance;
 import app.exception.db.ErrorDeleteSqlException;
@@ -14,19 +14,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static app.config.DbConfig.*;
-
 public class FinanceJdbcRepository implements FinanceRepository {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceJdbcRepository.class);
+    private final Connection connection;
+
+    public FinanceJdbcRepository(Connection connection) {
+        this.connection = connection;
+    }
 
     @Override
     public Optional<Finance> findById(Long id) {
         String sql = "SELECT * FROM business.finances WHERE id = ?";
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setLong(1, id);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -55,49 +56,40 @@ public class FinanceJdbcRepository implements FinanceRepository {
                     RETURNING id
                 """;
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD)) {
-            try (PreparedStatement financeStmt = connection.prepareStatement(financeSql, Statement.RETURN_GENERATED_KEYS)) {
-                connection.setAutoCommit(false);
-                connection.beginRequest();
+        try (PreparedStatement financeStmt = connection.prepareStatement(financeSql, Statement.RETURN_GENERATED_KEYS)) {
 
-                if (entity.getId() != null && entity.getId() > 0)
-                    financeStmt.setLong(1, entity.getId());
-                else
-                    financeStmt.setNull(1, Types.BIGINT);
+            if (entity.getId() != null && entity.getId() > 0)
+                financeStmt.setLong(1, entity.getId());
+            else
+                financeStmt.setNull(1, Types.BIGINT);
 
-                financeStmt.setDouble(2, entity.getMonthlyBudget());
-                financeStmt.setDouble(3, entity.getSavingsGoal());
-                financeStmt.setDouble(4, entity.getCurrentSavings());
-                financeStmt.setDouble(5, entity.getTotalExpenses());
+            financeStmt.setDouble(2, entity.getMonthlyBudget());
+            financeStmt.setDouble(3, entity.getSavingsGoal());
+            financeStmt.setDouble(4, entity.getCurrentSavings());
+            financeStmt.setDouble(5, entity.getTotalExpenses());
 
-                int affectedRows = financeStmt.executeUpdate();
+            int affectedRows = financeStmt.executeUpdate();
 
-                if (affectedRows == 0)
-                    throw new ErrorInsertSqlException("Upserting finance record failed, no rows affected.");
+            if (affectedRows == 0)
+                throw new ErrorInsertSqlException("Upserting finance record failed, no rows affected.");
 
-
-                try (ResultSet generatedKeys = financeStmt.getGeneratedKeys()) {
-                    if (generatedKeys.next())
-                        entity.setId(generatedKeys.getLong(1));
-                }
-
-                connection.commit();
-                return entity;
+            try (ResultSet generatedKeys = financeStmt.getGeneratedKeys()) {
+                if (generatedKeys.next())
+                    entity.setId(generatedKeys.getLong(1));
             }
+
+            return entity;
         } catch (SQLException e) {
             log.error("Error saving finance record: {}", e.getMessage());
             throw new ErrorInsertSqlException("Error saving finance record into database", e);
         }
     }
 
-
     @Override
     public void delete(Finance entity) {
         String sql = "DELETE FROM business.finances WHERE id = ?";
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setLong(1, entity.getId());
 
             int affectedRows = preparedStatement.executeUpdate();
@@ -115,8 +107,7 @@ public class FinanceJdbcRepository implements FinanceRepository {
         String sql = "SELECT * FROM business.finances";
         List<Finance> finances = new ArrayList<>();
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
              ResultSet resultSet = preparedStatement.executeQuery()) {
 
             while (resultSet.next()) {
@@ -139,5 +130,3 @@ public class FinanceJdbcRepository implements FinanceRepository {
         return finance;
     }
 }
-
-

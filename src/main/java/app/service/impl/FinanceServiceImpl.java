@@ -44,12 +44,12 @@ public class FinanceServiceImpl implements FinanceService {
     /**
      * Конструктор сервиса финансов.
      *
-     * @param financeRepository    репозиторий финансов
-     * @param userService          сервис пользователей
-     * @param transactionService   сервис транзакций
-     * @param financeMapper        маппер финансов
-     * @param transactionMapper    маппер транзакций
-     * @param notificationService  сервис уведомлений
+     * @param financeRepository   репозиторий финансов
+     * @param userService         сервис пользователей
+     * @param transactionService  сервис транзакций
+     * @param financeMapper       маппер финансов
+     * @param transactionMapper   маппер транзакций
+     * @param notificationService сервис уведомлений
      */
     public FinanceServiceImpl(FinanceRepository financeRepository, UserService userService, TransactionService transactionService, FinanceMapper financeMapper, TransactionMapper transactionMapper, NotificationService notificationService) {
         this.financeRepository = financeRepository;
@@ -69,7 +69,7 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     public TransactionDto addTransactionUser(CreateTransactionDto dto) {
         Finance financeUser = this.find(UserContext.getCurrentUser().financeId());
-        TransactionDto transaction = transactionService.create(dto,financeUser.getId());
+        TransactionDto transaction = transactionService.create(dto, financeUser.getId());
         financeUser.getTransactionsId().add(transaction.id());
 
         this.updateCurrentSavings(financeUser, transaction.amount(), transaction.typeTransaction());
@@ -104,13 +104,15 @@ public class FinanceServiceImpl implements FinanceService {
      * @param email email пользователя
      */
     @Override
-    public void checkExpenseLimit(String email) {
+    public Boolean checkExpenseLimit(String email) {
         UserDto user = userService.getUserByEmail(email);
         Finance finance = this.find(user.financeId());
 
         if (finance.getTotalExpenses() > finance.getMonthlyBudget()) {
             notificationService.sendMessage(UserContext.getCurrentUser().email(), "Внимание! Вы превысили ваш месячный бюджет в" + finance.getMonthlyBudget() + "!");
+            return true;
         }
+        return false;
     }
 
 
@@ -134,18 +136,16 @@ public class FinanceServiceImpl implements FinanceService {
     /**
      * Фильтрует транзакции по заданным параметрам.
      *
-     * @param startDate     начальная дата
-     * @param endDate       конечная дата
-     * @param category      категория
+     * @param startDate       начальная дата
+     * @param endDate         конечная дата
+     * @param category        категория
      * @param typeTransaction тип транзакции (доход/расход)
-     * @param email         email пользователя
+     * @param email           email пользователя
      * @return отфильтрованный список транзакций
      */
     @Override
-    public List<TransactionDto> filterTransactions(Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email) {
-        UserDto user = userService.getUserByEmail(email);
-        Finance finance = this.find(user.financeId());
-        return transactionService.getFilteredTransactions(finance.getTransactionsId(), startDate, endDate, category, typeTransaction);
+    public List<TransactionDto> filterTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email) {
+        return transactionService.getFilteredTransactions(financeId, startDate, endDate, category, typeTransaction);
 
     }
 
@@ -179,7 +179,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
 
-    private double getTotal(FinanceDto finance,LocalDate startDate, LocalDate endDate, TypeTransaction typeTransaction) {
+    private double getTotal(FinanceDto finance, LocalDate startDate, LocalDate endDate, TypeTransaction typeTransaction) {
         return finance.transactionsId().stream()
                 .map(transactionService::getTransactionById)
                 .filter(t -> t.typeTransaction() == typeTransaction)
@@ -219,9 +219,9 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     public TransactionDto editTransaction(UpdateTransactionDto updateTransactionDto) {
         try {
-            Transaction transaction = transactionService.edit(updateTransactionDto);
+            TransactionDto transaction = transactionService.edit(updateTransactionDto);
             log.debug("Edited transaction: {}", updateTransactionDto);
-            return transactionMapper.toDto(transaction);
+            return transaction;
         } catch (Exception e) {
             log.error("Failed to edit transaction: {}", updateTransactionDto);
             throw new EditException("Failed to edit transaction: " + updateTransactionDto);
@@ -237,7 +237,7 @@ public class FinanceServiceImpl implements FinanceService {
     public List<TransactionDto> getTransactions(String userId) {
         UserDto user = userService.getUserByEmail(userId);
         List<Transaction> transactions = transactionService.getTransactionsByFinanceId(user.financeId());
-        return  transactionMapper.toDtoList(transactions);
+        return transactionMapper.toDtoList(transactions);
     }
 
     @Override
@@ -258,10 +258,10 @@ public class FinanceServiceImpl implements FinanceService {
      */
     private FinanceDto getFinance(String email) {
         UserDto user = userService.getUserByEmail(email);
-        Finance finance =find(user.financeId());
+        Finance finance = find(user.financeId());
         List<Transaction> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
         finance.setTransactionsId(transactions.stream().map(Transaction::getId).collect(Collectors.toList()));
-        return  financeMapper.toDto(finance);
+        return financeMapper.toDto(finance);
     }
 
 }

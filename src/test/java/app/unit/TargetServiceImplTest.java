@@ -1,4 +1,4 @@
-package app;
+package app.unit;
 
 import app.context.UserContext;
 import app.dto.transaction.TransactionDto;
@@ -62,45 +62,46 @@ class TargetServiceImplTest {
     }
 
     @Test
-    void testSetMonthlyBudget() {
+    void setMonthlyBudget_ShouldUpdateBudgetAndSave() {
         double newBudget = 4000.0;
+
         targetService.setMonthlyBudget(newBudget);
+
         assertEquals(newBudget, finance.getMonthlyBudget());
         verify(financeService, times(1)).save(finance);
     }
 
     @Test
-    void testCheckBudgetExceeded_NoExceed() {
+    void checkBudgetExceeded_ShouldNotThrow_WhenNotExceeded() {
         List<TransactionDto> transactions = List.of(
-                new TransactionDto(1L, 500.0, "k1", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE),
-                new TransactionDto(2L, 1000.0, "k2", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE)
+                new TransactionDto(1L, 500.0, "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
+                new TransactionDto(2L, 1000.0, "k2", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
         );
-
         when(financeService.getTransactions(any())).thenReturn(transactions);
 
         assertDoesNotThrow(() -> targetService.checkBudgetExceeded(userDto.email()));
     }
 
     @Test
-    void testCheckBudgetExceeded_Exceeded() {
+    void checkBudgetExceeded_ShouldNotThrow_WhenExceeded() {
         List<TransactionDto> transactions = List.of(
-                new TransactionDto(1L, 2000.0, "k1", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE),
-                new TransactionDto(2L, 2000.0,"k1", Instant.now().minus(Duration.ofDays(10)),"", TypeTransaction.EXPENSE)
+                new TransactionDto(1L, 2000.0, "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
+                new TransactionDto(2L, 2000.0, "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
         );
-
         when(financeService.getTransactions(any())).thenReturn(transactions);
 
         assertDoesNotThrow(() -> targetService.checkBudgetExceeded(userDto.email()));
     }
 
     @Test
-    void testGenerateFinancialReport() {
+    void generateFinancialReport_ShouldContainExpectedValues() {
         when(financeService.getProgressTowardsGoal(any())).thenReturn(50.0);
         when(financeService.getTotalIncome(any(), any(), any())).thenReturn(8000.0);
         when(financeService.getTotalExpenses(any(), any(), any())).thenReturn(3000.0);
         when(financeService.getExpensesByCategory(any())).thenReturn(Map.of("Food", 1000.0, "Transport", 500.0));
 
         String report = targetService.generateFinancialReport();
+
         assertTrue(report.contains("Текущие накопления: 5000.0"));
         assertTrue(report.contains("Цель накопления: 10000.0"));
         assertTrue(report.contains("Прогресс к цели: 50.0%"));
@@ -111,9 +112,11 @@ class TargetServiceImplTest {
     }
 
     @Test
-    void testUpdateGoalSavings() {
+    void updateGoalSavings_ShouldUpdateGoalAndSave() {
         double newGoal = 15000.0;
+
         targetService.updateGoalSavings(newGoal);
+
         assertEquals(newGoal, finance.getSavingsGoal());
         verify(financeService, times(1)).save(finance);
     }

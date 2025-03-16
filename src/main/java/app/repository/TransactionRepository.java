@@ -13,4 +13,6 @@ public interface TransactionRepository extends GenericRepository<Transaction, Lo
     List<Transaction> findByFinanceId(Long id);
 
     List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction);
+
+    void deleteAllByFinanceId(Long financeId);
 }

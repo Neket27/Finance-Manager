@@ -18,7 +18,8 @@
         <logback-classic>1.4.8</logback-classic>
         <liquibase-core>4.17.2</liquibase-core>
         <postgresql>42.7.1</postgresql>
-        <snakeyaml>2.3</snakeyaml>
+        <testcontainers.version>1.19.8</testcontainers.version>
+        <postgresql-testcontainers>1.19.0</postgresql-testcontainers>
     </properties>
 
     <dependencies>
@@ -49,6 +50,18 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>${mockito-junit-jupiter}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql-testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

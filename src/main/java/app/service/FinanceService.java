@@ -18,7 +18,7 @@ public interface FinanceService {
 
     double getProgressTowardsGoal(String email);
 
-    List<TransactionDto> filterTransactions(Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email);
+    List<TransactionDto> filterTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email);
 
     Map<String, Double> getExpensesByCategory(String email);
 
@@ -34,7 +34,7 @@ public interface FinanceService {
 
     List<TransactionDto> getTransactions(String userId);
 
-    void checkExpenseLimit(String email);
+    Boolean checkExpenseLimit(String email);
 
     FinanceDto getFinanceById(Long id);
 

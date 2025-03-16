@@ -1,4 +1,4 @@
-package app.repository.bd;
+package app.repository.jdbc;
 
 import app.entity.Role;
 import app.entity.User;
@@ -15,18 +15,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static app.config.DbConfig.*;
-
 public class UserJdbcRepository implements UserRepository {
 
     private static final Logger log = LoggerFactory.getLogger(UserJdbcRepository.class);
+    private final Connection connection;
+
+    public UserJdbcRepository(Connection connection) {
+        this.connection = connection;
+    }
 
     @Override
     public Optional<User> findById(Long id) {
         String sql = "SELECT * FROM business.users WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setLong(1, id);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -44,9 +45,7 @@ public class UserJdbcRepository implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) {
         String sql = "SELECT * FROM business.users WHERE email = ?";
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, email);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -76,9 +75,9 @@ public class UserJdbcRepository implements UserRepository {
                 RETURNING id
                 """;
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            // Генерация ID, если он не установлен
             if (entity.getId() == null || entity.getId() == 0) {
                 try (Statement stmt = connection.createStatement();
                      ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('transaction_id_seq')")) {
@@ -96,7 +95,7 @@ public class UserJdbcRepository implements UserRepository {
             preparedStatement.setString(4, entity.getPassword());
             preparedStatement.setBoolean(5, entity.isActive());
             preparedStatement.setString(6, entity.getRole().toString());
-            preparedStatement.setLong(7, entity.getFinanceId());
+            preparedStatement.setObject(7, entity.getFinanceId());
 
             int affectedRows = preparedStatement.executeUpdate();
             if (affectedRows == 0) {
@@ -119,9 +118,7 @@ public class UserJdbcRepository implements UserRepository {
     public void delete(User entity) {
         String sql = "DELETE FROM business.users WHERE email = ?";
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, entity.getEmail());
             int affectedRows = preparedStatement.executeUpdate();
 
@@ -138,9 +135,7 @@ public class UserJdbcRepository implements UserRepository {
     public boolean existsByEmail(String email) {
         String sql = "SELECT COUNT(*) FROM business.users WHERE email = ?";
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, email);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -160,8 +155,7 @@ public class UserJdbcRepository implements UserRepository {
         String sql = "SELECT * FROM business.users";
         List<User> users = new ArrayList<>();
 
-        try (Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
              ResultSet resultSet = preparedStatement.executeQuery()) {
 
             while (resultSet.next()) {

@@ -1,6 +1,5 @@
 package app.service.impl;
 
-import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.TransactionDto;
@@ -16,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Реализация сервиса управления транзакциями.
@@ -86,12 +84,12 @@ public class TransactionServiceImpl implements TransactionService {
      * @return обновленная транзакция
      */
     @Override
-    public Transaction edit(UpdateTransactionDto dto) {
+    public TransactionDto edit(UpdateTransactionDto dto) {
         Transaction transaction = this.find(dto.id());
         transactionMapper.updateEntity(transaction, dto);
         transactionRepository.save(transaction);
         log.debug("Транзакция обновлена: {}", transaction);
-        return transaction;
+        return transactionMapper.toDto(transaction);
     }
 
     /**
@@ -126,7 +124,7 @@ public class TransactionServiceImpl implements TransactionService {
     /**
      * Фильтрует транзакции по заданным параметрам.
      *
-     * @param transactionsId  список идентификаторов транзакций
+     * @param financeId       id финансов пользователя
      * @param startDate       начальная дата
      * @param endDate         конечная дата
      * @param category        категория транзакции
@@ -134,9 +132,8 @@ public class TransactionServiceImpl implements TransactionService {
      * @return отфильтрованный список транзакций
      */
     @Override
-    public List<TransactionDto> getFilteredTransactions(List<Long> transactionsId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
-        Long financeId = UserContext.getCurrentUser().financeId();
-        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(financeId,startDate, endDate, category, typeTransaction));
+    public List<TransactionDto> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
+        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(financeId, startDate, endDate, category, typeTransaction));
     }
 
     @Override

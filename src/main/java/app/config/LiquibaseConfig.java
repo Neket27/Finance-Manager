@@ -7,27 +7,28 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-import static app.config.DbConfig.*;
-
 public class LiquibaseConfig {
 
-    public static void connect() {
+    private final String changeLogFile = "db/changelog/changelog-master.yml";
+    private final String liquibaseSchemaName = "metadata";
+    private final DbConfig dbConfig;
+
+    public LiquibaseConfig(DbConfig dbConfig) {
+        this.dbConfig = dbConfig;
+    }
+
+    public void connect() {
         try {
-            Connection connection = DriverManager.getConnection(URL, USER_NAME, PASSWORD);
             Database database =
-                    DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+                    DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(dbConfig.getConnection()));
 
             Liquibase liquibase =
-                    new Liquibase("db/changelog/changelog-master.yml", new ClassLoaderResourceAccessor(), database);
+                    new Liquibase(changeLogFile, new ClassLoaderResourceAccessor(), database);
 
-            database.setLiquibaseSchemaName("metadata");
+            database.setLiquibaseSchemaName(liquibaseSchemaName);
             liquibase.update();
             System.out.println("Migration is completed successfully");
-        } catch (SQLException | LiquibaseException e) {
+        } catch (LiquibaseException e) {
             System.out.println("SQL Exception in migration " + e.getMessage());
         }
     }

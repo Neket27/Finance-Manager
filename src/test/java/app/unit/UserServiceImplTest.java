@@ -1,4 +1,4 @@
-package app;
+package app.unit;
 
 import app.dto.finance.CreateFinanceDto;
 import app.dto.user.CreateUserDto;
@@ -60,14 +60,11 @@ class UserServiceImplTest {
                 .email("test@example.com")
                 .password("newPassword123")
                 .build();
-
         user = new User.Builder()
                 .email("test@example.com")
                 .role(Role.User)
                 .finance(1L)
                 .build();
-
-
         finance = new Finance.Builder()
                 .id(1L)
                 .build();
@@ -75,6 +72,7 @@ class UserServiceImplTest {
 
     @Test
     void createUser_Success() {
+        // Arrange
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
         when(userRepository.getAll()).thenReturn(new ArrayList<>());
         when(userMapper.toEntity(createUserDto)).thenReturn(user);
@@ -83,8 +81,10 @@ class UserServiceImplTest {
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(userDto);
 
+        // Act
         UserDto result = userService.createUser(createUserDto);
 
+        // Assert
         assertNotNull(result);
         assertEquals(userDto, result);
         verify(userRepository, times(1)).save(user);
@@ -92,78 +92,98 @@ class UserServiceImplTest {
 
     @Test
     void createUser_UserAlreadyExists() {
+        // Arrange
         when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
 
+        // Act & Assert
         assertThrows(UserExistException.class, () -> userService.createUser(createUserDto));
     }
 
     @Test
     void updateDataUser_Success() {
-        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
+        // Arrange
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(userMapper.updateEntity(updateUserDto, user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(userDto);
 
+        // Act
         UserDto result = userService.updateDataUser(updateUserDto, "test@example.com");
 
+        // Assert
         assertNotNull(result);
         assertEquals(userDto, result);
-        verify(userRepository, times(1)).findById("test@example.com");
+        verify(userRepository, times(1)).findByEmail("test@example.com");
     }
 
     @Test
     void updateDataUser_UserNotFound() {
-        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
+        // Arrange
+        when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
+        // Act & Assert
         assertThrows(NotFoundException.class, () -> userService.updateDataUser(updateUserDto, "notfound@example.com"));
     }
 
     @Test
     void remove_Success() {
-        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
+        // Arrange
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
+        // Act
         boolean result = userService.remove("test@example.com");
 
+        // Assert
         assertTrue(result);
         verify(userRepository, times(1)).delete(user);
     }
 
     @Test
     void remove_UserNotFound() {
-        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
+        // Arrange
+        when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
+        // Act
         boolean result = userService.remove("notfound@example.com");
 
+        // Assert
         assertFalse(result);
     }
 
     @Test
     void getUserByEmail_Success() {
-        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
+        // Arrange
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(userMapper.toDto(user)).thenReturn(userDto);
 
+        // Act
         UserDto result = userService.getUserByEmail("test@example.com");
 
+        // Assert
         assertNotNull(result);
         assertEquals(userDto, result);
     }
 
     @Test
     void getUserByEmail_UserNotFound() {
-        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
+        // Arrange
+        when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
+        // Act & Assert
         assertThrows(NotFoundException.class, () -> userService.getUserByEmail("notfound@example.com"));
     }
 
     @Test
     void listUsers_Success() {
+        // Arrange
         List<User> users = List.of(user);
         List<UserDto> userDtos = List.of(userDto);
-
         when(userRepository.getAll()).thenReturn(users);
         when(userMapper.toListDto(users)).thenReturn(userDtos);
 
+        // Act
         List<UserDto> result = userService.list();
 
+        // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(userDto, result.get(0));
@@ -171,10 +191,13 @@ class UserServiceImplTest {
 
     @Test
     void blockUser_Success() {
-        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
+        // Arrange
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
+        // Act
         boolean result = userService.blockUser("test@example.com");
 
+        // Assert
         assertTrue(result);
         assertFalse(user.isActive());
         verify(userRepository, times(1)).save(user);
@@ -182,19 +205,25 @@ class UserServiceImplTest {
 
     @Test
     void blockUser_UserNotFound() {
-        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
+        // Arrange
+        when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
+        // Act
         boolean result = userService.blockUser("notfound@example.com");
 
+        // Assert
         assertFalse(result);
     }
 
     @Test
     void changeUserRole_Success() {
-        when(userRepository.findById("test@example.com")).thenReturn(Optional.of(user));
+        // Arrange
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
+        // Act
         boolean result = userService.changeUserRole("test@example.com", Role.Admin);
 
+        // Assert
         assertTrue(result);
         assertEquals(Role.Admin, user.getRole());
         verify(userRepository, times(1)).save(user);
@@ -202,10 +231,13 @@ class UserServiceImplTest {
 
     @Test
     void changeUserRole_UserNotFound() {
-        when(userRepository.findById("notfound@example.com")).thenReturn(Optional.empty());
+        // Arrange
+        when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
+        // Act
         boolean result = userService.changeUserRole("notfound@example.com", Role.Admin);
 
+        // Assert
         assertFalse(result);
     }
 }
