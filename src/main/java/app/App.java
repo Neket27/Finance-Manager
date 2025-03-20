@@ -1,8 +1,5 @@
 package app;
 
-import app.auth.Authenticator;
-import app.config.AuthenticationConfig;
-import app.config.DbConfig;
 import app.config.LiquibaseConfig;
 import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
@@ -20,6 +17,9 @@ import app.util.in.UserAuth;
 import app.util.in.UserInput;
 import app.util.out.Menu;
 import app.util.out.UserOutput;
+import app.auth.Authenticator;
+import app.config.AuthenticationConfig;
+import app.config.DbConfig;
 
 import java.util.HashMap;
 import java.util.Scanner;

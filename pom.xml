@@ -32,7 +32,7 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
-            <version>4.17.2</version>
+            <version>${liquibase-core}</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

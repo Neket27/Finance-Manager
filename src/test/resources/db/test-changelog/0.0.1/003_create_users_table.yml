@@ -1,16 +1,16 @@
 databaseChangeLog:
   - changeSet:
-      id: 001_create_transactions_table
+      id: 003_create_users_table
       author: Nikita Kulga
       changes:
         - createSequence:
-            sequenceName: transaction_id_seq
+            sequenceName: user_id_seq
             startValue: 1
             incrementBy: 1
 
         - createTable:
             schemaName: business
-            tableName: transactions
+            tableName: users
             columns:
               - column:
                   name: id
@@ -20,20 +20,30 @@ databaseChangeLog:
                     nullable: false
                     unique: true
               - column:
-                  name: amount
-                  type: double precision
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
               - column:
-                  name: category
+                  name: name
                   type: varchar(255)
               - column:
-                  name: date
-                  type: timestamp
-              - column:
-                  name: description
+                  name: password
                   type: varchar(255)
               - column:
-                  name: type_transaction
+                  name: is_active
+                  type: boolean
+              - column:
+                  name: role
                   type: varchar(32)
               - column:
                   name: finance_id
                   type: bigint
+
+      rollback:
+        - dropTable:
+            schemaName: business
+            tableName: users
+        - dropSequence:
+            sequenceName: user_id_seq

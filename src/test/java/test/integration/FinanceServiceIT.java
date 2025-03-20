@@ -1,4 +1,4 @@
-package app.integration;
+package test.integration;
 
 import app.context.UserContext;
 import app.dto.transaction.CreateTransactionDto;
@@ -19,19 +19,13 @@ import app.service.impl.FinanceServiceImpl;
 import app.service.impl.TargetServiceImpl;
 import app.service.impl.TransactionServiceImpl;
 import app.service.impl.UserServiceImpl;
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.resource.ClassLoaderResourceAccessor;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.testcontainers.containers.PostgreSQLContainer;
+import test.db.TestDatabase;
+import test.db.TestDatabaseFactory;
 
-import java.sql.DriverManager;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -40,64 +34,40 @@ import static org.mockito.Mockito.mock;
 
 class FinanceServiceIT {
 
-    private static PostgreSQLContainer<?> postgres;
+    private static TestDatabase database;
     private static UserService userService;
     private TransactionService transactionService;
     private TargetService targetService;
     private TransactionRepository transactionRepository;
     private static FinanceService financeService;
-    private FinanceRepository financeRepository;
     private UserDto user;
 
     @Mock
     private NotificationService notificationService;
 
     @BeforeEach
-    void setup() throws Exception {
-        postgres = new PostgreSQLContainer<>("postgres:16")
-                .withDatabaseName("testdb")
-                .withUsername("test")
-                .withPassword("test")
-                .withReuse(false);
-        postgres.start();
+    void setup() {
 
-        var connection = DriverManager.getConnection(
-                postgres.getJdbcUrl(),
-                postgres.getUsername(),
-                postgres.getPassword()
-        );
+        database = TestDatabaseFactory.create();
 
-        Database database = DatabaseFactory.getInstance()
-                .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-        Liquibase liquibase = new Liquibase(
-                "db/changelog/changelog-master.yml",
-                new ClassLoaderResourceAccessor(),
-                database
-        );
-        liquibase.update();
         UserMapper userMapper = new UserMapper();
-        UserJdbcRepository userRepository = new UserJdbcRepository(connection);
-        FinanceRepository financeRepository = new FinanceJdbcRepository(connection);
+        UserJdbcRepository userRepository = new UserJdbcRepository(database.connection());
+        FinanceRepository financeRepository = new FinanceJdbcRepository(database.connection());
         FinanceMapper financeMapper = new FinanceMapper();
         userService = new UserServiceImpl(userMapper, userRepository, financeRepository, financeMapper);
         user = userService.createUser(new CreateUserDto("Clark Kent", "clark@example.com", "password"));
         UserContext.setCurrentUser(user);
         notificationService = mock(NotificationService.class);
-        transactionRepository = new TransactionJdbcRepository(connection);
+        transactionRepository = new TransactionJdbcRepository(database.connection());
         TransactionMapper transactionMapper = new TransactionMapper();
         transactionService = new TransactionServiceImpl(transactionRepository, transactionMapper);
         financeService = new FinanceServiceImpl(financeRepository, userService, transactionService, financeMapper, transactionMapper, notificationService);
         targetService = new TargetServiceImpl(userService, financeService);
-        this.financeRepository = financeRepository;
     }
 
     @AfterEach
     void tearDown() {
-    }
-
-    @AfterAll
-    static void tearDownAfterClass() {
-        postgres.stop();
+        TestDatabaseFactory.reset();
     }
 
     @Test

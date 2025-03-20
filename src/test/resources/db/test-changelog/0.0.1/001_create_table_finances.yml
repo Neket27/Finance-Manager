@@ -58,6 +58,12 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
-
-
-
+      rollback:
+        - dropTable:
+            schemaName: business
+            tableName: finance_transactions
+        - dropTable:
+            schemaName: business
+            tableName: finances
+        - dropSequence:
+            sequenceName: finance_id_seq

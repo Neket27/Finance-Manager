@@ -58,11 +58,18 @@ public class FinanceJdbcRepository implements FinanceRepository {
 
         try (PreparedStatement financeStmt = connection.prepareStatement(financeSql, Statement.RETURN_GENERATED_KEYS)) {
 
-            if (entity.getId() != null && entity.getId() > 0)
-                financeStmt.setLong(1, entity.getId());
-            else
-                financeStmt.setNull(1, Types.BIGINT);
+            if (entity.getId() == null || entity.getId() == 0) {
+                try (Statement stmt = connection.createStatement();
+                     ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('finance_id_seq')")) {
+                    if (rs.next()) {
+                        entity.setId(rs.getLong(1));
+                    } else {
+                        throw new SQLException("Unable to get next value from sequence");
+                    }
+                }
+            }
 
+            financeStmt.setLong(1, entity.getId());
             financeStmt.setDouble(2, entity.getMonthlyBudget());
             financeStmt.setDouble(3, entity.getSavingsGoal());
             financeStmt.setDouble(4, entity.getCurrentSavings());

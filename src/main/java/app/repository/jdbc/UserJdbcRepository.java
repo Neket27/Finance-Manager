@@ -175,7 +175,10 @@ public class UserJdbcRepository implements UserRepository {
         user.setName(resultSet.getString("name"));
         user.setPassword(resultSet.getString("password"));
         user.setActive(resultSet.getBoolean("is_active"));
-        user.setRole(Role.valueOf(resultSet.getString("role")));
+
+        String roleStr = resultSet.getString("role");
+
+        user.setRole(Role.valueOf(roleStr.toUpperCase()));
         user.setFinanceId(resultSet.getObject("finance_id", Long.class));
         return user;
     }

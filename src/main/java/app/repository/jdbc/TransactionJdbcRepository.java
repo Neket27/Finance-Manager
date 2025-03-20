@@ -59,13 +59,14 @@ public class TransactionJdbcRepository implements TransactionRepository {
                 RETURNING id
                 """;
 
-        String sqlFinanceTransaction = """
-                INSERT INTO business.finance_transactions (finance_id, transaction_id) 
-                VALUES (?, ?) 
-                """;
+//        String sqlFinanceTransaction = """
+//                INSERT INTO business.finance_transactions (finance_id, transaction_id)
+//                VALUES (?, ?)
+//                """;
 
-        try (PreparedStatement preparedStatementTransaction = connection.prepareStatement(sqlTransaction, Statement.RETURN_GENERATED_KEYS);
-             PreparedStatement preparedStatementFinanceTransaction = connection.prepareStatement(sqlFinanceTransaction)) {
+        try (PreparedStatement preparedStatementTransaction = connection.prepareStatement(sqlTransaction, Statement.RETURN_GENERATED_KEYS)) {
+            ;
+//             PreparedStatement preparedStatementFinanceTransaction = connection.prepareStatement(sqlFinanceTransaction)) {
 
             connection.setAutoCommit(false);
 
@@ -93,9 +94,9 @@ public class TransactionJdbcRepository implements TransactionRepository {
                 throw new ErrorInsertSqlException("Creating or updating transaction failed, no rows affected.");
             }
 
-            preparedStatementFinanceTransaction.setLong(1, entity.getFinanceId());
-            preparedStatementFinanceTransaction.setLong(2, entity.getId());
-            preparedStatementFinanceTransaction.executeUpdate();
+//            preparedStatementFinanceTransaction.setLong(1, entity.getFinanceId());
+//            preparedStatementFinanceTransaction.setLong(2, entity.getId());
+//            preparedStatementFinanceTransaction.executeUpdate();
 
             connection.commit();
             return entity;
@@ -129,11 +130,17 @@ public class TransactionJdbcRepository implements TransactionRepository {
 
     @Override
     public List<Transaction> findByFinanceId(Long id) {
+//        String sql = """
+//                    SELECT t.* FROM business.transactions t
+//                    JOIN business.finance_transactions ft ON t.id = ft.transaction_id
+//                    WHERE ft.finance_id = ?
+//                """;
+
         String sql = """
-                    SELECT t.* FROM business.transactions t
-                    JOIN business.finance_transactions ft ON t.id = ft.transaction_id
-                    WHERE ft.finance_id = ?
-                """;
+                SELECT t.* FROM business.transactions t
+                JOIN business.finances f ON t.finance_id = f.id
+                WHERE t.finance_id = ?
+                            """;
 
         List<Transaction> transactions = new ArrayList<>();
 
@@ -156,51 +163,36 @@ public class TransactionJdbcRepository implements TransactionRepository {
     @Override
     public List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
         StringBuilder sqlBuilder = new StringBuilder("""
-                        SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
-                        FROM business.transactions t
-                        JOIN business.finance_transactions ft ON t.id = ft.transaction_id
-                        WHERE ft.finance_id = ?
-                """);
+                SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
+                FROM business.transactions t
+                JOIN business.finances f ON f.id = t.finance_id
+                WHERE t.finance_id = ?
+                """
+        );
 
         List<Object> parameters = new ArrayList<>();
         parameters.add(financeId);
 
-        boolean hasFilters = false;
-
         if (startDate != null) {
             sqlBuilder.append(" AND t.date >= ?");
             parameters.add(Timestamp.from(startDate));
-            hasFilters = true;
         }
 
         if (endDate != null) {
             sqlBuilder.append(" AND t.date <= ?");
             parameters.add(Timestamp.from(endDate));
-            hasFilters = true;
         }
 
         if (!category.isEmpty()) {
             sqlBuilder.append(" AND t.category = ?");
             parameters.add(category);
-            hasFilters = true;
         }
 
         if (typeTransaction != null) {
             sqlBuilder.append(" AND t.type_transaction = ?");
             parameters.add(typeTransaction.toString());
-            hasFilters = true;
         }
 
-        if (!hasFilters) {
-            sqlBuilder = new StringBuilder("""
-                            SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
-                            FROM business.transactions t
-                            JOIN business.finance_transactions ft ON t.id = ft.transaction_id
-                            WHERE ft.finance_id = ?
-                    """);
-            parameters.clear();
-            parameters.add(financeId);
-        }
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sqlBuilder.toString())) {
 
@@ -292,7 +284,10 @@ public class TransactionJdbcRepository implements TransactionRepository {
         transaction.setCategory(resultSet.getString("category"));
         transaction.setDate(resultSet.getTimestamp("date").toInstant());
         transaction.setDescription(resultSet.getString("description"));
-        transaction.setTypeTransaction(TypeTransaction.valueOf(resultSet.getString("type_transaction")));
+
+        String transactionTypeStr = resultSet.getString("type_transaction");
+
+        transaction.setTypeTransaction(TypeTransaction.valueOf(transactionTypeStr.toUpperCase()));
         transaction.setFinanceId(resultSet.getLong("finance_id"));
         return transaction;
     }

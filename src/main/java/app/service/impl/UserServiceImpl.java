@@ -1,6 +1,9 @@
 package app.service.impl;
 
+import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
+import app.mapper.FinanceMapper;
+import app.repository.FinanceRepository;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
@@ -9,9 +12,7 @@ import app.entity.Role;
 import app.entity.User;
 import app.exception.NotFoundException;
 import app.exception.UserExistException;
-import app.mapper.FinanceMapper;
 import app.mapper.UserMapper;
-import app.repository.FinanceRepository;
 import app.repository.UserRepository;
 import app.service.UserService;
 import org.slf4j.Logger;
@@ -62,9 +63,9 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.toEntity(createUserDto);
 
         if (userRepository.getAll().isEmpty())
-            user.setRole(Role.Admin);
+            user.setRole(Role.ADMIN);
         else
-            user.setRole(Role.User);
+            user.setRole(Role.USER);
 
         CreateFinanceDto dto = new CreateFinanceDto.Builder()
                 .currentSavings(0.0)
@@ -188,6 +189,7 @@ public class UserServiceImpl implements UserService {
             User user = this.find(email);
             user.setRole(role);
             userRepository.save(user);
+            UserContext.setCurrentUser(userMapper.toDto(user));
             return true;
         } catch (Exception e) {
             log.error(e.getMessage());

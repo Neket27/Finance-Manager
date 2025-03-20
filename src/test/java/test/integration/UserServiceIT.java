@@ -1,4 +1,4 @@
-package app.integration;
+package test.integration;
 
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
@@ -10,16 +10,10 @@ import app.repository.jdbc.FinanceJdbcRepository;
 import app.repository.jdbc.UserJdbcRepository;
 import app.service.UserService;
 import app.service.impl.UserServiceImpl;
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.sql.DriverManager;
+import test.db.TestDatabase;
+import test.db.TestDatabaseFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,44 +21,25 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserServiceIT {
 
-    private PostgreSQLContainer<?> postgres;
+    private TestDatabase database;
     private UserService userService;
 
     @BeforeEach
     void setup() throws Exception {
-        postgres = new PostgreSQLContainer<>("postgres:16")
-                .withDatabaseName("testdb")
-                .withUsername("test")
-                .withPassword("test")
-                .withReuse(false);
-        postgres.start();
 
-        var connection = DriverManager.getConnection(
-                postgres.getJdbcUrl(),
-                postgres.getUsername(),
-                postgres.getPassword()
-        );
+        database = TestDatabaseFactory.create();
 
-        Database database = DatabaseFactory.getInstance()
-                .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-        Liquibase liquibase = new Liquibase(
-                "db/changelog/changelog-master.yml",
-                new ClassLoaderResourceAccessor(),
-                database
-        );
-        liquibase.update();
-
-        FinanceRepository financeRepository = new FinanceJdbcRepository(connection);
+        FinanceRepository financeRepository = new FinanceJdbcRepository(database.connection());
         FinanceMapper financeMapper = new FinanceMapper();
         UserMapper userMapper = new UserMapper();
-        UserJdbcRepository userRepository = new UserJdbcRepository(connection);
+        UserJdbcRepository userRepository = new UserJdbcRepository(database.connection());
 
         userService = new UserServiceImpl(userMapper, userRepository, financeRepository, financeMapper);
     }
 
     @AfterEach
     void tearDown() {
-        postgres.stop();
+        TestDatabaseFactory.reset();
     }
 
     @Test

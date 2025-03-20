@@ -1,16 +1,16 @@
 databaseChangeLog:
   - changeSet:
-      id: 001_create_users_table
+      id: 002_create_transactions_table
       author: Nikita Kulga
       changes:
         - createSequence:
-            sequenceName: user_id_seq
+            sequenceName: transaction_id_seq
             startValue: 1
             incrementBy: 1
 
         - createTable:
             schemaName: business
-            tableName: users
+            tableName: transactions
             columns:
               - column:
                   name: id
@@ -20,28 +20,27 @@ databaseChangeLog:
                     nullable: false
                     unique: true
               - column:
-                  name: email
+                  name: amount
+                  type: double precision
+              - column:
+                  name: category
                   type: varchar(255)
-                  constraints:
-                    nullable: false
-                    unique: true # Уникальное ограничение для email
               - column:
-                  name: name
+                  name: date
+                  type: timestamp
+              - column:
+                  name: description
                   type: varchar(255)
-
               - column:
-                  name: password
-                  type: varchar(255)
-
-              - column:
-                  name: is_active
-                  type: boolean
-
-              - column:
-                  name: role
+                  name: type_transaction
                   type: varchar(32)
-
               - column:
                   name: finance_id
                   type: bigint
 
+      rollback:
+        - dropTable:
+            schemaName: business
+            tableName: transactions
+        - dropSequence:
+            sequenceName: transaction_id_seq

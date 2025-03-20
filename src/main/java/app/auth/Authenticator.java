@@ -2,7 +2,6 @@ package app.auth;
 
 import app.config.AuthenticationConfig;
 import app.dto.user.UserDto;
-import app.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

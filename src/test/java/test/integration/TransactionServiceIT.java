@@ -1,4 +1,4 @@
-package app.integration;
+package test.integration;
 
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
@@ -20,62 +20,36 @@ import app.service.TransactionService;
 import app.service.UserService;
 import app.service.impl.TransactionServiceImpl;
 import app.service.impl.UserServiceImpl;
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import test.db.TestDatabase;
+import test.db.TestDatabaseFactory;
 
-import java.sql.DriverManager;
 import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Testcontainers
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TransactionServiceIT {
 
-    private PostgreSQLContainer<?> postgres;
+    private TestDatabase database;
     private TransactionService transactionService;
     private TransactionRepository transactionRepository;
     private UserService userService;
     private UserDto user;
 
     @BeforeEach
-    void setup() throws Exception {
-        postgres = new PostgreSQLContainer<>("postgres:16")
-                .withDatabaseName("testdb")
-                .withUsername("test")
-                .withPassword("test")
-                .withReuse(false);
-        postgres.start();
+    void setup(){
 
-        var connection = DriverManager.getConnection(
-                postgres.getJdbcUrl(),
-                postgres.getUsername(),
-                postgres.getPassword()
-        );
+       database = TestDatabaseFactory.create();
 
-        Database database = DatabaseFactory.getInstance()
-                .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-        Liquibase liquibase = new Liquibase(
-                "db/changelog/changelog-master.yml",
-                new ClassLoaderResourceAccessor(),
-                database
-        );
-        liquibase.update();
-
-        var financeRepository = new FinanceJdbcRepository(connection);
+        var financeRepository = new FinanceJdbcRepository(database.connection());
         var financeMapper = new FinanceMapper();
         var userMapper = new UserMapper();
-        var userRepository = new UserJdbcRepository(connection);
+        var userRepository = new UserJdbcRepository(database.connection());
         userService = new UserServiceImpl(userMapper, userRepository, financeRepository, financeMapper);
         user = userService.createUser(new CreateUserDto("Clark Kent", "clark@example.com", "password"));
-        transactionRepository = new TransactionJdbcRepository(connection);
+        transactionRepository = new TransactionJdbcRepository(database.connection());
         var transactionMapper = new TransactionMapper();
 
         transactionService = new TransactionServiceImpl(transactionRepository, transactionMapper);
@@ -83,7 +57,7 @@ class TransactionServiceIT {
 
     @AfterEach
     void tearDown() {
-        postgres.stop();
+        TestDatabaseFactory.reset();
         UserContext.clear();
     }
 

@@ -1,14 +1,14 @@
 package app.util.out;
 
-import app.context.UserContext;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
+import app.service.FinanceService;
+import app.service.TargetService;
+import app.context.UserContext;
+import app.dto.transaction.CreateTransactionDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
 import app.entity.TypeTransaction;
-import app.service.FinanceService;
-import app.service.TargetService;
 import app.service.UserService;
 import app.util.in.UserAuth;
 import app.util.in.UserInput;
@@ -306,7 +306,7 @@ public class Menu {
         if (isAdmin(UserContext.getCurrentUser())) {
             String emailToAssign = userInput.readString("Введите email пользователя для назначения роли: ");
             String role = userInput.readString("Введите роль (ADMIN/USER): ");
-            if (userService.changeUserRole(emailToAssign, role.equalsIgnoreCase("ADMIN")?Role.Admin:Role.User)) {
+            if (userService.changeUserRole(emailToAssign, role.equalsIgnoreCase("ADMIN")?Role.ADMIN:Role.USER)) {
                 userOutput.print("Роль успешно назначена!");
             } else {
                 userOutput.print("Не удалось назначить роль. Проверьте email и роль.");
@@ -317,7 +317,7 @@ public class Menu {
     }
 
     private boolean isAdmin(UserDto user) {
-        return user.role().equals(Role.Admin);
+        return user.role().equals(Role.ADMIN);
     }
 }
 

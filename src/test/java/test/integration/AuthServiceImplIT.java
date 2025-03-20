@@ -1,4 +1,4 @@
-package app.integration;
+package test.integration;
 
 import app.auth.Authenticator;
 import app.config.AuthenticationConfig;
@@ -12,67 +12,41 @@ import app.service.AuthService;
 import app.service.UserService;
 import app.service.impl.AuthServiceImpl;
 import app.service.impl.UserServiceImpl;
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import test.db.TestDatabase;
+import test.db.TestDatabaseFactory;
 
-import java.sql.DriverManager;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Testcontainers
 @TestMethodOrder(MethodOrderer.Random.class)
 class AuthServiceImplIT {
 
-    private PostgreSQLContainer<?> postgres;
+    private TestDatabase database;
     private AuthService authService;
     private UserService userService;
 
     @BeforeEach
-    void setup() throws Exception {
-        postgres = new PostgreSQLContainer<>("postgres:16")
-                .withDatabaseName("testdb")
-                .withUsername("test")
-                .withPassword("test")
-                .withReuse(false);
-        postgres.start();
-
-        var connection = DriverManager.getConnection(
-                postgres.getJdbcUrl(),
-                postgres.getUsername(),
-                postgres.getPassword()
-        );
-
-        Database database = DatabaseFactory.getInstance()
-                .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-        Liquibase liquibase = new Liquibase(
-                "db/changelog/changelog-master.yml",
-                new ClassLoaderResourceAccessor(),
-                database
-        );
-        liquibase.update();
+    void setup() {
+        database = TestDatabaseFactory.create();
 
         var authenticationConfig = new AuthenticationConfig(new HashMap<>());
         var authenticator = new Authenticator(authenticationConfig);
-        var financeRepository = new FinanceJdbcRepository(connection);
+        var financeRepository = new FinanceJdbcRepository(database.connection());
         var financeMapper = new FinanceMapper();
         var userMapper = new UserMapper();
-        var userRepository = new UserJdbcRepository(connection);
+        var userRepository = new UserJdbcRepository(database.connection());
 
         userService = new UserServiceImpl(userMapper, userRepository, financeRepository, financeMapper);
         authService = new AuthServiceImpl(authenticationConfig, authenticator, userService);
     }
 
+
     @AfterEach
     void tearDown() {
-        postgres.stop();
         UserContext.clear();
+        TestDatabaseFactory.reset();
     }
 
     @Test

@@ -1,4 +1,4 @@
-package app.unit;
+package test.unit;
 
 import app.dto.finance.CreateFinanceDto;
 import app.dto.user.CreateUserDto;

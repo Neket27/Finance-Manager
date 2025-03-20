@@ -1,10 +1,10 @@
 package app.util.in;
 
+import app.util.out.UserOutput;
 import app.context.UserContext;
 import app.dto.user.CreateUserDto;
 import app.service.AuthService;
 import app.service.UserService;
-import app.util.out.UserOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
