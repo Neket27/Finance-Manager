@@ -55,14 +55,14 @@ class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         createUserDto = new CreateUserDto("name", "test@example.com", "password123");
-        updateUserDto = new UpdateUserDto("name", "test@example.com", "newPassword123", Role.User, 1L);
+        updateUserDto = new UpdateUserDto("name", "test@example.com", "newPassword123", Role.USER, 1L);
         userDto = new UserDto.Builder()
                 .email("test@example.com")
                 .password("newPassword123")
                 .build();
         user = new User.Builder()
                 .email("test@example.com")
-                .role(Role.User)
+                .role(Role.USER)
                 .finance(1L)
                 .build();
         finance = new Finance.Builder()
@@ -221,11 +221,11 @@ class UserServiceImplTest {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
         // Act
-        boolean result = userService.changeUserRole("test@example.com", Role.Admin);
+        boolean result = userService.changeUserRole("test@example.com", Role.ADMIN);
 
         // Assert
         assertTrue(result);
-        assertEquals(Role.Admin, user.getRole());
+        assertEquals(Role.ADMIN, user.getRole());
         verify(userRepository, times(1)).save(user);
     }
 
@@ -235,7 +235,7 @@ class UserServiceImplTest {
         when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
         // Act
-        boolean result = userService.changeUserRole("notfound@example.com", Role.Admin);
+        boolean result = userService.changeUserRole("notfound@example.com", Role.ADMIN);
 
         // Assert
         assertFalse(result);

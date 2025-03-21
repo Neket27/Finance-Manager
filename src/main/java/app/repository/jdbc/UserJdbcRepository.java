@@ -26,36 +26,27 @@ public class UserJdbcRepository implements UserRepository {
 
     @Override
     public Optional<User> findById(Long id) {
-        String sql = "SELECT * FROM business.users WHERE id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, id);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(mapUser(resultSet));
-                }
-            }
-        } catch (SQLException e) {
-            log.error("Error executing findById: {}", e.getMessage());
-            throw new ErrorSelectSqlException("Error finding user by ID", e);
-        }
-        return Optional.empty();
+        return findUserBy("id = ?", id);
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
-        String sql = "SELECT * FROM business.users WHERE email = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, email);
+        return findUserBy("email = ?", email);
+    }
 
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(mapUser(resultSet));
+    private Optional<User> findUserBy(String condition, Object param) {
+        String sql = "SELECT * FROM business.users WHERE " + condition;
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setObject(1, param);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapUser(rs));
                 }
             }
         } catch (SQLException e) {
-            log.error("Error executing findByEmail: {}", e.getMessage());
-            throw new ErrorSelectSqlException("Error finding user by email", e);
+            log.error("Error executing findUserBy [{}]: {}", condition, e.getMessage());
+            throw new ErrorSelectSqlException("Error finding user", e);
         }
         return Optional.empty();
     }
@@ -65,8 +56,8 @@ public class UserJdbcRepository implements UserRepository {
         String sql = """
                 INSERT INTO business.users (id, email, name, password, is_active, role, finance_id) 
                 VALUES (?, ?, ?, ?, ?, ?, ?) 
-                ON CONFLICT (id) DO UPDATE 
-                SET email = EXCLUDED.email,
+                ON CONFLICT (id) DO UPDATE SET 
+                    email = EXCLUDED.email,
                     name = EXCLUDED.name,
                     password = EXCLUDED.password,
                     is_active = EXCLUDED.is_active,
@@ -75,79 +66,87 @@ public class UserJdbcRepository implements UserRepository {
                 RETURNING id
                 """;
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try {
+            connection.setAutoCommit(false);
 
-            // Генерация ID, если он не установлен
-            if (entity.getId() == null || entity.getId() == 0) {
-                try (Statement stmt = connection.createStatement();
-                     ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('transaction_id_seq')")) {
-                    if (rs.next()) {
-                        entity.setId(rs.getLong(1));
-                    } else {
-                        throw new SQLException("Unable to get next value from sequence");
+            try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+                if (entity.getId() == null || entity.getId() == 0) {
+                    entity.setId(getNextUserId());
+                }
+
+                ps.setLong(1, entity.getId());
+                ps.setString(2, entity.getEmail());
+                ps.setString(3, entity.getName());
+                ps.setString(4, entity.getPassword());
+                ps.setBoolean(5, entity.isActive());
+                ps.setString(6, entity.getRole().name());
+                ps.setObject(7, entity.getFinanceId());
+
+                int affectedRows = ps.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new ErrorInsertSqlException("Saving user failed, no rows affected.");
+                }
+
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        entity.setId(generatedKeys.getLong(1));
                     }
                 }
-            }
 
-            preparedStatement.setLong(1, entity.getId());
-            preparedStatement.setString(2, entity.getEmail());
-            preparedStatement.setString(3, entity.getName());
-            preparedStatement.setString(4, entity.getPassword());
-            preparedStatement.setBoolean(5, entity.isActive());
-            preparedStatement.setString(6, entity.getRole().toString());
-            preparedStatement.setObject(7, entity.getFinanceId());
-
-            int affectedRows = preparedStatement.executeUpdate();
-            if (affectedRows == 0) {
-                throw new ErrorInsertSqlException("Creating user failed, no rows affected.");
+                connection.commit();
+                return entity;
+            } catch (SQLException e) {
+                rollbackQuietly();
+                throw new ErrorInsertSqlException("Error saving user into database", e);
+            } finally {
+                resetAutoCommit();
             }
-
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    entity.setId(generatedKeys.getLong(1));
-                }
-            }
-            return entity;
         } catch (SQLException e) {
-            log.error("Error inserting user: {}", e.getMessage());
-            throw new ErrorInsertSqlException("Error inserting user into database", e);
+            throw new ErrorInsertSqlException("Transaction management error for save", e);
         }
     }
 
     @Override
     public void delete(User entity) {
         String sql = "DELETE FROM business.users WHERE email = ?";
+        try {
+            connection.setAutoCommit(false);
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, entity.getEmail());
-            int affectedRows = preparedStatement.executeUpdate();
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setString(1, entity.getEmail());
 
-            if (affectedRows == 0) {
-                throw new ErrorDeleteSqlException("User not found, nothing deleted.");
+                int affectedRows = ps.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new ErrorDeleteSqlException("User not found, nothing deleted.");
+                }
+
+                connection.commit();
+            } catch (SQLException e) {
+                rollbackQuietly();
+                throw new ErrorDeleteSqlException("Error deleting user from database", e);
+            } finally {
+                resetAutoCommit();
             }
         } catch (SQLException e) {
-            log.error("Error deleting user: {}", e.getMessage());
-            throw new ErrorDeleteSqlException("Error deleting user from database", e);
+            throw new ErrorDeleteSqlException("Transaction management error for delete", e);
         }
     }
 
     @Override
     public boolean existsByEmail(String email) {
-        String sql = "SELECT COUNT(*) FROM business.users WHERE email = ?";
+        String sql = "SELECT 1 FROM business.users WHERE email = ? LIMIT 1";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, email);
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, email);
 
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getInt(1) > 0;
-                }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
         } catch (SQLException e) {
-            log.error("Error checking existsByEmail: {}", e.getMessage());
+            log.error("Error checking existence by email: {}", e.getMessage());
             throw new ErrorSelectSqlException("Error checking if user exists", e);
         }
-        return false;
     }
 
     @Override
@@ -155,31 +154,66 @@ public class UserJdbcRepository implements UserRepository {
         String sql = "SELECT * FROM business.users";
         List<User> users = new ArrayList<>();
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        try {
+            connection.setAutoCommit(false);
 
-            while (resultSet.next()) {
-                users.add(mapUser(resultSet));
+            try (PreparedStatement ps = connection.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    users.add(mapUser(rs));
+                }
+
+                connection.commit();
+            } catch (SQLException e) {
+                rollbackQuietly();
+                throw new ErrorSelectSqlException("Error fetching all users from database", e);
+            } finally {
+                resetAutoCommit();
             }
         } catch (SQLException e) {
-            log.error("Error fetching all users: {}", e.getMessage());
-            throw new ErrorSelectSqlException("Error fetching all users from database", e);
+            throw new ErrorSelectSqlException("Transaction management error for getAll", e);
         }
         return users;
     }
 
-    private User mapUser(ResultSet resultSet) throws SQLException {
-        User user = new User();
-        user.setId(resultSet.getLong("id"));
-        user.setEmail(resultSet.getString("email"));
-        user.setName(resultSet.getString("name"));
-        user.setPassword(resultSet.getString("password"));
-        user.setActive(resultSet.getBoolean("is_active"));
+    private Long getNextUserId() throws SQLException {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('transaction_id_seq')")) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            } else {
+                throw new SQLException("Unable to get next value from sequence");
+            }
+        }
+    }
 
-        String roleStr = resultSet.getString("role");
+    private User mapUser(ResultSet rs) throws SQLException {
+        return new User(
+                rs.getLong("id"),
+                rs.getString("name"),
+                rs.getString("email"),
+                rs.getString("password"),
+                Role.valueOf(rs.getString("role").toUpperCase()),
+                rs.getLong("finance_id"),
+                rs.getBoolean("is_active")
+        );
+    }
 
-        user.setRole(Role.valueOf(roleStr.toUpperCase()));
-        user.setFinanceId(resultSet.getObject("finance_id", Long.class));
-        return user;
+    private void rollbackQuietly() {
+        try {
+            connection.rollback();
+            log.warn("Transaction rolled back");
+        } catch (SQLException rollbackEx) {
+            log.error("Rollback failed: {}", rollbackEx.getMessage());
+        }
+    }
+
+    private void resetAutoCommit() {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            log.error("Failed to reset auto-commit: {}", e.getMessage());
+        }
     }
 }

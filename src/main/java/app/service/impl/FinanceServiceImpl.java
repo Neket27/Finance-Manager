@@ -1,26 +1,28 @@
 package app.service.impl;
 
+import app.context.UserContext;
 import app.dto.finance.FinanceDto;
+import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
-import app.exception.EditException;
-import app.mapper.FinanceMapper;
-import app.repository.FinanceRepository;
-import app.service.FinanceService;
-import app.service.NotificationService;
-import app.context.UserContext;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.user.UserDto;
 import app.entity.Finance;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
+import app.exception.EditException;
+import app.exception.LimitAmountBalance;
 import app.exception.NotFoundException;
+import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
+import app.repository.FinanceRepository;
+import app.service.FinanceService;
+import app.service.NotificationService;
 import app.service.TransactionService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -28,9 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Реализация сервиса управления финансами.
- */
 public class FinanceServiceImpl implements FinanceService {
 
     private final Logger log = LoggerFactory.getLogger(FinanceServiceImpl.class);
@@ -41,16 +40,6 @@ public class FinanceServiceImpl implements FinanceService {
     private final TransactionMapper transactionMapper;
     private final NotificationService notificationService;
 
-    /**
-     * Конструктор сервиса финансов.
-     *
-     * @param financeRepository   репозиторий финансов
-     * @param userService         сервис пользователей
-     * @param transactionService  сервис транзакций
-     * @param financeMapper       маппер финансов
-     * @param transactionMapper   маппер транзакций
-     * @param notificationService сервис уведомлений
-     */
     public FinanceServiceImpl(FinanceRepository financeRepository, UserService userService, TransactionService transactionService, FinanceMapper financeMapper, TransactionMapper transactionMapper, NotificationService notificationService) {
         this.financeRepository = financeRepository;
         this.userService = userService;
@@ -60,105 +49,88 @@ public class FinanceServiceImpl implements FinanceService {
         this.notificationService = notificationService;
     }
 
-    /**
-     * Добавляет транзакцию пользователю.
-     *
-     * @param dto данные для создания транзакции
-     * @return созданная транзакция
-     */
     @Override
     public TransactionDto addTransactionUser(CreateTransactionDto dto) {
-        Finance financeUser = this.find(UserContext.getCurrentUser().financeId());
+        UserDto user = UserContext.getCurrentUser();
+        Finance financeUser = this.find(user.financeId());
+
+        if (dto.typeTransaction().equals(TypeTransaction.EXPENSE) &&
+                transactionAmountExceedsBalance(user.email(), dto.amount())) {
+
+            BigDecimal diff = dto.amount().subtract(financeUser.getCurrentSavings());
+            System.out.println("Внимание! Ваших накоплений не хватает для проведения транзакции. Пополните баланс на: " + diff);
+            throw new LimitAmountBalance("Amount translation limit exceeded");
+        }
+
         TransactionDto transaction = transactionService.create(dto, financeUser.getId());
         financeUser.getTransactionsId().add(transaction.id());
 
-        this.updateCurrentSavings(financeUser, transaction.amount(), transaction.typeTransaction());
+        updateCurrentSavings(financeUser, transaction.amount(), transaction.typeTransaction());
 
         financeRepository.save(financeUser);
         return transaction;
     }
 
-    /**
-     * Обновляет текущие накопления пользователя в зависимости от типа транзакции.
-     *
-     * @param finance финансовые данные пользователя
-     * @param amount  сумма транзакции
-     * @param type    тип транзакции (доход/расход)
-     */
-    private void updateCurrentSavings(Finance finance, double amount, TypeTransaction type) {
-
+    private void updateCurrentSavings(Finance finance, BigDecimal amount, TypeTransaction type) {
+        BigDecimal currentSavings = finance.getCurrentSavings();
         if (type == TypeTransaction.PROFIT) {
-            finance.setCurrentSavings(finance.getCurrentSavings() + amount);
+            currentSavings = currentSavings.add(amount);
         } else if (type == TypeTransaction.EXPENSE) {
-            finance.setCurrentSavings(finance.getCurrentSavings() - amount);
-            if (finance.getCurrentSavings() < 0) {
-                finance.setCurrentSavings(0);
-                System.out.println("Внимание! Ваши накопления стали отрицательными. Установите новую цель или пересмотрите расходы.");
-            }
+            currentSavings = currentSavings.subtract(amount);
         }
+        finance.setCurrentSavings(currentSavings);
     }
 
-    /**
-     * Проверяет превышение месячного бюджета.
-     *
-     * @param email email пользователя
-     */
     @Override
-    public Boolean checkExpenseLimit(String email) {
+    public Boolean checkMonthlyExpenseLimit(String email) {
         UserDto user = userService.getUserByEmail(email);
-        Finance finance = this.find(user.financeId());
+        Finance finance = find(user.financeId());
+        BigDecimal monthlyExpenses = getTotalExpenses(LocalDate.now().minusMonths(1), LocalDate.now(), email);
 
-        if (finance.getTotalExpenses() > finance.getMonthlyBudget()) {
-            notificationService.sendMessage(UserContext.getCurrentUser().email(), "Внимание! Вы превысили ваш месячный бюджет в" + finance.getMonthlyBudget() + "!");
+        if (monthlyExpenses.compareTo(finance.getMonthlyBudget()) > 0) {
+            notificationService.sendMessage(UserContext.getCurrentUser().email(),
+                    "Внимание! Вы превысили ваш месячный бюджет в " + finance.getMonthlyBudget() + "!");
             return true;
         }
         return false;
     }
 
+    @Override
+    public Boolean transactionAmountExceedsBalance(String email, BigDecimal transactionAmount) {
+        UserDto user = userService.getUserByEmail(email);
+        Finance finance = find(user.financeId());
+        return finance.getCurrentSavings().compareTo(transactionAmount) < 0;
+    }
 
     private Finance find(Long id) {
         return financeRepository.findById(id).orElseThrow(() -> new NotFoundException("Finance not found with id: " + id));
     }
 
-
-    /**
-     * Рассчитывает процент выполнения накоплений относительно цели.
-     *
-     * @param email email пользователя
-     * @return процент выполнения цели
-     */
     @Override
-    public double getProgressTowardsGoal(String email) {
+    public Double getProgressTowardsGoal(String email) {
         FinanceDto finance = getFinance(email);
-        return (finance.currentSavings() / finance.savingsGoal()) * 100;
+        BigDecimal current = finance.currentSavings();
+        BigDecimal goal = finance.savingsGoal();
+        if (goal.compareTo(BigDecimal.ZERO) == 0) {
+            return 0.0;
+        }
+        return current.divide(goal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue();
     }
 
-    /**
-     * Фильтрует транзакции по заданным параметрам.
-     *
-     * @param startDate       начальная дата
-     * @param endDate         конечная дата
-     * @param category        категория
-     * @param typeTransaction тип транзакции (доход/расход)
-     * @param email           email пользователя
-     * @return отфильтрованный список транзакций
-     */
     @Override
     public List<TransactionDto> filterTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email) {
         return transactionService.getFilteredTransactions(financeId, startDate, endDate, category, typeTransaction);
-
     }
 
-
     @Override
-    public Map<String, Double> getExpensesByCategory(String email) {
+    public Map<String, BigDecimal> getExpensesByCategory(String email) {
         FinanceDto finance = getFinance(email);
         return finance.transactionsId().stream()
                 .map(transactionService::getTransactionById)
                 .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE)
-                .collect(Collectors.groupingBy(TransactionDto::category, Collectors.summingDouble(TransactionDto::amount)));
+                .collect(Collectors.groupingBy(TransactionDto::category,
+                        Collectors.reducing(BigDecimal.ZERO, TransactionDto::amount, BigDecimal::add)));
     }
-
 
     private boolean isWithinDateRange(Instant date, LocalDate startDate, LocalDate endDate) {
         LocalDate transactionDate = date.atZone(ZoneId.systemDefault()).toLocalDate();
@@ -167,33 +139,26 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public double getTotalIncome(LocalDate startDate, LocalDate endDate, String email) {
+    public BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, String email) {
         FinanceDto finance = getFinance(email);
         return getTotal(finance, startDate, endDate, TypeTransaction.PROFIT);
     }
 
     @Override
-    public double getTotalExpenses(LocalDate startDate, LocalDate endDate, String email) {
+    public BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, String email) {
         FinanceDto finance = getFinance(email);
         return getTotal(finance, startDate, endDate, TypeTransaction.EXPENSE);
     }
 
-
-    private double getTotal(FinanceDto finance, LocalDate startDate, LocalDate endDate, TypeTransaction typeTransaction) {
+    private BigDecimal getTotal(FinanceDto finance, LocalDate startDate, LocalDate endDate, TypeTransaction typeTransaction) {
         return finance.transactionsId().stream()
                 .map(transactionService::getTransactionById)
                 .filter(t -> t.typeTransaction() == typeTransaction)
                 .filter(t -> isWithinDateRange(t.date(), startDate, endDate))
-                .mapToDouble(TransactionDto::amount)
-                .sum();
+                .map(TransactionDto::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    /**
-     * Удаляет транзакцию пользователя.
-     *
-     * @param id идентификатор транзакции
-     * @return true, если удаление прошло успешно, иначе false
-     */
     @Override
     public boolean removeTransactionUser(Long id) {
         UserDto user = userService.getUserByEmail(UserContext.getCurrentUser().email());
@@ -209,13 +174,6 @@ public class FinanceServiceImpl implements FinanceService {
         }
     }
 
-    /**
-     * Редактирует существующую транзакцию.
-     *
-     * @param updateTransactionDto данные для обновления транзакции
-     * @return обновленная транзакция
-     * @throws EditException если редактирование не удалось
-     */
     @Override
     public TransactionDto editTransaction(UpdateTransactionDto updateTransactionDto) {
         try {
@@ -250,12 +208,6 @@ public class FinanceServiceImpl implements FinanceService {
         return this.find(id);
     }
 
-    /**
-     * Получает финансовые данные пользователя.
-     *
-     * @param email email пользователя
-     * @return объект финансовых данных
-     */
     private FinanceDto getFinance(String email) {
         UserDto user = userService.getUserByEmail(email);
         Finance finance = find(user.financeId());
@@ -263,5 +215,4 @@ public class FinanceServiceImpl implements FinanceService {
         finance.setTransactionsId(transactions.stream().map(Transaction::getId).collect(Collectors.toList()));
         return financeMapper.toDto(finance);
     }
-
 }

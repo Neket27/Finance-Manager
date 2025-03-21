@@ -1,4 +1,4 @@
-package app.config;
+package test.config;
 
 import app.exception.db.ErrorConnectionDb;
 import lombok.AllArgsConstructor;
@@ -12,13 +12,13 @@ import java.sql.SQLException;
 @Getter
 @Setter
 @AllArgsConstructor
-public class DbConfig {
+public class PostgresLContainerConfig {
 
-    private AppProperties.DbProperties prop;
+    private AppProperties.PostgresContainerProperties prop;
 
     public Connection getConnection() {
         try {
-            return DriverManager.getConnection(prop.getUrl(), prop.getUsername(), prop.getPassword());
+            return DriverManager.getConnection(prop.getDbName(), prop.getUsername(), prop.getPassword());
         } catch (SQLException e) {
             throw new ErrorConnectionDb(e.getMessage());
         }

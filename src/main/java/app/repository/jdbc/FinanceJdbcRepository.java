@@ -27,17 +27,24 @@ public class FinanceJdbcRepository implements FinanceRepository {
     public Optional<Finance> findById(Long id) {
         String sql = "SELECT * FROM business.finances WHERE id = ?";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, id);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(mapFinance(resultSet));
+        try {
+            beginTransaction();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setLong(1, id);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        commitTransaction();
+                        return Optional.of(mapFinance(resultSet));
+                    }
                 }
+                commitTransaction();
             }
         } catch (SQLException e) {
+            rollbackQuietly();
             log.error("Error executing findById: {}", e.getMessage());
             throw new ErrorSelectSqlException("Error finding finance record by ID", e);
+        } finally {
+            resetAutoCommit();
         }
         return Optional.empty();
     }
@@ -45,50 +52,50 @@ public class FinanceJdbcRepository implements FinanceRepository {
     @Override
     public Finance save(Finance entity) {
         String financeSql = """
-                    INSERT INTO business.finances (id, monthly_budget, savings_goal, current_savings, total_expenses) 
+                    INSERT INTO business.finances (id, monthly_budget, savings_goal, current_savings, total_expenses)
                     VALUES (COALESCE(?, NEXTVAL('finance_id_seq')), ?, ?, ?, ?)
-                    ON CONFLICT (id) 
-                    DO UPDATE SET 
-                        monthly_budget = EXCLUDED.monthly_budget, 
-                        savings_goal = EXCLUDED.savings_goal, 
-                        current_savings = EXCLUDED.current_savings, 
+                    ON CONFLICT (id)
+                    DO UPDATE SET
+                        monthly_budget = EXCLUDED.monthly_budget,
+                        savings_goal = EXCLUDED.savings_goal,
+                        current_savings = EXCLUDED.current_savings,
                         total_expenses = EXCLUDED.total_expenses
                     RETURNING id
                 """;
 
-        try (PreparedStatement financeStmt = connection.prepareStatement(financeSql, Statement.RETURN_GENERATED_KEYS)) {
-
+        try {
+            beginTransaction();
             if (entity.getId() == null || entity.getId() == 0) {
-                try (Statement stmt = connection.createStatement();
-                     ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('finance_id_seq')")) {
-                    if (rs.next()) {
-                        entity.setId(rs.getLong(1));
-                    } else {
-                        throw new SQLException("Unable to get next value from sequence");
+                entity.setId(getNextFinanceId());
+            }
+
+            try (PreparedStatement financeStmt = connection.prepareStatement(financeSql, Statement.RETURN_GENERATED_KEYS)) {
+                financeStmt.setLong(1, entity.getId());
+                financeStmt.setBigDecimal(2, entity.getMonthlyBudget());
+                financeStmt.setBigDecimal(3, entity.getSavingsGoal());
+                financeStmt.setBigDecimal(4, entity.getCurrentSavings());
+                financeStmt.setBigDecimal(5, entity.getTotalExpenses());
+
+                int affectedRows = financeStmt.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new ErrorInsertSqlException("Upserting finance record failed, no rows affected.");
+                }
+
+                try (ResultSet generatedKeys = financeStmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        entity.setId(generatedKeys.getLong(1));
                     }
                 }
+
+                commitTransaction();
+                return entity;
             }
-
-            financeStmt.setLong(1, entity.getId());
-            financeStmt.setDouble(2, entity.getMonthlyBudget());
-            financeStmt.setDouble(3, entity.getSavingsGoal());
-            financeStmt.setDouble(4, entity.getCurrentSavings());
-            financeStmt.setDouble(5, entity.getTotalExpenses());
-
-            int affectedRows = financeStmt.executeUpdate();
-
-            if (affectedRows == 0)
-                throw new ErrorInsertSqlException("Upserting finance record failed, no rows affected.");
-
-            try (ResultSet generatedKeys = financeStmt.getGeneratedKeys()) {
-                if (generatedKeys.next())
-                    entity.setId(generatedKeys.getLong(1));
-            }
-
-            return entity;
         } catch (SQLException e) {
+            rollbackQuietly();
             log.error("Error saving finance record: {}", e.getMessage());
             throw new ErrorInsertSqlException("Error saving finance record into database", e);
+        } finally {
+            resetAutoCommit();
         }
     }
 
@@ -96,16 +103,24 @@ public class FinanceJdbcRepository implements FinanceRepository {
     public void delete(Finance entity) {
         String sql = "DELETE FROM business.finances WHERE id = ?";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, entity.getId());
+        try {
+            beginTransaction();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setLong(1, entity.getId());
 
-            int affectedRows = preparedStatement.executeUpdate();
-            if (affectedRows == 0) {
-                throw new ErrorDeleteSqlException("Finance record not found, nothing deleted.");
+                int affectedRows = preparedStatement.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new ErrorDeleteSqlException("Finance record not found, nothing deleted.");
+                }
+
+                commitTransaction();
             }
         } catch (SQLException e) {
+            rollbackQuietly();
             log.error("Error deleting finance record: {}", e.getMessage());
             throw new ErrorDeleteSqlException("Error deleting finance record from database", e);
+        } finally {
+            resetAutoCommit();
         }
     }
 
@@ -114,15 +129,23 @@ public class FinanceJdbcRepository implements FinanceRepository {
         String sql = "SELECT * FROM business.finances";
         List<Finance> finances = new ArrayList<>();
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        try {
+            beginTransaction();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                 ResultSet resultSet = preparedStatement.executeQuery()) {
 
-            while (resultSet.next()) {
-                finances.add(mapFinance(resultSet));
+                while (resultSet.next()) {
+                    finances.add(mapFinance(resultSet));
+                }
+
+                commitTransaction();
             }
         } catch (SQLException e) {
+            rollbackQuietly();
             log.error("Error fetching all finance records: {}", e.getMessage());
             throw new ErrorSelectSqlException("Error fetching all finance records from database", e);
+        } finally {
+            resetAutoCommit();
         }
         return finances;
     }
@@ -130,10 +153,46 @@ public class FinanceJdbcRepository implements FinanceRepository {
     private Finance mapFinance(ResultSet resultSet) throws SQLException {
         Finance finance = new Finance();
         finance.setId(resultSet.getLong("id"));
-        finance.setMonthlyBudget(resultSet.getDouble("monthly_budget"));
-        finance.setSavingsGoal(resultSet.getDouble("savings_goal"));
-        finance.setCurrentSavings(resultSet.getDouble("current_savings"));
-        finance.setTotalExpenses(resultSet.getDouble("total_expenses"));
+        finance.setMonthlyBudget(resultSet.getBigDecimal("monthly_budget"));
+        finance.setSavingsGoal(resultSet.getBigDecimal("savings_goal"));
+        finance.setCurrentSavings(resultSet.getBigDecimal("current_savings"));
+        finance.setTotalExpenses(resultSet.getBigDecimal("total_expenses"));
         return finance;
+    }
+
+
+    private Long getNextFinanceId() throws SQLException {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('finance_id_seq')")) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            } else {
+                throw new SQLException("Unable to get next value from sequence");
+            }
+        }
+    }
+
+    private void beginTransaction() throws SQLException {
+        connection.setAutoCommit(false);
+    }
+
+    private void commitTransaction() throws SQLException {
+        connection.commit();
+    }
+
+    private void rollbackQuietly() {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            log.error("Rollback failed: {}", ex.getMessage());
+        }
+    }
+
+    private void resetAutoCommit() {
+        try {
+            connection.setAutoCommit(true);
+        } catch (SQLException e) {
+            log.error("Failed to reset auto-commit: {}", e.getMessage());
+        }
     }
 }

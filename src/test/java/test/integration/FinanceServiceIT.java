@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import test.db.TestDatabase;
 import test.db.TestDatabaseFactory;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -73,7 +74,7 @@ class FinanceServiceIT {
     @Test
     void testAddTransactionUser() {
         // Arrange
-        CreateTransactionDto createTransactionDto = new CreateTransactionDto(500.0, "Salary", Instant.now(), "Monthly salary", TypeTransaction.PROFIT);
+        CreateTransactionDto createTransactionDto = new CreateTransactionDto(BigDecimal.valueOf(500.0), "Salary", Instant.now(), "Monthly salary", TypeTransaction.PROFIT);
 
         // Act
         TransactionDto transactionDto = financeService.addTransactionUser(createTransactionDto);
@@ -81,30 +82,28 @@ class FinanceServiceIT {
         // Assert
         assertNotNull(transactionDto);
         assertEquals("Salary", transactionDto.category());
-        assertEquals(500.0, transactionDto.amount());
+        assertEquals(BigDecimal.valueOf(500.0), transactionDto.amount());
     }
 
     @Test
-    void testCheckExpenseLimit() {
+    void testCheckExpenseMonthLimit() {
         // Arrange
-        targetService.setMonthlyBudget(100);
-        targetService.updateGoalSavings(50);
-        financeService.addTransactionUser(new CreateTransactionDto(500.0, "auto", Instant.now(), "", TypeTransaction.PROFIT));
-        financeService.addTransactionUser(new CreateTransactionDto(200.0, "auto", Instant.now(), "", TypeTransaction.EXPENSE));
+        targetService.setMonthlyBudget(BigDecimal.valueOf(100.0));
+        financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(500.0), "auto", Instant.now(), "", TypeTransaction.PROFIT));
+        financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(200.0), "auto", Instant.now(), "", TypeTransaction.EXPENSE));
 
         // Act
-        targetService.checkBudgetExceeded(UserContext.getCurrentUser().email());
-        boolean isExpenseLimit = financeService.checkExpenseLimit(user.email());
+        boolean isExpenseLimit = financeService.checkMonthlyExpenseLimit(user.email());
 
         // Assert
-        assertFalse(isExpenseLimit);
+        assertTrue(isExpenseLimit);
     }
 
     @Test
     void testGetProgressTowardsGoal() {
         // Arrange
-        financeService.addTransactionUser(new CreateTransactionDto(50.0, "auto", Instant.now(), "", TypeTransaction.PROFIT));
-        targetService.updateGoalSavings(140);
+        financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(50.0), "auto", Instant.now(), "", TypeTransaction.PROFIT));
+        targetService.updateGoalSavings(BigDecimal.valueOf(140.0));
 
         // Act
         double progress = financeService.getProgressTowardsGoal("clark@example.com");
@@ -116,7 +115,7 @@ class FinanceServiceIT {
     @Test
     void testRemoveTransactionUser() {
         // Arrange
-        financeService.addTransactionUser(new CreateTransactionDto(50.0, "auto", Instant.now(), "", TypeTransaction.PROFIT));
+        financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(50.0), "auto", Instant.now(), "", TypeTransaction.PROFIT));
 
         // Act
         boolean result = financeService.removeTransactionUser(1L);
@@ -128,12 +127,12 @@ class FinanceServiceIT {
     @Test
     void testGetTotalIncome() {
         // Arrange
-        financeService.addTransactionUser(new CreateTransactionDto(1000.0, "auto", Instant.now(), "", TypeTransaction.PROFIT));
+        financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(1000.11), "auto", Instant.now(), "", TypeTransaction.PROFIT));
 
         // Act
-        double totalIncome = financeService.getTotalIncome(LocalDate.now(), LocalDate.now(), user.email());
+        BigDecimal totalIncome = financeService.getTotalProfit(LocalDate.now(), LocalDate.now(), user.email());
 
         // Assert
-        assertEquals(1000.0, totalIncome);
+        assertEquals(BigDecimal.valueOf(1000.11), totalIncome);
     }
 }

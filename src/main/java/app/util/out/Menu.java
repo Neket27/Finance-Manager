@@ -1,20 +1,22 @@
 package app.util.out;
 
-import app.dto.transaction.TransactionDto;
-import app.dto.transaction.UpdateTransactionDto;
-import app.service.FinanceService;
-import app.service.TargetService;
 import app.context.UserContext;
 import app.dto.transaction.CreateTransactionDto;
+import app.dto.transaction.TransactionDto;
+import app.dto.transaction.UpdateTransactionDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
 import app.entity.TypeTransaction;
+import app.exception.LimitAmountBalance;
+import app.service.FinanceService;
+import app.service.TargetService;
 import app.service.UserService;
 import app.util.in.UserAuth;
 import app.util.in.UserInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -151,14 +153,21 @@ public class Menu {
     }
 
     private void addTransaction() {
-        double amount = userInput.readDouble("Введите сумму транзакции: ");
+        BigDecimal amount = userInput.readBigDecimal("Введите сумму транзакции: ");
         String category = userInput.readString("Введите категорию: ");
         String description = userInput.readString("Введите описание: ");
 
         TypeTransaction typeTransaction = getTypeTransactionFromUser();
-        financeService.addTransactionUser(new CreateTransactionDto(amount, category, Instant.now(), description, typeTransaction));
-        targetService.checkBudgetExceeded(UserContext.getCurrentUser().email());
-        userOutput.print("Транзакция добавлена!");
+        try {
+            financeService.addTransactionUser(new CreateTransactionDto(amount, category, Instant.now(), description, typeTransaction));
+
+            if (typeTransaction.equals(TypeTransaction.EXPENSE) && targetService.isMonthBudgetExceeded(UserContext.getCurrentUser().email()))
+                log.warn("exceeded month budget");
+
+            userOutput.print("Транзакция добавлена!");
+        } catch (LimitAmountBalance e) {
+            log.warn("Transaction amount exceeded, insufficient money");
+        }
     }
 
     private TypeTransaction getTypeTransactionFromUser() {
@@ -195,7 +204,7 @@ public class Menu {
         String filterCategory = userInput.readString("Введите категорию (или оставьте пустым для всех): ");
         TypeTransaction filterType = getTypeTransactionFromUserInput();
 
-        List<TransactionDto> filteredTransactions = financeService.filterTransactions(financeId,startDate, endDate, filterCategory, filterType, UserContext.getCurrentUser().email());
+        List<TransactionDto> filteredTransactions = financeService.filterTransactions(financeId, startDate, endDate, filterCategory, filterType, UserContext.getCurrentUser().email());
         userOutput.print("Отфильтрованные транзакции:");
         userOutput.printTransactions(filteredTransactions);
     }
@@ -228,10 +237,9 @@ public class Menu {
         };
     }
 
-
     private void editTransaction() {
         long id = userInput.readLong("Введите id транзакции для редактирования: ");
-        double newAmount = userInput.readDouble("Введите новую сумму транзакции: ");
+        BigDecimal newAmount = userInput.readBigDecimal("Введите новую сумму транзакции: ");
         String newCategory = userInput.readString("Введите новую категорию: ");
         String newDescription = userInput.readString("Введите новое описание: ");
         TypeTransaction newTypeTransaction = getTypeTransactionFromUser();
@@ -253,18 +261,18 @@ public class Menu {
     }
 
     private void setSavingsGoal() {
-        double savingGoal = userInput.readDouble("Введите цель накопления: ");
+        BigDecimal savingGoal = userInput.readBigDecimal("Введите цель накопления: ");
         targetService.updateGoalSavings(savingGoal);
         userOutput.print("Цель накопления установлена!");
     }
 
     private void trackProgress() {
-        double progress = financeService.getProgressTowardsGoal(UserContext.getCurrentUser().email());
+        Double progress = financeService.getProgressTowardsGoal(UserContext.getCurrentUser().email());
         userOutput.print("Прогресс накопления: " + progress);
     }
 
     private void setMonthlyBudget() {
-        double monthlyBudget = userInput.readDouble("Введите месячный бюджет: ");
+        BigDecimal monthlyBudget = userInput.readBigDecimal("Введите месячный бюджет: ");
         targetService.setMonthlyBudget(monthlyBudget);
         userOutput.print("Месячный бюджет установлен!");
     }
@@ -278,7 +286,7 @@ public class Menu {
         if (isAdmin(UserContext.getCurrentUser())) {
             String emailToBlock = userInput.readString("Введите email пользователя для блокировки: ");
             if (userService.blockUser(emailToBlock)) {
-                if(UserContext.getCurrentUser().email().equals(emailToBlock))
+                if (UserContext.getCurrentUser().email().equals(emailToBlock))
                     handleLoginLogout();
                 userOutput.print("Пользователь успешно заблокирован!");
             } else {
@@ -306,7 +314,7 @@ public class Menu {
         if (isAdmin(UserContext.getCurrentUser())) {
             String emailToAssign = userInput.readString("Введите email пользователя для назначения роли: ");
             String role = userInput.readString("Введите роль (ADMIN/USER): ");
-            if (userService.changeUserRole(emailToAssign, role.equalsIgnoreCase("ADMIN")?Role.ADMIN:Role.USER)) {
+            if (userService.changeUserRole(emailToAssign, role.equalsIgnoreCase("ADMIN") ? Role.ADMIN : Role.USER)) {
                 userOutput.print("Роль успешно назначена!");
             } else {
                 userOutput.print("Не удалось назначить роль. Проверьте email и роль.");
@@ -320,4 +328,3 @@ public class Menu {
         return user.role().equals(Role.ADMIN);
     }
 }
-

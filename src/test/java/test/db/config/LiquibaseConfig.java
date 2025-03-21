@@ -8,6 +8,7 @@ import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import test.config.AppProperties;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,12 +16,12 @@ import java.sql.SQLException;
 public class LiquibaseConfig {
 
     private final Logger log = LoggerFactory.getLogger(app.config.LiquibaseConfig.class);
-    private final String changeLogFile = "db/test-changelog/changelog-master.yml";
-    private final String liquibaseSchemaName = "metadata";
     private final Connection connection;
+    private final AppProperties.LiquibaseProperties prop;
 
-    public LiquibaseConfig(Connection connection) {
+    public LiquibaseConfig(Connection connection, AppProperties.LiquibaseProperties liquibaseProperties) {
         this.connection = connection;
+        this.prop = liquibaseProperties;
     }
 
     public void initializeAndMigrate() {
@@ -51,9 +52,9 @@ public class LiquibaseConfig {
         try {
             Database database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            database.setLiquibaseSchemaName(liquibaseSchemaName);
+            database.setLiquibaseSchemaName(prop.getLiquibaseSchemaName());
 
-            Liquibase liquibase = new Liquibase(changeLogFile, new ClassLoaderResourceAccessor(), database);
+            Liquibase liquibase = new Liquibase(prop.getChangeLogFile(), new ClassLoaderResourceAccessor(), database);
             liquibase.update();
             log.info("Liquibase migration completed successfully");
         } catch (LiquibaseException e) {

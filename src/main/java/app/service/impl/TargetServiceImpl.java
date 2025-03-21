@@ -1,16 +1,17 @@
 package app.service.impl;
 
-import app.service.TargetService;
 import app.context.UserContext;
 import app.dto.transaction.TransactionDto;
 import app.dto.user.UserDto;
 import app.entity.Finance;
 import app.entity.TypeTransaction;
 import app.service.FinanceService;
+import app.service.TargetService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,7 +43,7 @@ public class TargetServiceImpl implements TargetService {
      * @param budget сумма месячного бюджета
      */
     @Override
-    public void setMonthlyBudget(double budget) {
+    public void setMonthlyBudget(BigDecimal budget) {
         Finance finance = this.findFinance(UserContext.getCurrentUser().email());
         finance.setMonthlyBudget(budget);
         financeService.save(finance);
@@ -55,20 +56,24 @@ public class TargetServiceImpl implements TargetService {
      * @param email электронная почта пользователя
      */
     @Override
-    public void checkBudgetExceeded(String email) {
+    public Boolean isMonthBudgetExceeded(String email) {
         Finance finance = this.findFinance(UserContext.getCurrentUser().email());
 
         List<TransactionDto> transactions = financeService.getTransactions(email);
         Instant thirtyDaysAgo = Instant.now().minus(Duration.ofDays(30));
-        double totalExpenses = transactions.stream()
+        BigDecimal totalExpenses = transactions.stream()
                 .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE && t.date().isAfter(thirtyDaysAgo))
-                .mapToDouble(TransactionDto::amount)
-                .sum();
+                .map(TransactionDto::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        double monthlyBudget = finance.getMonthlyBudget();
-        if (totalExpenses > monthlyBudget) {
-            System.out.println("Внимание! Вы превысили месячный бюджет на " + (totalExpenses - monthlyBudget) + "!");
+        BigDecimal monthlyBudget = finance.getMonthlyBudget();
+
+        if (totalExpenses.compareTo(monthlyBudget) > 0) {
+            System.out.println("Внимание! Вы превысили месячный бюджет на " + totalExpenses.subtract(monthlyBudget) + "!");
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -88,7 +93,7 @@ public class TargetServiceImpl implements TargetService {
         reportBuilder.append("Прогресс к цели: ").append(financeService.getProgressTowardsGoal(user.email())).append("%\n");
 
         reportBuilder.append("Суммарный доход за период: ")
-                .append(financeService.getTotalIncome(LocalDate.now().minusMonths(1), LocalDate.now(), user.email())).append("\n");
+                .append(financeService.getTotalProfit(LocalDate.now().minusMonths(1), LocalDate.now(), user.email())).append("\n");
         reportBuilder.append("Суммарные расходы за период: ")
                 .append(financeService.getTotalExpenses(LocalDate.now().minusMonths(1), LocalDate.now(), user.email())).append("\n");
 
@@ -107,7 +112,7 @@ public class TargetServiceImpl implements TargetService {
      * @param savingGoal сумма целевых накоплений
      */
     @Override
-    public void updateGoalSavings(double savingGoal) {
+    public void updateGoalSavings(BigDecimal savingGoal) {
         Finance finance = this.findFinance(UserContext.getCurrentUser().email());
         finance.setSavingsGoal(savingGoal);
         financeService.save(finance);

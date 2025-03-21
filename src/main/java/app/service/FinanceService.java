@@ -7,6 +7,7 @@ import app.dto.transaction.CreateTransactionDto;
 import app.entity.Finance;
 import app.entity.TypeTransaction;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -16,15 +17,17 @@ public interface FinanceService {
 
     TransactionDto addTransactionUser(CreateTransactionDto dto);
 
-    double getProgressTowardsGoal(String email);
+    Boolean transactionAmountExceedsBalance(String email, BigDecimal transactionAmount);
+
+    Double getProgressTowardsGoal(String email);
 
     List<TransactionDto> filterTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email);
 
-    Map<String, Double> getExpensesByCategory(String email);
+    Map<String, BigDecimal> getExpensesByCategory(String email);
 
-    double getTotalIncome(LocalDate startDate, LocalDate endDate, String email);
+    BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, String email);
 
-    double getTotalExpenses(LocalDate startDate, LocalDate endDate, String email);
+    BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, String email);
 
     boolean removeTransactionUser(Long id);
 
@@ -34,7 +37,7 @@ public interface FinanceService {
 
     List<TransactionDto> getTransactions(String userId);
 
-    Boolean checkExpenseLimit(String email);
+    Boolean checkMonthlyExpenseLimit(String email);
 
     FinanceDto getFinanceById(Long id);
 

@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -52,9 +53,9 @@ class TargetServiceImplTest {
         UserContext.setCurrentUser(userDto);
 
         finance = new Finance.Builder()
-                .currentSavings(5000.0)
-                .savingsGoal(10000.0)
-                .monthlyBudget(3000.0)
+                .currentSavings(new BigDecimal("5000.00"))
+                .savingsGoal(new BigDecimal("10000.00"))
+                .monthlyBudget(new BigDecimal("3000.00"))
                 .build();
 
         when(userService.getUserByEmail(any())).thenReturn(userDto);
@@ -63,7 +64,7 @@ class TargetServiceImplTest {
 
     @Test
     void setMonthlyBudget_ShouldUpdateBudgetAndSave() {
-        double newBudget = 4000.0;
+        BigDecimal newBudget = new BigDecimal("4000.00");
 
         targetService.setMonthlyBudget(newBudget);
 
@@ -74,46 +75,46 @@ class TargetServiceImplTest {
     @Test
     void checkBudgetExceeded_ShouldNotThrow_WhenNotExceeded() {
         List<TransactionDto> transactions = List.of(
-                new TransactionDto(1L, 500.0, "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
-                new TransactionDto(2L, 1000.0, "k2", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
+                new TransactionDto(1L, new BigDecimal("500.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
+                new TransactionDto(2L, new BigDecimal("1000.00"), "k2", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
         );
         when(financeService.getTransactions(any())).thenReturn(transactions);
 
-        assertDoesNotThrow(() -> targetService.checkBudgetExceeded(userDto.email()));
+        assertDoesNotThrow(() -> targetService.isMonthBudgetExceeded(userDto.email()));
     }
 
     @Test
     void checkBudgetExceeded_ShouldNotThrow_WhenExceeded() {
         List<TransactionDto> transactions = List.of(
-                new TransactionDto(1L, 2000.0, "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
-                new TransactionDto(2L, 2000.0, "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
+                new TransactionDto(1L, new BigDecimal("2000.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
+                new TransactionDto(2L, new BigDecimal("2000.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
         );
         when(financeService.getTransactions(any())).thenReturn(transactions);
 
-        assertDoesNotThrow(() -> targetService.checkBudgetExceeded(userDto.email()));
+        assertDoesNotThrow(() -> targetService.isMonthBudgetExceeded(userDto.email()));
     }
 
     @Test
     void generateFinancialReport_ShouldContainExpectedValues() {
-        when(financeService.getProgressTowardsGoal(any())).thenReturn(50.0);
-        when(financeService.getTotalIncome(any(), any(), any())).thenReturn(8000.0);
-        when(financeService.getTotalExpenses(any(), any(), any())).thenReturn(3000.0);
-        when(financeService.getExpensesByCategory(any())).thenReturn(Map.of("Food", 1000.0, "Transport", 500.0));
+        when(financeService.getProgressTowardsGoal(any())).thenReturn(50.00);
+        when(financeService.getTotalProfit(any(), any(), any())).thenReturn(new BigDecimal("8000.00"));
+        when(financeService.getTotalExpenses(any(), any(), any())).thenReturn(new BigDecimal("3000.00"));
+        when(financeService.getExpensesByCategory(any())).thenReturn(Map.of("Food", new BigDecimal("1000.00"), "Transport", new BigDecimal("500.00")));
 
         String report = targetService.generateFinancialReport();
 
-        assertTrue(report.contains("Текущие накопления: 5000.0"));
-        assertTrue(report.contains("Цель накопления: 10000.0"));
-        assertTrue(report.contains("Прогресс к цели: 50.0%"));
-        assertTrue(report.contains("Суммарный доход за период: 8000.0"));
-        assertTrue(report.contains("Суммарные расходы за период: 3000.0"));
-        assertTrue(report.contains("Food: 1000.0"));
-        assertTrue(report.contains("Transport: 500.0"));
+        assertTrue(report.contains("Текущие накопления: 5000.00"));
+        assertTrue(report.contains("Цель накопления: 10000.00"));
+        assertTrue(report.contains("Прогресс к цели: 50.00%"));
+        assertTrue(report.contains("Суммарный доход за период: 8000.00"));
+        assertTrue(report.contains("Суммарные расходы за период: 3000.00"));
+        assertTrue(report.contains("Food: 1000.00"));
+        assertTrue(report.contains("Transport: 500.00"));
     }
 
     @Test
     void updateGoalSavings_ShouldUpdateGoalAndSave() {
-        double newGoal = 15000.0;
+        BigDecimal newGoal = new BigDecimal("15000.00");
 
         targetService.updateGoalSavings(newGoal);
 

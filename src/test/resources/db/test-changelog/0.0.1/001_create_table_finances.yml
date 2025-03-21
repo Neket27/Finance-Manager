@@ -21,22 +21,22 @@ databaseChangeLog:
                     unique: true
               - column:
                   name: monthly_budget
-                  type: double
+                  type: decimal(19, 2)
                   constraints:
                     nullable: false
               - column:
                   name: savings_goal
-                  type: double
+                  type: decimal(19, 2)
                   constraints:
                     nullable: false
               - column:
                   name: current_savings
-                  type: double
+                  type: decimal(19, 2)
                   constraints:
                     nullable: false
               - column:
                   name: total_expenses
-                  type: double
+                  type: decimal(19, 2)
                   constraints:
                     nullable: false
 

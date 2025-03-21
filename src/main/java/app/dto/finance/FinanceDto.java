@@ -1,14 +1,15 @@
 package app.dto.finance;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 public record FinanceDto(
         Long id,
-        Double monthlyBudget,
-        Double savingsGoal,
-        Double currentSavings,
-        Double totalExpenses,
+        BigDecimal monthlyBudget,
+        BigDecimal savingsGoal,
+        BigDecimal currentSavings,
+        BigDecimal totalExpenses,
         List<Long> transactionsId
 ) {
     public static Builder builder() {
@@ -17,10 +18,10 @@ public record FinanceDto(
 
     public static class Builder {
         private Long id;
-        private Double monthlyBudget;
-        private Double savingsGoal;
-        private Double currentSavings;
-        private Double totalExpenses;
+        private BigDecimal monthlyBudget = BigDecimal.ZERO;
+        private BigDecimal savingsGoal = BigDecimal.ZERO;
+        private BigDecimal currentSavings = BigDecimal.ZERO;
+        private BigDecimal totalExpenses = BigDecimal.ZERO;
         private List<Long> transactionsId = new ArrayList<>();
 
         public Builder id(Long id) {
@@ -28,22 +29,22 @@ public record FinanceDto(
             return this;
         }
 
-        public Builder monthlyBudget(Double monthlyBudget) {
+        public Builder monthlyBudget(BigDecimal monthlyBudget) {
             this.monthlyBudget = monthlyBudget;
             return this;
         }
 
-        public Builder savingsGoal(Double savingsGoal) {
+        public Builder savingsGoal(BigDecimal savingsGoal) {
             this.savingsGoal = savingsGoal;
             return this;
         }
 
-        public Builder currentSavings(Double currentSavings) {
+        public Builder currentSavings(BigDecimal currentSavings) {
             this.currentSavings = currentSavings;
             return this;
         }
 
-        public Builder totalExpenses(Double totalExpenses) {
+        public Builder totalExpenses(BigDecimal totalExpenses) {
             this.totalExpenses = totalExpenses;
             return this;
         }
@@ -58,4 +59,3 @@ public record FinanceDto(
         }
     }
 }
-

@@ -50,7 +50,7 @@ public class UserServiceIT {
         var userDto = userService.createUser(createUserDto);
 
         assertNotNull(userDto);
-        assertEquals(Role.Admin, userDto.role());
+        assertEquals(Role.ADMIN, userDto.role());
         assertEquals("John Doe", userDto.name());
         assertTrue(userDto.isActive());
         assertNotNull(userDto.financeId());
@@ -65,7 +65,7 @@ public class UserServiceIT {
         var userDto = userService.createUser(secondUserDto);
 
         assertNotNull(userDto);
-        assertEquals(Role.User, userDto.role());
+        assertEquals(Role.USER, userDto.role());
         assertEquals("Jane Doe", userDto.name());
     }
 
@@ -115,11 +115,11 @@ public class UserServiceIT {
     void testChangeUserRole() {
         userService.createUser(new CreateUserDto("Bruce Wayne", "bruce@example.com", "password"));
 
-        boolean changed = userService.changeUserRole("bruce@example.com", Role.Admin);
+        boolean changed = userService.changeUserRole("bruce@example.com", Role.ADMIN);
 
         assertTrue(changed);
         var user = userService.getUserByEmail("bruce@example.com");
-        assertEquals(Role.Admin, user.role());
+        assertEquals(Role.ADMIN, user.role());
     }
 
     @Test

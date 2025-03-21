@@ -18,6 +18,7 @@ import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,10 +69,10 @@ public class UserServiceImpl implements UserService {
             user.setRole(Role.USER);
 
         CreateFinanceDto dto = new CreateFinanceDto.Builder()
-                .currentSavings(0.0)
-                .monthlyBudget(0.0)
-                .savingsGoal(0.0)
-                .totalExpenses(0.0)
+                .currentSavings(BigDecimal.valueOf(0.0))
+                .monthlyBudget(BigDecimal.valueOf(0.0))
+                .savingsGoal(BigDecimal.valueOf(0.0))
+                .totalExpenses(BigDecimal.valueOf(0.0))
                 .transactionsId(new ArrayList<>())
                 .build();
 
@@ -141,6 +142,13 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
     }
 
+    /**
+     * Ищет пользователя по email
+     *
+     * @param email  пользователя
+     * @return объект пользователя
+     * @throws NotFoundException если пользователь не найден
+     */
     private User find(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(String.format("User with email %s not found", email)));

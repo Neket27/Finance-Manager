@@ -1,5 +1,6 @@
 package app.util.in;
 
+import java.math.BigDecimal;
 import java.util.Scanner;
 
 public class UserInput {
@@ -25,9 +26,9 @@ public class UserInput {
         return readInt(prompt);
     }
 
-    public double readDouble(String prompt) {
+    public BigDecimal readBigDecimal(String prompt) {
         System.out.print(prompt);
-        double value = scanner.nextDouble();
+        BigDecimal value = scanner.nextBigDecimal();
         scanner.nextLine();
         return value;
     }

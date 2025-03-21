@@ -1,4 +1,4 @@
-package app.config;
+package test.config;
 
 import liquibase.Liquibase;
 import liquibase.database.Database;
@@ -19,7 +19,7 @@ import java.sql.SQLException;
 @AllArgsConstructor
 public class LiquibaseConfig {
     private final Logger log = LoggerFactory.getLogger(LiquibaseConfig.class);
-    private DbConfig dbConfig;
+    private PostgresLContainerConfig dbConfig;
     private AppProperties.LiquibaseProperties prop;
 
 

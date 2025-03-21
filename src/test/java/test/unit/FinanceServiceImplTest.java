@@ -25,6 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -74,24 +75,24 @@ public class FinanceServiceImplTest {
                 .password("hashedPassword")
                 .isActive(true)
                 .finance(1L)
-                .role(Role.User)
+                .role(Role.USER)
                 .build();
 
         finance = new Finance.Builder()
                 .id(1L)
-                .currentSavings(1000)
-                .monthlyBudget(500)
-                .totalExpenses(600)
+                .currentSavings(BigDecimal.valueOf(1000))
+                .monthlyBudget(BigDecimal.valueOf(500))
+                .totalExpenses(BigDecimal.valueOf(600))
                 .transactionsId(new ArrayList<>(List.of(1L, 2L)))
                 .build();
 
         UserContext.setCurrentUser(userDto);
 
-        financeDto = new FinanceDto(1L, 1000.0, 500.0, 600.0, 2000.0, List.of(1L, 2L));
-        transactionDto = new TransactionDto(1L, 100.0, "Food", Instant.now(), "", TypeTransaction.EXPENSE);
+        financeDto = new FinanceDto(1L, BigDecimal.valueOf(1000), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(2000), List.of(1L, 2L));
+        transactionDto = new TransactionDto(1L, BigDecimal.valueOf(100), "Food", Instant.now(), "", TypeTransaction.EXPENSE);
         transaction = new Transaction.Builder()
                 .id(1L)
-                .amount(100)
+                .amount(BigDecimal.valueOf(100))
                 .category("Food")
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .description("")
@@ -106,7 +107,7 @@ public class FinanceServiceImplTest {
         when(transactionService.create(any(CreateTransactionDto.class), anyLong())).thenReturn(transactionDto);
 
         // Act
-        TransactionDto result = financeService.addTransactionUser(new CreateTransactionDto(100.0, "Food", Instant.now(), "", TypeTransaction.EXPENSE));
+        TransactionDto result = financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(100), "Food", Instant.now(), "", TypeTransaction.EXPENSE));
 
         // Assert
         assertNotNull(result);
@@ -120,7 +121,7 @@ public class FinanceServiceImplTest {
         when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
 
         // Act
-        financeService.checkExpenseLimit("test@example.com");
+        financeService.checkMonthlyExpenseLimit("test@example.com");
 
         // Assert
         verify(notificationService, times(1)).sendMessage(eq("test@example.com"), contains("превысили"));
@@ -140,7 +141,6 @@ public class FinanceServiceImplTest {
         assertEquals(120, progress);
     }
 
-
     @Test
     void filterTransactions_ReturnFilteredTransactions() {
         // Arrange
@@ -156,7 +156,6 @@ public class FinanceServiceImplTest {
         assertEquals(transactionDto, transactions.get(0));
     }
 
-
     @Test
     void getExpensesByCategory_ReturnsCorrectGrouping() {
         // Arrange
@@ -164,14 +163,14 @@ public class FinanceServiceImplTest {
         when(financeMapper.toDto(finance)).thenReturn(financeDto);
         when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
         when(transactionService.getTransactionById(1L)).thenReturn(transactionDto);
-        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(2L, 50.0, "Food", Instant.now(), "", TypeTransaction.EXPENSE));
+        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(2L, BigDecimal.valueOf(50), "Food", Instant.now(), "", TypeTransaction.EXPENSE));
 
         // Act
-        Map<String, Double> expenses = financeService.getExpensesByCategory("test@example.com");
+        Map<String, BigDecimal> expenses = financeService.getExpensesByCategory("test@example.com");
 
         // Assert
         assertEquals(1, expenses.size());
-        assertEquals(150, expenses.get("Food"));
+        assertEquals(BigDecimal.valueOf(150), expenses.get("Food"));
     }
 
     @Test
@@ -180,14 +179,14 @@ public class FinanceServiceImplTest {
         when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
         when(financeMapper.toDto(finance)).thenReturn(financeDto);
         when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
-        when(transactionService.getTransactionById(1L)).thenReturn(new TransactionDto(3L, 200.0, "Salary", Instant.now(), "", TypeTransaction.PROFIT));
-        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(3L, 200.0, "Salary", Instant.now(), "", TypeTransaction.PROFIT));
+        when(transactionService.getTransactionById(1L)).thenReturn(new TransactionDto(3L, BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT));
+        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(3L, BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT));
 
         // Act
-        double totalIncome = financeService.getTotalIncome(LocalDate.now().minusDays(30), LocalDate.now(), "test@example.com");
+        BigDecimal totalIncome = financeService.getTotalProfit(LocalDate.now().minusDays(30), LocalDate.now(), "test@example.com");
 
         // Assert
-        assertEquals(400, totalIncome);
+        assertEquals(BigDecimal.valueOf(400), totalIncome);
     }
 
     @Test
@@ -211,16 +210,16 @@ public class FinanceServiceImplTest {
         // Arrange
         TransactionDto expectedTransactionDto = new TransactionDto.Builder()
                 .id(1L)
-                .amount(120)
+                .amount(BigDecimal.valueOf(120))
                 .build();
         when(transactionService.edit(any(UpdateTransactionDto.class))).thenReturn(expectedTransactionDto);
 
         // Act
-        TransactionDto result = financeService.editTransaction(new UpdateTransactionDto(1L, 120.0, "Groceries", Instant.now(), "", TypeTransaction.EXPENSE));
+        TransactionDto result = financeService.editTransaction(new UpdateTransactionDto(1L, BigDecimal.valueOf(120), "Groceries", Instant.now(), "", TypeTransaction.EXPENSE));
 
         // Assert
         assertNotNull(result);
-        assertEquals(120, result.amount());
+        assertEquals(BigDecimal.valueOf(120), result.amount());
     }
 
     @Test
@@ -229,7 +228,7 @@ public class FinanceServiceImplTest {
         when(transactionService.edit(any(UpdateTransactionDto.class))).thenThrow(new RuntimeException());
 
         // Act & Assert
-        assertThrows(EditException.class, () -> financeService.editTransaction(new UpdateTransactionDto(1L, 120.0, "Groceries", Instant.now(), "", TypeTransaction.EXPENSE)));
+        assertThrows(EditException.class, () -> financeService.editTransaction(new UpdateTransactionDto(1L, BigDecimal.valueOf(120), "Groceries", Instant.now(), "", TypeTransaction.EXPENSE)));
     }
 
     @Test
@@ -246,4 +245,3 @@ public class FinanceServiceImplTest {
         assertEquals(1, transactions.size());
     }
 }
-

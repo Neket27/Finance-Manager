@@ -21,7 +21,7 @@ databaseChangeLog:
                     unique: true
               - column:
                   name: amount
-                  type: double precision
+                  type: decimal(19, 2)
               - column:
                   name: category
                   type: varchar(255)

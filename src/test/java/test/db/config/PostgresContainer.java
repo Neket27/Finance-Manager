@@ -1,10 +1,10 @@
 package test.db.config;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import test.config.AppProperties;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,22 +16,24 @@ public class PostgresContainer {
 
     private final Logger log = LoggerFactory.getLogger(PostgresContainer.class);
     private static PostgreSQLContainer<?> postgres;
-    private static final String DB_NAME = "testdb";
-    private static final String USER_NAME = "test";
-    private static final String PASSWORD = "test";
+    private final AppProperties.PostgresContainerProperties prop;
+
+    public PostgresContainer(AppProperties.PostgresContainerProperties prop) {
+        this.prop = prop;
+    }
 
     public void startContainer() {
         postgres = new PostgreSQLContainer<>("postgres:16")
-                .withDatabaseName(DB_NAME)
-                .withUsername(USER_NAME)
-                .withPassword(PASSWORD);
+                .withDatabaseName(prop.getDbName())
+                .withUsername(prop.getUsername())
+                .withPassword(prop.getPassword());
         postgres.start();
     }
 
     public void stopContainer() {
         if (postgres != null)
             postgres.stop();
-        postgres=null;
+        postgres = null;
     }
 
     public Connection getConnection() {

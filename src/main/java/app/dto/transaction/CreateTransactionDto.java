@@ -2,10 +2,11 @@ package app.dto.transaction;
 
 import app.entity.TypeTransaction;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public record CreateTransactionDto(
-        Double amount,
+        BigDecimal amount,
         String category,
         Instant date,
         String description,
@@ -13,14 +14,14 @@ public record CreateTransactionDto(
 ) {
 
     public static class Builder {
-        private Double amount;
+        private BigDecimal amount = BigDecimal.ZERO;
         private String category;
         private Instant date;
         private String description;
         private TypeTransaction typeTransaction;
 
-        public Builder amount(Double amount) {
-            this.amount = amount;
+        public Builder amount(BigDecimal amount) {
+            this.amount = amount != null ? amount : BigDecimal.ZERO;
             return this;
         }
 
