@@ -93,7 +93,11 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public boolean logout() {
-        boolean userCredentialsDeleted = authenticator.clearCredentials(UserContext.getCurrentUser().email());
+        UserDto user = UserContext.getCurrentUser();
+        if (user == null)
+            return false;
+
+        boolean userCredentialsDeleted = authenticator.clearCredentials(user.email());
         UserContext.clear();
         return userCredentialsDeleted;
     }

@@ -23,6 +23,9 @@ public class Authenticator {
     }
 
     public boolean clearCredentials(String email) {
+        if (email == null)
+            return false;
+
         try {
             authenticationConfig.getCredentials().remove(email);
             return true;

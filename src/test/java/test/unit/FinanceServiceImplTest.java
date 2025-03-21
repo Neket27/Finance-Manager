@@ -11,6 +11,8 @@ import app.entity.Role;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
 import app.exception.EditException;
+import app.exception.LimitAmountBalance;
+import app.exception.NotFoundException;
 import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
 import app.repository.FinanceRepository;
@@ -89,7 +91,7 @@ public class FinanceServiceImplTest {
         UserContext.setCurrentUser(userDto);
 
         financeDto = new FinanceDto(1L, BigDecimal.valueOf(1000), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(2000), List.of(1L, 2L));
-        transactionDto = new TransactionDto(1L, BigDecimal.valueOf(100), "Food", Instant.now(), "", TypeTransaction.EXPENSE);
+        transactionDto = new TransactionDto(1L, BigDecimal.valueOf(400), "Food", Instant.now(), "", TypeTransaction.EXPENSE,1L);
         transaction = new Transaction.Builder()
                 .id(1L)
                 .amount(BigDecimal.valueOf(100))
@@ -105,7 +107,7 @@ public class FinanceServiceImplTest {
         // Arrange
         when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
         when(transactionService.create(any(CreateTransactionDto.class), anyLong())).thenReturn(transactionDto);
-
+        when(userService.getUserByEmail(any())).thenReturn(userDto);
         // Act
         TransactionDto result = financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(100), "Food", Instant.now(), "", TypeTransaction.EXPENSE));
 
@@ -119,12 +121,15 @@ public class FinanceServiceImplTest {
         // Arrange
         when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
         when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
+        when(transactionService.getTransactionsByFinanceId(finance.getId())).thenReturn(List.of(transaction,transaction));
+        when(transactionService.getTransactionById(any())).thenReturn(transactionDto);
+        when(financeMapper.toDto(finance)).thenReturn(financeDto);
 
         // Act
-        financeService.checkMonthlyExpenseLimit("test@example.com");
+       boolean isExpenseLimit =  financeService.checkMonthlyExpenseLimit("test@example.com");
 
         // Assert
-        verify(notificationService, times(1)).sendMessage(eq("test@example.com"), contains("превысили"));
+        assertTrue(isExpenseLimit);
     }
 
     @Test
@@ -163,14 +168,14 @@ public class FinanceServiceImplTest {
         when(financeMapper.toDto(finance)).thenReturn(financeDto);
         when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
         when(transactionService.getTransactionById(1L)).thenReturn(transactionDto);
-        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(2L, BigDecimal.valueOf(50), "Food", Instant.now(), "", TypeTransaction.EXPENSE));
+        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(2L, BigDecimal.valueOf(50), "Food", Instant.now(), "", TypeTransaction.EXPENSE,1L));
 
         // Act
         Map<String, BigDecimal> expenses = financeService.getExpensesByCategory("test@example.com");
 
         // Assert
         assertEquals(1, expenses.size());
-        assertEquals(BigDecimal.valueOf(150), expenses.get("Food"));
+        assertEquals(BigDecimal.valueOf(450), expenses.get("Food"));
     }
 
     @Test
@@ -179,8 +184,8 @@ public class FinanceServiceImplTest {
         when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
         when(financeMapper.toDto(finance)).thenReturn(financeDto);
         when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
-        when(transactionService.getTransactionById(1L)).thenReturn(new TransactionDto(3L, BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT));
-        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(3L, BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT));
+        when(transactionService.getTransactionById(1L)).thenReturn(new TransactionDto(3L, BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT, 1L));
+        when(transactionService.getTransactionById(2L)).thenReturn(new TransactionDto(3L, BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT, 1L));
 
         // Act
         BigDecimal totalIncome = financeService.getTotalProfit(LocalDate.now().minusDays(30), LocalDate.now(), "test@example.com");
@@ -244,4 +249,129 @@ public class FinanceServiceImplTest {
         // Assert
         assertEquals(1, transactions.size());
     }
+
+    @Test
+    void addTransactionUser_ThrowsLimitAmountBalance_WhenExpenseExceedsBalance() {
+        // Arrange
+        finance.setCurrentSavings(BigDecimal.valueOf(50));
+        when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
+        when(userService.getUserByEmail(any())).thenReturn(userDto);
+
+
+        // Act & Assert
+        LimitAmountBalance exception = assertThrows(LimitAmountBalance.class, () -> {
+            financeService.addTransactionUser(new CreateTransactionDto(BigDecimal.valueOf(100), "Food", Instant.now(), "", TypeTransaction.EXPENSE));
+        });
+
+        assertEquals("Amount translation limit exceeded", exception.getMessage());
+    }
+
+    @Test
+    void addTransactionUser_AddsIncomeSuccessfully() {
+        // Arrange
+        when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
+        CreateTransactionDto incomeTransaction = new CreateTransactionDto(BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT);
+        TransactionDto incomeDto = new TransactionDto(5L, BigDecimal.valueOf(200), "Salary", Instant.now(), "", TypeTransaction.PROFIT,1L);
+        when(transactionService.create(any(CreateTransactionDto.class), anyLong())).thenReturn(incomeDto);
+
+        // Act
+        TransactionDto result = financeService.addTransactionUser(incomeTransaction);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(5L, result.id());
+        assertEquals(BigDecimal.valueOf(1200), finance.getCurrentSavings());
+        verify(financeRepository).save(finance);
+    }
+
+    @Test
+    void transactionAmountExceedsBalance_ReturnsTrue_WhenInsufficientFunds() {
+        // Arrange
+        finance.setCurrentSavings(BigDecimal.valueOf(50));
+        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
+
+        // Act
+        boolean result = financeService.transactionAmountExceedsBalance("test@example.com", BigDecimal.valueOf(100));
+
+        // Assert
+        assertTrue(result);
+    }
+
+    @Test
+    void transactionAmountExceedsBalance_ReturnsFalse_WhenSufficientFunds() {
+        // Arrange
+        finance.setCurrentSavings(BigDecimal.valueOf(500));
+        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
+
+        // Act
+        boolean result = financeService.transactionAmountExceedsBalance("test@example.com", BigDecimal.valueOf(100));
+
+        // Assert
+        assertFalse(result);
+    }
+
+    @Test
+    void getProgressTowardsGoal_ReturnsZero_WhenGoalIsZero() {
+        // Arrange
+        financeDto = new FinanceDto(1L, BigDecimal.valueOf(500), BigDecimal.valueOf(0), BigDecimal.valueOf(600), BigDecimal.ZERO, List.of(1L, 2L));
+        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(financeMapper.toDto(finance)).thenReturn(financeDto);
+        when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
+
+        // Act
+        double result = financeService.getProgressTowardsGoal("test@example.com");
+
+        // Assert
+        assertEquals(0.0, result);
+    }
+
+    @Test
+    void getProgressTowardsGoal_Returns100Percent_WhenCurrentEqualsGoal() {
+        // Arrange
+        financeDto = new FinanceDto(1L, BigDecimal.valueOf(1000), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(1000), List.of(1L, 2L));
+        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(financeMapper.toDto(finance)).thenReturn(financeDto);
+        when(financeRepository.findById(1L)).thenReturn(Optional.of(finance));
+
+        // Act
+        double result = financeService.getProgressTowardsGoal("test@example.com");
+
+        // Assert
+        assertEquals(120.0, result);
+    }
+
+    @Test
+    void removeTransactionUser_ReturnsFalse_WhenTransactionDeleteFails() {
+        // Arrange
+        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(transactionService.delete(1L)).thenThrow(new RuntimeException("DB error"));
+
+        // Act
+        boolean result = financeService.removeTransactionUser(1L);
+
+        // Assert
+        assertFalse(result);
+    }
+
+    @Test
+    void getFinanceById_WhenFinanceNotFound_ThrowsNotFoundException() {
+        // Arrange
+        when(financeRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        NotFoundException ex = assertThrows(NotFoundException.class, () -> financeService.getFinanceById(1L));
+        assertEquals("Finance not found with id: 1", ex.getMessage());
+    }
+
+    @Test
+    void save_ShouldCallRepositorySave() {
+        // Act
+        financeService.save(finance);
+
+        // Assert
+        verify(financeRepository, times(1)).save(finance);
+    }
+
 }

@@ -18,6 +18,7 @@ public class TransactionMapper implements BaseMapper<Transaction, TransactionDto
                 .date(dto.date())
                 .description(dto.description())
                 .typeTransaction(dto.typeTransaction())
+                .financeId(dto.financeId())
                 .build();
     }
 
@@ -30,6 +31,7 @@ public class TransactionMapper implements BaseMapper<Transaction, TransactionDto
                 .date(entity.getDate())
                 .description(entity.getDescription())
                 .typeTransaction(entity.getTypeTransaction())
+                .financeId(entity.getFinanceId())
                 .build();
     }
 

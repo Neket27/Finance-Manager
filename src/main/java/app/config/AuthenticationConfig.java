@@ -23,4 +23,8 @@ public class AuthenticationConfig {
     public Map<String, UserDto> getCredentials() {
         return credentials;
     }
+
+    public boolean hasCredential(String mail) {
+        return credentials.containsKey(mail);
+    }
 }

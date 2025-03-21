@@ -153,7 +153,7 @@ public class FinanceServiceImpl implements FinanceService {
     private BigDecimal getTotal(FinanceDto finance, LocalDate startDate, LocalDate endDate, TypeTransaction typeTransaction) {
         return finance.transactionsId().stream()
                 .map(transactionService::getTransactionById)
-                .filter(t -> t.typeTransaction() == typeTransaction)
+                .filter(t -> t.typeTransaction().equals(typeTransaction))
                 .filter(t -> isWithinDateRange(t.date(), startDate, endDate))
                 .map(TransactionDto::amount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

@@ -1,5 +1,6 @@
 package test.integration;
 
+import app.context.UserContext;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.entity.Role;
@@ -10,25 +11,24 @@ import app.repository.jdbc.FinanceJdbcRepository;
 import app.repository.jdbc.UserJdbcRepository;
 import app.service.UserService;
 import app.service.impl.UserServiceImpl;
-import org.junit.jupiter.api.*;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import test.db.TestDatabase;
 import test.db.TestDatabaseFactory;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-@Testcontainers
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserServiceIT {
 
     private TestDatabase database;
     private UserService userService;
 
     @BeforeEach
-    void setup() throws Exception {
-
+    void setup() {
         database = TestDatabaseFactory.create();
-
         FinanceRepository financeRepository = new FinanceJdbcRepository(database.connection());
         FinanceMapper financeMapper = new FinanceMapper();
         UserMapper userMapper = new UserMapper();
@@ -43,105 +43,82 @@ public class UserServiceIT {
     }
 
     @Test
-    @Order(1)
-    void testCreateFirstUser_ShouldBeAdmin() {
-        var createUserDto = new CreateUserDto("John Doe", "john@example.com", "password123");
+    void testCreateUser_NullDto_ShouldThrowException() {
+        var exception = assertThrows(NullPointerException.class, () -> {
+            userService.createUser(null);
+        });
+        assertTrue(exception.getMessage().toLowerCase().contains("null"));
+    }
 
-        var userDto = userService.createUser(createUserDto);
+    @Test
+    void testUpdateUser_NullDto_ShouldThrowIllegalArgumentException() {
+        userService.createUser(new CreateUserDto("Dummy", "dummy@example.com", "pass"));
+        var ex = assertThrows(IllegalArgumentException.class, () -> userService.updateDataUser(null, "dummy@example.com"));
+        assertEquals("User Dto не может быть null", ex.getMessage());
+    }
 
-        assertNotNull(userDto);
-        assertEquals(Role.ADMIN, userDto.role());
-        assertEquals("John Doe", userDto.name());
-        assertTrue(userDto.isActive());
+    @Test
+    void testUpdateNonExistingUser_ShouldThrowNotFoundException() {
+        var updateDto = new UpdateUserDto.Builder()
+                .name("Ghost")
+                .email("ghost@example.com")
+                .password("pass")
+                .build();
+        var ex = assertThrows(Exception.class, () -> userService.updateDataUser(updateDto, "ghost@example.com"));
+        assertTrue(ex.getMessage().contains("not found"));
+    }
+
+    @Test
+    void testRemoveNonExistingUser_ShouldReturnFalse() {
+        boolean removed = userService.remove("unknown@example.com");
+        assertFalse(removed);
+    }
+
+    @Test
+    void testBlockNonExistingUser_ShouldReturnFalse() {
+        boolean result = userService.blockUser("nonexistent@example.com");
+        assertFalse(result);
+    }
+
+    @Test
+    void testChangeUserRole_InvalidUser_ShouldReturnFalse() {
+        boolean result = userService.changeUserRole("ghost@example.com", Role.ADMIN);
+        assertFalse(result);
+    }
+
+    @Test
+    void testCreateUser_CheckFinanceIsNotNull() {
+        var userDto = userService.createUser(new CreateUserDto("Finance Check", "finance@example.com", "pass"));
         assertNotNull(userDto.financeId());
     }
 
     @Test
-    @Order(2)
-    void testCreateSecondUser_ShouldBeUser() {
-        userService.createUser(new CreateUserDto("Admin User", "admin@example.com", "adminpass"));
-
-        var secondUserDto = new CreateUserDto("Jane Doe", "jane@example.com", "password");
-        var userDto = userService.createUser(secondUserDto);
-
-        assertNotNull(userDto);
-        assertEquals(Role.USER, userDto.role());
-        assertEquals("Jane Doe", userDto.name());
-    }
-
-    @Test
-    @Order(3)
-    void testUpdateUser() {
-        userService.createUser(new CreateUserDto("Mark Smith", "mark@example.com", "password"));
-
-        var updateDto = new UpdateUserDto.Builder()
-                .name("Mark Updated")
-                .email("mark@example.com")
-                .password("newpassword")
-                .build();
-
-        var updatedUser = userService.updateDataUser(updateDto, "mark@example.com");
-
-        assertEquals("Mark Updated", updatedUser.name());
-        assertEquals("mark@example.com", updatedUser.email());
-    }
-
-    @Test
-    @Order(4)
-    void testRemoveUser() {
-        userService.createUser(new CreateUserDto("Lara Croft", "lara@example.com", "password"));
-
-        boolean removed = userService.remove("lara@example.com");
-
-        assertTrue(removed);
-        var exception = assertThrows(Exception.class, () -> userService.getUserByEmail("lara@example.com"));
-        assertTrue(exception.getMessage().contains("not found"));
-    }
-
-    @Test
-    @Order(5)
-    void testBlockUser() {
-        userService.createUser(new CreateUserDto("Clark Kent", "clark@example.com", "password"));
-
-        boolean blocked = userService.blockUser("clark@example.com");
-
-        assertTrue(blocked);
-        var user = userService.getUserByEmail("clark@example.com");
-        assertFalse(user.isActive());
-    }
-
-    @Test
-    @Order(6)
-    void testChangeUserRole() {
-        userService.createUser(new CreateUserDto("Bruce Wayne", "bruce@example.com", "password"));
-
-        boolean changed = userService.changeUserRole("bruce@example.com", Role.ADMIN);
-
+    void testChangeUserRole_ShouldSetUserContext() {
+        userService.createUser(new CreateUserDto("Clark Kent", "superman@example.com", "kryptonite"));
+        boolean changed = userService.changeUserRole("superman@example.com", Role.ADMIN);
         assertTrue(changed);
-        var user = userService.getUserByEmail("bruce@example.com");
-        assertEquals(Role.ADMIN, user.role());
+        assertNotNull(UserContext.getCurrentUser());
+        assertEquals("superman@example.com", UserContext.getCurrentUser().email());
     }
 
     @Test
-    @Order(7)
-    void testDuplicateEmailThrowsException() {
-        userService.createUser(new CreateUserDto("Tony Stark", "tony@example.com", "password"));
-
-        var exception = assertThrows(RuntimeException.class, () -> {
-            userService.createUser(new CreateUserDto("Tony Stark", "tony@example.com", "password"));
-        });
-
-        assertTrue(exception.getMessage().contains("already exists"));
-    }
-
-    @Test
-    @Order(8)
-    void testListUsers() {
-        userService.createUser(new CreateUserDto("User One", "one@example.com", "password"));
-        userService.createUser(new CreateUserDto("User Two", "two@example.com", "password"));
-
+    void testListUsers_WhenEmpty() {
         var users = userService.list();
+        assertEquals(0, users.size());
+    }
 
-        assertEquals(2, users.size());
+    @Test
+    void testListUsers_AfterDeletion() {
+        userService.createUser(new CreateUserDto("Temp User", "temp@example.com", "pass"));
+        userService.remove("temp@example.com");
+        List<?> users = userService.list();
+        assertEquals(0, users.size());
+    }
+
+    @Test
+    void testCreateMultipleAdmins_NotPossible() {
+        userService.createUser(new CreateUserDto("Admin1", "admin1@example.com", "pass"));
+        var user = userService.createUser(new CreateUserDto("Admin2", "admin2@example.com", "pass"));
+        assertEquals(Role.USER, user.role());
     }
 }

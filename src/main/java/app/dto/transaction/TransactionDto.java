@@ -11,7 +11,8 @@ public record TransactionDto(
         String category,
         Instant date,
         String description,
-        TypeTransaction typeTransaction
+        TypeTransaction typeTransaction,
+        Long financeId
 ) {
     public static class Builder {
         private Long id;
@@ -20,6 +21,7 @@ public record TransactionDto(
         private Instant date;
         private String description;
         private TypeTransaction typeTransaction;
+        Long financeId;
 
         public Builder id(Long id) {
             this.id = id;
@@ -51,8 +53,13 @@ public record TransactionDto(
             return this;
         }
 
+        public Builder financeId(Long financeId) {
+            this.financeId = financeId;
+            return this;
+        }
+
         public TransactionDto build() {
-            return new TransactionDto(id, amount, category, date, description, typeTransaction);
+            return new TransactionDto(id, amount, category, date, description, typeTransaction, financeId);
         }
     }
 }

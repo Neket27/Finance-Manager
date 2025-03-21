@@ -75,8 +75,8 @@ class TargetServiceImplTest {
     @Test
     void checkBudgetExceeded_ShouldNotThrow_WhenNotExceeded() {
         List<TransactionDto> transactions = List.of(
-                new TransactionDto(1L, new BigDecimal("500.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
-                new TransactionDto(2L, new BigDecimal("1000.00"), "k2", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
+                new TransactionDto(1L, new BigDecimal("500.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE, 1L),
+                new TransactionDto(2L, new BigDecimal("1000.00"), "k2", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE, 1L)
         );
         when(financeService.getTransactions(any())).thenReturn(transactions);
 
@@ -86,8 +86,8 @@ class TargetServiceImplTest {
     @Test
     void checkBudgetExceeded_ShouldNotThrow_WhenExceeded() {
         List<TransactionDto> transactions = List.of(
-                new TransactionDto(1L, new BigDecimal("2000.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE),
-                new TransactionDto(2L, new BigDecimal("2000.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE)
+                new TransactionDto(1L, new BigDecimal("2000.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE, 1L),
+                new TransactionDto(2L, new BigDecimal("2000.00"), "k1", Instant.now().minus(Duration.ofDays(10)), "", TypeTransaction.EXPENSE, 1L)
         );
         when(financeService.getTransactions(any())).thenReturn(transactions);
 

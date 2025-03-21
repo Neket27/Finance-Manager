@@ -52,10 +52,10 @@ public class TransactionJdbcRepository implements TransactionRepository {
     @Override
     public List<Transaction> findByFinanceId(Long id) {
         String sql = """
-            SELECT t.* FROM business.transactions t
-            JOIN business.finances f ON t.finance_id = f.id
-            WHERE t.finance_id = ?
-            """;
+                SELECT t.* FROM business.transactions t
+                JOIN business.finances f ON t.finance_id = f.id
+                WHERE t.finance_id = ?
+                """;
 
         List<Transaction> transactions = new ArrayList<>();
         try {
@@ -82,11 +82,11 @@ public class TransactionJdbcRepository implements TransactionRepository {
     @Override
     public List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
         StringBuilder sqlBuilder = new StringBuilder("""
-            SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
-            FROM business.transactions t
-            JOIN business.finances f ON f.id = t.finance_id
-            WHERE t.finance_id = ?
-            """);
+                SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
+                FROM business.transactions t
+                JOIN business.finances f ON f.id = t.finance_id
+                WHERE t.finance_id = ?
+                """);
 
         List<Object> parameters = new ArrayList<>();
         parameters.add(financeId);
@@ -101,7 +101,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
             parameters.add(Timestamp.from(endDate));
         }
 
-        if (!category.isEmpty()) {
+        if (category != null && !category.isEmpty()) {
             sqlBuilder.append(" AND t.category = ?");
             parameters.add(category);
         }
@@ -184,17 +184,17 @@ public class TransactionJdbcRepository implements TransactionRepository {
     @Override
     public Transaction save(Transaction entity) {
         String sqlTransaction = """
-            INSERT INTO business.transactions (id, amount, category, date, description, type_transaction, finance_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?) 
-            ON CONFLICT (id) DO UPDATE 
-            SET amount = EXCLUDED.amount, 
-                category = EXCLUDED.category, 
-                date = EXCLUDED.date, 
-                description = EXCLUDED.description, 
-                type_transaction = EXCLUDED.type_transaction, 
-                finance_id = EXCLUDED.finance_id
-            RETURNING id
-            """;
+                INSERT INTO business.transactions (id, amount, category, date, description, type_transaction, finance_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?) 
+                ON CONFLICT (id) DO UPDATE 
+                SET amount = EXCLUDED.amount, 
+                    category = EXCLUDED.category, 
+                    date = EXCLUDED.date, 
+                    description = EXCLUDED.description, 
+                    type_transaction = EXCLUDED.type_transaction, 
+                    finance_id = EXCLUDED.finance_id
+                RETURNING id
+                """;
         try {
             connection.setAutoCommit(false);
 
