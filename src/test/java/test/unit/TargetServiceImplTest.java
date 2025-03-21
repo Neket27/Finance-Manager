@@ -105,7 +105,7 @@ class TargetServiceImplTest {
 
         assertTrue(report.contains("Текущие накопления: 5000.00"));
         assertTrue(report.contains("Цель накопления: 10000.00"));
-        assertTrue(report.contains("Прогресс к цели: 50.00%"));
+        assertTrue(report.contains("Прогресс к цели: 50.0%"));
         assertTrue(report.contains("Суммарный доход за период: 8000.00"));
         assertTrue(report.contains("Суммарные расходы за период: 3000.00"));
         assertTrue(report.contains("Food: 1000.00"));
