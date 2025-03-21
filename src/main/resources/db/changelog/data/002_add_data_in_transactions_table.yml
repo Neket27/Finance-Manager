@@ -1,0 +1,140 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001_insert_data_into_transactions
+      author: Nikita Kulga
+      changes:
+        - insert:
+            tableName: transactions
+            schemaName: business
+            columns:
+              - column:
+                  name: id
+                  value: 1
+              - column:
+                  name: amount
+                  value: 200.00
+              - column:
+                  name: category
+                  value: 'Groceries'
+              - column:
+                  name: date
+                  valueDate: '2025-03-01 10:00:00'
+              - column:
+                  name: description
+                  value: 'Weekly grocery shopping'
+              - column:
+                  name: type_transaction
+                  value: 'Expense'
+              - column:
+                  name: finance_id
+                  value: 1
+
+        - insert:
+            tableName: transactions
+            schemaName: business
+            columns:
+              - column:
+                  name: id
+                  value: 2
+              - column:
+                  name: amount
+                  value: 100.00
+              - column:
+                  name: category
+                  value: 'Transport'
+              - column:
+                  name: date
+                  valueDate: '2025-03-02 08:30:00'
+              - column:
+                  name: description
+                  value: 'Monthly transport card'
+              - column:
+                  name: type_transaction
+                  value: 'Expense'
+              - column:
+                  name: finance_id
+                  value: 1
+
+        - insert:
+            tableName: transactions
+            schemaName: business
+            columns:
+              - column:
+                  name: id
+                  value: 3
+              - column:
+                  name: amount
+                  value: 50.00
+              - column:
+                  name: category
+                  value: 'Entertainment'
+              - column:
+                  name: date
+                  valueDate: '2025-03-05 19:00:00'
+              - column:
+                  name: description
+                  value: 'Cinema tickets'
+              - column:
+                  name: type_transaction
+                  value: 'Expense'
+              - column:
+                  name: finance_id
+                  value: 1
+
+        - insert:
+            tableName: transactions
+            schemaName: business
+            columns:
+              - column:
+                  name: id
+                  value: 4
+              - column:
+                  name: amount
+                  value: 150.00
+              - column:
+                  name: category
+                  value: 'Dining'
+              - column:
+                  name: date
+                  valueDate: '2025-03-06 12:00:00'
+              - column:
+                  name: description
+                  value: 'Lunch at restaurant'
+              - column:
+                  name: type_transaction
+                  value: 'Expense'
+              - column:
+                  name: finance_id
+                  value: 2
+
+        - insert:
+            tableName: transactions
+            schemaName: business
+            columns:
+              - column:
+                  name: id
+                  value: 5
+              - column:
+                  name: amount
+                  value: 300.00
+              - column:
+                  name: category
+                  value: 'Salary'
+              - column:
+                  name: date
+                  valueDate: '2025-03-10 09:00:00'
+              - column:
+                  name: description
+                  value: 'Monthly salary payment'
+              - column:
+                  name: type_transaction
+                  value: 'PROFIT'
+              - column:
+                  name: finance_id
+                  value: 2
+
+      rollback:
+        - delete:
+            tableName: transactions
+            schemaName: business
+            where: "id IN (1, 2, 3, 4, 5)"

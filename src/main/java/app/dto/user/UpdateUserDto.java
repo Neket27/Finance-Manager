@@ -10,13 +10,6 @@ public record UpdateUserDto(
         Long financeId
 ) {
 
-    public UpdateUserDto(String name, String email, String password, Role role, Long financeId) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.financeId = financeId;
-    }
 
     public static class Builder {
         private String name;

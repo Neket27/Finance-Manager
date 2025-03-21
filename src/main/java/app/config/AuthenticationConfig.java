@@ -1,7 +1,7 @@
 package app.config;
 
 import app.dto.user.UserDto;
-import app.exeption.UserIsAlreadyLoggedInException;
+import app.exception.UserIsAlreadyLoggedInException;
 
 import java.util.Map;
 
@@ -22,5 +22,9 @@ public class AuthenticationConfig {
 
     public Map<String, UserDto> getCredentials() {
         return credentials;
+    }
+
+    public boolean hasCredential(String mail) {
+        return credentials.containsKey(mail);
     }
 }

@@ -1,0 +1,8 @@
+postgres-container:
+  db-name: testdb
+  username: testdb
+  password: testdb
+
+liquibase:
+  change-log-file: db/test-changelog/changelog-master.yml
+  schema-name: metadata

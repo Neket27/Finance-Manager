@@ -2,31 +2,34 @@ package app.dto.transaction;
 
 import app.entity.TypeTransaction;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public record TransactionDto(
         Long id,
-        Double amount,
+        BigDecimal amount,
         String category,
         Instant date,
         String description,
-        TypeTransaction typeTransaction
+        TypeTransaction typeTransaction,
+        Long financeId
 ) {
     public static class Builder {
         private Long id;
-        private double amount;
+        private BigDecimal amount = BigDecimal.ZERO;
         private String category;
         private Instant date;
         private String description;
         private TypeTransaction typeTransaction;
+        Long financeId;
 
         public Builder id(Long id) {
             this.id = id;
             return this;
         }
 
-        public Builder amount(double amount) {
-            this.amount = amount;
+        public Builder amount(BigDecimal amount) {
+            this.amount = amount != null ? amount : BigDecimal.ZERO;
             return this;
         }
 
@@ -50,8 +53,13 @@ public record TransactionDto(
             return this;
         }
 
+        public Builder financeId(Long financeId) {
+            this.financeId = financeId;
+            return this;
+        }
+
         public TransactionDto build() {
-            return new TransactionDto(id, amount, category, date, description, typeTransaction);
+            return new TransactionDto(id, amount, category, date, description, typeTransaction, financeId);
         }
     }
 }

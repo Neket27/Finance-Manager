@@ -1,22 +1,24 @@
 package app.service.impl;
 
+import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
+import app.mapper.FinanceMapper;
+import app.repository.FinanceRepository;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Finance;
 import app.entity.Role;
 import app.entity.User;
-import app.exeption.NotFoundException;
-import app.exeption.UserExistException;
-import app.mapper.FinanceMapper;
+import app.exception.NotFoundException;
+import app.exception.UserExistException;
 import app.mapper.UserMapper;
-import app.repository.FinanceRepository;
 import app.repository.UserRepository;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,15 +64,15 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.toEntity(createUserDto);
 
         if (userRepository.getAll().isEmpty())
-            user.setRole(Role.Admin);
+            user.setRole(Role.ADMIN);
         else
-            user.setRole(Role.User);
+            user.setRole(Role.USER);
 
         CreateFinanceDto dto = new CreateFinanceDto.Builder()
-                .currentSavings(0.0)
-                .monthlyBudget(0.0)
-                .savingsGoal(0.0)
-                .totalExpenses(0.0)
+                .currentSavings(BigDecimal.valueOf(0.0))
+                .monthlyBudget(BigDecimal.valueOf(0.0))
+                .savingsGoal(BigDecimal.valueOf(0.0))
+                .totalExpenses(BigDecimal.valueOf(0.0))
                 .transactionsId(new ArrayList<>())
                 .build();
 
@@ -129,14 +131,26 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Ищет пользователя по email.
+     * Ищет пользователя по id
      *
-     * @param email email пользователя
+     * @param id  пользователя
+     * @return объект пользователя
+     * @throws NotFoundException если пользователь не найден
+     */
+    private User find(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
+    }
+
+    /**
+     * Ищет пользователя по email
+     *
+     * @param email  пользователя
      * @return объект пользователя
      * @throws NotFoundException если пользователь не найден
      */
     private User find(String email) {
-        return userRepository.findById(email)
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(String.format("User with email %s not found", email)));
     }
 
@@ -183,6 +197,7 @@ public class UserServiceImpl implements UserService {
             User user = this.find(email);
             user.setRole(role);
             userRepository.save(user);
+            UserContext.setCurrentUser(userMapper.toDto(user));
             return true;
         } catch (Exception e) {
             log.error(e.getMessage());

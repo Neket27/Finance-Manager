@@ -5,8 +5,9 @@ import app.config.AuthenticationConfig;
 import app.context.UserContext;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
-import app.exeption.NotFoundException;
-import app.exeption.UserIsAlreadyLoggedInException;
+import app.exception.NotFoundException;
+import app.exception.UserExistException;
+import app.exception.UserIsAlreadyLoggedInException;
 import app.service.AuthService;
 import app.service.UserService;
 import org.slf4j.Logger;
@@ -47,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
             userService.createUser(userDto);
             log.debug("Registered user: " + userDto);
             return true;
-        } catch (UserIsAlreadyLoggedInException e) {
+        } catch (UserExistException | UserIsAlreadyLoggedInException e) {
             log.debug("User with email {} is already logged in", userDto.email());
             return false;
         }
@@ -75,15 +76,14 @@ public class AuthServiceImpl implements AuthService {
             return true;
         }
 
-        try {
+        if (password.equals(user.password())) {
             authenticationConfig.addCredential(user);
             UserContext.setCurrentUser(user);
             log.debug("Authenticated user: " + email);
             return true;
-        } catch (Exception e) {
-            log.debug("Invalid password or email", email);
-            return false;
         }
+        log.debug("Invalid password or email", email);
+        return false;
     }
 
     /**
@@ -93,7 +93,11 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public boolean logout() {
-        boolean userCredentialsDeleted = authenticator.clearCredentials(UserContext.getCurrentUser().email());
+        UserDto user = UserContext.getCurrentUser();
+        if (user == null)
+            return false;
+
+        boolean userCredentialsDeleted = authenticator.clearCredentials(user.email());
         UserContext.clear();
         return userCredentialsDeleted;
     }

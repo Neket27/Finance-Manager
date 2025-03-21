@@ -1,21 +1,20 @@
 package app.service.impl;
 
 import app.dto.finance.FinanceDto;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
+import app.repository.TransactionRepository;
+import app.dto.transaction.CreateTransactionDto;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
-import app.exeption.NotFoundException;
+import app.exception.NotFoundException;
 import app.mapper.TransactionMapper;
-import app.repository.TransactionRepository;
 import app.service.TransactionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Реализация сервиса управления транзакциями.
@@ -44,9 +43,10 @@ public class TransactionServiceImpl implements TransactionService {
      * @return созданная транзакция
      */
     @Override
-    public TransactionDto create(CreateTransactionDto dto) {
+    public TransactionDto create(CreateTransactionDto dto, Long financeId) {
         try {
             Transaction transaction = transactionMapper.toEntity(dto);
+            transaction.setFinanceId(financeId);
             transaction = transactionRepository.save(transaction);
             log.debug("addTransaction: {}", transaction.toString());
             return transactionMapper.toDto(transaction);
@@ -84,12 +84,12 @@ public class TransactionServiceImpl implements TransactionService {
      * @return обновленная транзакция
      */
     @Override
-    public Transaction edit(UpdateTransactionDto dto) {
+    public TransactionDto edit(UpdateTransactionDto dto) {
         Transaction transaction = this.find(dto.id());
         transactionMapper.updateEntity(transaction, dto);
         transactionRepository.save(transaction);
         log.debug("Транзакция обновлена: {}", transaction);
-        return transaction;
+        return transactionMapper.toDto(transaction);
     }
 
     /**
@@ -124,7 +124,7 @@ public class TransactionServiceImpl implements TransactionService {
     /**
      * Фильтрует транзакции по заданным параметрам.
      *
-     * @param transactionsId  список идентификаторов транзакций
+     * @param financeId       id финансов пользователя
      * @param startDate       начальная дата
      * @param endDate         конечная дата
      * @param category        категория транзакции
@@ -132,29 +132,13 @@ public class TransactionServiceImpl implements TransactionService {
      * @return отфильтрованный список транзакций
      */
     @Override
-    public List<TransactionDto> getFilteredTransactions(List<Long> transactionsId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
-        return transactionsId.stream()
-                .map(this::find)
-                .filter(t -> isTransactionValid(t, startDate, endDate, category, typeTransaction))
-                .map(transactionMapper::toDto)
-                .collect(Collectors.toList());
+    public List<TransactionDto> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
+        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(financeId, startDate, endDate, category, typeTransaction));
     }
 
-    /**
-     * Проверяет, соответствует ли транзакция заданным критериям фильтрации.
-     *
-     * @param t              транзакция
-     * @param startDate      начальная дата
-     * @param endDate        конечная дата
-     * @param category       категория транзакции
-     * @param typeTransaction тип транзакции (доход/расход)
-     * @return true, если транзакция соответствует критериям, иначе false
-     */
-    private boolean isTransactionValid(Transaction t, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
-        boolean isAfterStartDate = startDate == null || t.getDate().isAfter(startDate);
-        boolean isBeforeEndDate = endDate == null || t.getDate().isBefore(endDate);
-        boolean isCategoryMatch = category.isEmpty() || t.getCategory().equalsIgnoreCase(category);
-        boolean isTypeMatch = typeTransaction == null || t.getTypeTransaction() == typeTransaction;
-        return isAfterStartDate && isBeforeEndDate && isCategoryMatch && isTypeMatch;
+    @Override
+    public List<Transaction> getTransactionsByFinanceId(Long id) {
+        return transactionRepository.findByFinanceId(id);
     }
+
 }

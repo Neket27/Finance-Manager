@@ -4,7 +4,6 @@ import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
-import app.entity.User;
 
 import java.util.List;
 

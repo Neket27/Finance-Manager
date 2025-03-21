@@ -1,14 +1,15 @@
 package app.dto.finance;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 public record UpdateFinanceDto(
         Long id,
-        Double monthlyBudget,
-        Double savingsGoal,
-        Double currentSavings,
-        Double totalExpenses,
+        BigDecimal monthlyBudget,
+        BigDecimal savingsGoal,
+        BigDecimal currentSavings,
+        BigDecimal totalExpenses,
         List<Long> transactionsId
 ) {
     public static Builder builder() {
@@ -17,10 +18,10 @@ public record UpdateFinanceDto(
 
     public static class Builder {
         private Long id;
-        private Double monthlyBudget;
-        private Double savingsGoal;
-        private Double currentSavings;
-        private Double totalExpenses;
+        private BigDecimal monthlyBudget = BigDecimal.ZERO;
+        private BigDecimal savingsGoal = BigDecimal.ZERO;
+        private BigDecimal currentSavings = BigDecimal.ZERO;
+        private BigDecimal totalExpenses = BigDecimal.ZERO;
         private List<Long> transactionsId = new ArrayList<>();
 
         public Builder id(Long id) {
@@ -28,28 +29,28 @@ public record UpdateFinanceDto(
             return this;
         }
 
-        public Builder monthlyBudget(Double monthlyBudget) {
-            this.monthlyBudget = monthlyBudget;
+        public Builder monthlyBudget(BigDecimal monthlyBudget) {
+            this.monthlyBudget = monthlyBudget != null ? monthlyBudget : BigDecimal.ZERO;
             return this;
         }
 
-        public Builder savingsGoal(Double savingsGoal) {
-            this.savingsGoal = savingsGoal;
+        public Builder savingsGoal(BigDecimal savingsGoal) {
+            this.savingsGoal = savingsGoal != null ? savingsGoal : BigDecimal.ZERO;
             return this;
         }
 
-        public Builder currentSavings(Double currentSavings) {
-            this.currentSavings = currentSavings;
+        public Builder currentSavings(BigDecimal currentSavings) {
+            this.currentSavings = currentSavings != null ? currentSavings : BigDecimal.ZERO;
             return this;
         }
 
-        public Builder totalExpenses(Double totalExpenses) {
-            this.totalExpenses = totalExpenses;
+        public Builder totalExpenses(BigDecimal totalExpenses) {
+            this.totalExpenses = totalExpenses != null ? totalExpenses : BigDecimal.ZERO;
             return this;
         }
 
         public Builder transactionsId(List<Long> transactionsId) {
-            this.transactionsId = transactionsId;
+            this.transactionsId = transactionsId != null ? transactionsId : new ArrayList<>();
             return this;
         }
 

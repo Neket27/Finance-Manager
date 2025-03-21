@@ -12,7 +12,9 @@ public class UserOutput {
 
     public void printTransactions(List<TransactionDto> transactions) {
         for (TransactionDto transaction : transactions) {
-            System.out.println("Сумма: " + transaction.amount() +
+            System.out.println(
+                    "ID: "+transaction.id()+
+                    " Сумма: " + transaction.amount() +
                     ", Категория: " + transaction.category() +
                     ", Описание: " + transaction.description() +
                     ", Тип: " + (transaction.typeTransaction().equals(TypeTransaction.PROFIT) ? "Доход" : "Расход"));

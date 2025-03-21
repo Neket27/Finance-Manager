@@ -1,12 +1,14 @@
 package app.service;
 
+import java.math.BigDecimal;
+
 public interface TargetService {
 
-    void setMonthlyBudget(double budget);
+    void setMonthlyBudget(BigDecimal budget);
 
-    void checkBudgetExceeded(String email);
+    Boolean isMonthBudgetExceeded(String email);
 
     String generateFinancialReport();
 
-    void updateGoalSavings(double savingGoal);
+    void updateGoalSavings(BigDecimal savingGoal);
 }

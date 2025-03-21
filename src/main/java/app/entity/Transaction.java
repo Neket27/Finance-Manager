@@ -1,25 +1,31 @@
 package app.entity;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public class Transaction {
 
     private Long id;
-    private double amount;
+    private BigDecimal amount;
     private String category;
     private Instant date;
     private String description;
     private TypeTransaction typeTransaction;
+    private Long financeId;
 
-    public Transaction(Long id, double amount, String category, Instant date, String description, TypeTransaction isIncome) {
+    public Transaction(Long id, BigDecimal amount, String category, Instant date, String description, TypeTransaction typeTransaction, Long financeId) {
         this.id = id;
         this.amount = amount;
         this.category = category;
         this.date = date;
         this.description = description;
-        this.typeTransaction = isIncome;
+        this.typeTransaction = typeTransaction;
+        this.financeId = financeId;
     }
-    public Transaction() {}
+
+    public Transaction() {
+        this.amount = BigDecimal.ZERO;
+    }
 
     public Long getId() {
         return id;
@@ -29,11 +35,19 @@ public class Transaction {
         this.id = id;
     }
 
+    public Long getFinanceId() {
+        return financeId;
+    }
+
+    public void setFinanceId(Long financeId) {
+        this.financeId = financeId;
+    }
+
     public void setDate(Instant date) {
         this.date = date;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
@@ -57,7 +71,7 @@ public class Transaction {
         this.typeTransaction = typeTransaction;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
@@ -69,21 +83,26 @@ public class Transaction {
         this.description = description;
     }
 
-
     public static class Builder {
         private Long id;
-        private double amount;
+        private BigDecimal amount = BigDecimal.ZERO;
         private String category;
         private Instant date;
         private String description;
         private TypeTransaction typeTransaction;
+        private Long financeId;
 
         public Builder id(Long id) {
             this.id = id;
             return this;
         }
 
-        public Builder amount(double amount) {
+        public Builder financeId(Long financeId) {
+            this.financeId = financeId;
+            return this;
+        }
+
+        public Builder amount(BigDecimal amount) {
             this.amount = amount;
             return this;
         }
@@ -109,8 +128,7 @@ public class Transaction {
         }
 
         public Transaction build() {
-            return new Transaction(id, amount, category, date, description, typeTransaction);
+            return new Transaction(id, amount, category, date, description, typeTransaction, financeId);
         }
     }
-
 }

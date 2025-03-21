@@ -1,0 +1,11 @@
+services:
+
+  db-postgres:
+    image: postgres:16.1-alpine
+    container_name: db_finance_manager
+    environment:
+      POSTGRES_DB: db_finance_manager
+      POSTGRES_USER: db_finance_manager
+      POSTGRES_PASSWORD: db_finance_manager
+    ports:
+      - "5434:5432"
