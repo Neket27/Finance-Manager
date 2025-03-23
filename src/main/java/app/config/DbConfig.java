@@ -1,20 +1,26 @@
 package app.config;
 
 import app.exception.db.ErrorConnectionDb;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-@Getter
-@Setter
-@AllArgsConstructor
 public class DbConfig {
 
     private AppProperties.DbProperties prop;
+
+    public DbConfig(AppProperties.DbProperties prop) {
+        this.prop = prop;
+    }
+
+    public AppProperties.DbProperties getProp() {
+        return prop;
+    }
+
+    public void setProp(AppProperties.DbProperties prop) {
+        this.prop = prop;
+    }
 
     public Connection getConnection() {
         try {

@@ -12,7 +12,7 @@ public interface TransactionRepository extends BaseRepository<Transaction, Long>
 
     List<Transaction> findByFinanceId(Long id);
 
-    List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction);
+    List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, String typeTransaction);
 
     void deleteAllByFinanceId(Long financeId);
 }

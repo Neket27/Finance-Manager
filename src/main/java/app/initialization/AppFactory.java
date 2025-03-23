@@ -2,7 +2,6 @@ package app.initialization;
 
 import app.auth.Authenticator;
 import app.config.AppProperties;
-import app.config.AuthenticationConfig;
 import app.config.DbConfig;
 import app.config.LiquibaseConfig;
 import app.mapper.FinanceMapper;
@@ -10,12 +9,10 @@ import app.mapper.TransactionMapper;
 import app.mapper.UserMapper;
 import app.repository.FinanceRepository;
 import app.repository.jdbc.FinanceJdbcRepository;
+import app.repository.jdbc.TokenJdbcRepository;
 import app.repository.jdbc.TransactionJdbcRepository;
 import app.repository.jdbc.UserJdbcRepository;
-import app.service.AuthService;
-import app.service.FinanceService;
-import app.service.TransactionService;
-import app.service.UserService;
+import app.service.*;
 import app.service.impl.*;
 import app.util.ConfigLoader;
 import app.util.in.UserInput;
@@ -23,19 +20,16 @@ import app.util.out.UserOutput;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import java.util.HashMap;
 import java.util.Scanner;
 
 public class AppFactory {
 
     private final DbConfig dbConfig;
-    private final AuthenticationConfig authenticationConfig;
     private final AppProperties appProperties;
 
     public AppFactory() {
         this.appProperties = ConfigLoader.loadConfig("application.yml", AppProperties.class);
         this.dbConfig = new DbConfig(appProperties.getDb());
-        this.authenticationConfig = new AuthenticationConfig(new HashMap<>());
     }
 
     public static App initialization(String... args) {
@@ -46,13 +40,22 @@ public class AppFactory {
         JsonMapper jsonMapper = appFactory.createMapper();
 
         UserService userService = appFactory.createUserService();
-        AuthService authService = appFactory.createAuthService(userService);
+
+        TokenService tokenService = appFactory.createTokenService();
+
+        Authenticator authenticator = appFactory.createAuthenticator(tokenService, userService);
+
+        AuthService authService = appFactory.createAuthService(userService, authenticator, tokenService);
 
         TransactionService transactionService = appFactory.createTransactionService();
 
-        FinanceService financeService = appFactory.createFinanceService(userService, transactionService);
+        FinanceRepository financeRepository = appFactory.createFinanceRepository();
 
-        return new App(jsonMapper, userService, authService, financeService, transactionService);
+        FinanceService financeService = appFactory.createFinanceService(userService, transactionService, financeRepository);
+
+        TargetService targetService = appFactory.createTargetService(userService, financeService);
+
+        return new App(jsonMapper, userService, authService, financeService, transactionService, authenticator,targetService);
     }
 
     public JsonMapper createMapper() {
@@ -69,8 +72,8 @@ public class AppFactory {
         return new UserOutput();
     }
 
-    public Authenticator createAuthenticator() {
-        return new Authenticator(authenticationConfig);
+    public Authenticator createAuthenticator(TokenService tokenService, UserService userService) {
+        return new Authenticator(tokenService, userService);
     }
 
     public FinanceRepository createFinanceRepository() {
@@ -82,19 +85,29 @@ public class AppFactory {
         return new UserServiceImpl(new UserMapper(), new UserJdbcRepository(dbConfig.getConnection()), financeRepository, new FinanceMapper());
     }
 
-    public AuthService createAuthService(UserService userService) {
-        return new AuthServiceImpl(authenticationConfig, createAuthenticator(), userService);
+    public AuthService createAuthService(UserService userService, Authenticator authenticator, TokenService tokenService) {
+        return new AuthServiceImpl(userService, tokenService);
     }
 
     public TransactionService createTransactionService() {
         return new TransactionServiceImpl(new TransactionJdbcRepository(dbConfig.getConnection()), new TransactionMapper());
     }
 
-    public FinanceService createFinanceService(UserService userService, TransactionService transactionService) {
-        FinanceRepository financeRepository = createFinanceRepository();
+    public FinanceService createFinanceService(UserService userService, TransactionService transactionService, FinanceRepository financeRepository) {
         return new FinanceServiceImpl(financeRepository, userService, transactionService, new FinanceMapper(), new TransactionMapper(), new NotificationServiceImpl());
     }
 
+    public TokenJdbcRepository createTokenRepository() {
+        return new TokenJdbcRepository(dbConfig.getConnection());
+    }
+
+    public TokenService createTokenService() {
+        return new TokenServiceImpl(createTokenRepository());
+    }
+
+    private TargetService createTargetService(UserService userService, FinanceService financeService) {
+        return new TargetServiceImpl(userService, financeService);
+    }
 
     public void initializeLiquibase() {
         LiquibaseConfig liquibaseConfig = new LiquibaseConfig(dbConfig, appProperties.getLiquibase());

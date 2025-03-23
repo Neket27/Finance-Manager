@@ -1,14 +1,34 @@
 package app.dto.user;
 
 import app.entity.Role;
+import jakarta.validation.constraints.*;
 
 public record UserDto(
+
+        @NotNull(message = "ID пользователя не может быть null")
+        @Positive(message = "ID пользователя должен быть положительным числом")
         Long id,
+
+        @NotBlank(message = "Имя не должно быть пустым")
+        @Size(min = 2, max = 50, message = "Имя должно содержать от 2 до 50 символов")
         String name,
+
+        @NotBlank(message = "Email не должен быть пустым")
+        @Email(message = "Некорректный email")
         String email,
+
+        @NotBlank(message = "Пароль не должен быть пустым")
+        @Size(min = 6, message = "Пароль должен содержать минимум 6 символов")
         String password,
+
+        @NotNull(message = "Активность пользователя должна быть указана")
         Boolean isActive,
+
+        @NotNull(message = "Роль не может быть null")
         Role role,
+
+        @NotNull(message = "ID финансов должен быть указан")
+        @Positive(message = "ID финансов должен быть положительным числом")
         Long financeId
 ) {
 

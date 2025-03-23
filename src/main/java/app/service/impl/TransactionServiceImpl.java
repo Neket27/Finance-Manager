@@ -1,12 +1,15 @@
 package app.service.impl;
 
+import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
+import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
+import app.dto.user.UserDto;
 import app.entity.Transaction;
-import app.entity.TypeTransaction;
 import app.exception.NotFoundException;
+import app.exception.TransactionException;
 import app.mapper.TransactionMapper;
 import app.repository.TransactionRepository;
 import app.service.TransactionService;
@@ -43,15 +46,19 @@ public class TransactionServiceImpl implements TransactionService {
      * @return созданная транзакция
      */
     @Override
-    public TransactionDto create(CreateTransactionDto dto, Long financeId) {
+    public TransactionDto create(CreateTransactionDto dto) {
         try {
+            UserDto user = UserContext.getCurrentUser();
+
             Transaction transaction = transactionMapper.toEntity(dto);
-            transaction.setFinanceId(financeId);
+            transaction.setDate(Instant.now());
+            transaction.setFinanceId(user.financeId());
             transaction = transactionRepository.save(transaction);
+
             log.debug("addTransaction: {}", transaction.toString());
             return transactionMapper.toDto(transaction);
         } catch (Exception e) {
-            throw new RuntimeException("Error adding transaction", e);
+            throw new TransactionException("Error adding transaction", e);
         }
     }
 
@@ -99,14 +106,13 @@ public class TransactionServiceImpl implements TransactionService {
      * @return true, если удаление прошло успешно, иначе false
      */
     @Override
-    public boolean delete(Long id) {
+    public void delete(Long id) {
         try {
             transactionRepository.deleteById(id);
             log.debug("deleteTransaction with id: {}", id);
-            return true;
         } catch (Exception e) {
             log.error(e.getMessage());
-            return false;
+            throw new TransactionException("Error deleting transaction", e);
         }
     }
 
@@ -123,22 +129,17 @@ public class TransactionServiceImpl implements TransactionService {
 
     /**
      * Фильтрует транзакции по заданным параметрам.
-     *
-     * @param financeId       id финансов пользователя
-     * @param startDate       начальная дата
-     * @param endDate         конечная дата
-     * @param category        категория транзакции
-     * @param typeTransaction тип транзакции (доход/расход)
-     * @return отфильтрованный список транзакций
      */
     @Override
-    public List<TransactionDto> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
-        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(financeId, startDate, endDate, category, typeTransaction));
+    public List<TransactionDto> getFilteredTransactions(FilterTransactionDto f) {
+        UserDto user = UserContext.getCurrentUser();
+        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(user.financeId(),
+                f.startDate(), f.endDate(), f.category(), f.typeTransaction()));
     }
 
     @Override
-    public List<Transaction> getTransactionsByFinanceId(Long id) {
-        return transactionRepository.findByFinanceId(id);
+    public List<TransactionDto> getTransactionsByFinanceId(Long id) {
+        return transactionMapper.toDtoList(transactionRepository.findByFinanceId(id));
     }
 
 }

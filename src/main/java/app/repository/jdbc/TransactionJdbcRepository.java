@@ -80,7 +80,7 @@ public class TransactionJdbcRepository implements TransactionRepository {
     }
 
     @Override
-    public List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction) {
+    public List<Transaction> getFilteredTransactions(Long financeId, Instant startDate, Instant endDate, String category, String typeTransaction) {
         StringBuilder sqlBuilder = new StringBuilder("""
                 SELECT t.id, t.amount, t.category, t.date, t.description, t.type_transaction, t.finance_id
                 FROM business.transactions t
@@ -101,12 +101,12 @@ public class TransactionJdbcRepository implements TransactionRepository {
             parameters.add(Timestamp.from(endDate));
         }
 
-        if (category != null && !category.isEmpty()) {
+        if (!category.isEmpty()) {
             sqlBuilder.append(" AND t.category = ?");
             parameters.add(category);
         }
 
-        if (typeTransaction != null) {
+        if (!typeTransaction.isEmpty()) {
             sqlBuilder.append(" AND t.type_transaction = ?");
             parameters.add(typeTransaction.toString());
         }

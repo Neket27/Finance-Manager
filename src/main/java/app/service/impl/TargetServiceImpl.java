@@ -44,7 +44,7 @@ public class TargetServiceImpl implements TargetService {
      */
     @Override
     public void setMonthlyBudget(BigDecimal budget) {
-        Finance finance = this.findFinance(UserContext.getCurrentUser().email());
+        Finance finance = findFinance(UserContext.getCurrentUser().email());
         finance.setMonthlyBudget(budget);
         financeService.save(finance);
         log.debug("Месячный бюджет установлен: {}", budget);
@@ -57,7 +57,7 @@ public class TargetServiceImpl implements TargetService {
      */
     @Override
     public Boolean isMonthBudgetExceeded(String email) {
-        Finance finance = this.findFinance(UserContext.getCurrentUser().email());
+        Finance finance = findFinance(UserContext.getCurrentUser().email());
 
         List<TransactionDto> transactions = financeService.getTransactions(email);
         Instant thirtyDaysAgo = Instant.now().minus(Duration.ofDays(30));
@@ -113,7 +113,7 @@ public class TargetServiceImpl implements TargetService {
      */
     @Override
     public void updateGoalSavings(BigDecimal savingGoal) {
-        Finance finance = this.findFinance(UserContext.getCurrentUser().email());
+        Finance finance = findFinance(UserContext.getCurrentUser().email());
         finance.setSavingsGoal(savingGoal);
         financeService.save(finance);
         log.debug("Цель накопления установлена: {}", savingGoal);

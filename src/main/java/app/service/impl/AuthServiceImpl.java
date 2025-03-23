@@ -1,42 +1,43 @@
 package app.service.impl;
 
-import app.auth.Authenticator;
-import app.config.AuthenticationConfig;
 import app.context.UserContext;
-import app.dto.auth.Signin;
+import app.dto.auth.ResponseLogin;
+import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
+import app.entity.Token;
+import app.exception.ErrorLogoutException;
 import app.exception.NotFoundException;
 import app.exception.UserAlreadyExistsException;
 import app.exception.UserIsAlreadyLoggedInException;
 import app.exception.auth.ErrorLoginExeption;
 import app.exception.auth.ErrorRegisterExeption;
+import app.aspect.Loggable.loggable;
 import app.service.AuthService;
+import app.service.TokenService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
+
 /**
  * Реализация сервиса аутентификации.
  */
+
+@loggable
 public class AuthServiceImpl implements AuthService {
 
     private final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
-    private final AuthenticationConfig authenticationConfig;
-    private final Authenticator authenticator;
     private final UserService userService;
+    private TokenService tokenService;
 
     /**
      * Конструктор сервиса аутентификации.
-     *
-     * @param authenticationConfig конфигурация аутентификации
-     * @param authenticator        обработчик аутентификации
-     * @param userService          сервис пользователей
      */
-    public AuthServiceImpl(AuthenticationConfig authenticationConfig, Authenticator authenticator, UserService userService) {
-        this.authenticationConfig = authenticationConfig;
-        this.authenticator = authenticator;
+    public AuthServiceImpl(UserService userService, TokenService tokenService) {
         this.userService = userService;
+        this.tokenService = tokenService;
     }
 
     /**
@@ -61,25 +62,31 @@ public class AuthServiceImpl implements AuthService {
      * Выполняет вход пользователя.
      */
     @Override
-    public UserDto login(Signin signin) {
+    public ResponseLogin login(SignIn signin) {
         UserDto user;
+
         try {
             user = userService.getUserByEmail(signin.email());
+
         } catch (NotFoundException e) {
             log.debug("User with email {} not found", signin.email());
             throw new ErrorLoginExeption(e.getMessage());
         }
 
-        if (authenticator.checkCredentials(signin.email(), signin.password())) {
-            UserContext.setCurrentUser(user);
-            return user;
-        }
 
         if (signin.password().equals(user.password())) {
-            authenticationConfig.addCredential(user);
+            Integer key = new Random().nextInt(100);
+
+            Token token = new Token.Builder()
+                    .userId(user.id())
+                    .value(key.toString())
+                    .build();
+            tokenService.saveToken(token);
+
+//            authenticationConfig.addCredential(user);
             UserContext.setCurrentUser(user);
             log.debug("Authenticated user: " + signin.email());
-            return user;
+            return new ResponseLogin(user.id().toString());
         }
 
         log.debug("Invalid password or email", signin.email());
@@ -92,13 +99,13 @@ public class AuthServiceImpl implements AuthService {
      * @return true, если выход выполнен успешно, иначе false
      */
     @Override
-    public boolean logout() {
+    public void logout() {
         UserDto user = UserContext.getCurrentUser();
         if (user == null)
-            return false;
+            throw new ErrorLogoutException("You are not logged in");
 
-        boolean userCredentialsDeleted = authenticator.clearCredentials(user.email());
+        tokenService.deleteTokenByUserId(user.id());
+
         UserContext.clear();
-        return userCredentialsDeleted;
     }
 }

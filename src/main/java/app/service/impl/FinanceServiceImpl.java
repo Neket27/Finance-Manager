@@ -3,6 +3,7 @@ package app.service.impl;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
+import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.dto.user.UserDto;
@@ -62,7 +63,7 @@ public class FinanceServiceImpl implements FinanceService {
             throw new LimitAmountBalance("Amount translation limit exceeded");
         }
 
-        TransactionDto transaction = transactionService.create(dto, financeUser.getId());
+        TransactionDto transaction = transactionService.create(dto);
         financeUser.getTransactionsId().add(transaction.id());
 
         updateCurrentSavings(financeUser, transaction.amount(), transaction.typeTransaction());
@@ -118,8 +119,8 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public List<TransactionDto> filterTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email) {
-        return transactionService.getFilteredTransactions(financeId, startDate, endDate, category, typeTransaction);
+    public List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto) {
+        return transactionService.getFilteredTransactions(filterTransactionDto);
     }
 
     @Override
@@ -194,8 +195,7 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     public List<TransactionDto> getTransactions(String userId) {
         UserDto user = userService.getUserByEmail(userId);
-        List<Transaction> transactions = transactionService.getTransactionsByFinanceId(user.financeId());
-        return transactionMapper.toDtoList(transactions);
+        return transactionService.getTransactionsByFinanceId(user.financeId());
     }
 
     @Override
@@ -211,8 +211,8 @@ public class FinanceServiceImpl implements FinanceService {
     private FinanceDto getFinance(String email) {
         UserDto user = userService.getUserByEmail(email);
         Finance finance = find(user.financeId());
-        List<Transaction> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
-        finance.setTransactionsId(transactions.stream().map(Transaction::getId).collect(Collectors.toList()));
+        List<TransactionDto> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
+        finance.setTransactionsId(transactions.stream().map(TransactionDto::id).collect(Collectors.toList()));
         return financeMapper.toDto(finance);
     }
 }

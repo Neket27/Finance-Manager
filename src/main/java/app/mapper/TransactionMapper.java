@@ -49,7 +49,6 @@ public class TransactionMapper implements BaseMapper<Transaction, TransactionDto
         return new Transaction.Builder()
                 .amount(dto.amount())
                 .category(dto.category())
-                .date(dto.date())
                 .description(dto.description())
                 .typeTransaction(dto.typeTransaction())
                 .build();

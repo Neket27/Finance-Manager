@@ -1,6 +1,7 @@
 package app.service;
 
-import app.dto.auth.Signin;
+import app.dto.auth.ResponseLogin;
+import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
 
@@ -8,7 +9,7 @@ public interface AuthService {
 
     UserDto register(CreateUserDto userDto);
 
-    UserDto login(Signin signin);
+    ResponseLogin login(SignIn signIn);
 
-    boolean logout();
+    void logout();
 }

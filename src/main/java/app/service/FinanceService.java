@@ -2,6 +2,7 @@ package app.service;
 
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
+import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Finance;
@@ -21,7 +22,7 @@ public interface FinanceService {
 
     Double getProgressTowardsGoal(String email);
 
-    List<TransactionDto> filterTransactions(Long financeId, Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email);
+    List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto);
 
     Map<String, BigDecimal> getExpensesByCategory(String email);
 

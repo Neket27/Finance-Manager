@@ -204,4 +204,9 @@ public class UserServiceImpl implements UserService {
             return false;
         }
     }
+
+    @Override
+    public UserDto getUserById(Long id) {
+        return userMapper.toDto(find(id));
+    }
 }

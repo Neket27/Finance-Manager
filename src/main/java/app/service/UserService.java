@@ -22,4 +22,6 @@ public interface UserService {
     boolean blockUser (String email);
 
     boolean changeUserRole(String email, Role role);
+
+    UserDto getUserById(Long id);
 }
