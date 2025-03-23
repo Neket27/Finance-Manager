@@ -18,11 +18,10 @@ import app.service.TransactionService;
 import app.service.UserService;
 import app.service.impl.*;
 import app.util.ConfigLoader;
-import app.util.in.UserAuth;
 import app.util.in.UserInput;
-import app.util.out.Menu;
 import app.util.out.UserOutput;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.util.HashMap;
 import java.util.Scanner;
@@ -53,15 +52,13 @@ public class AppFactory {
 
         FinanceService financeService = appFactory.createFinanceService(userService, transactionService);
 
-        UserAuth userAuth = new UserAuth(userService, authService, appFactory.createUserOutput(), appFactory.createUserInput());
-
-        Menu menu = appFactory.createMenu(userAuth, userService, financeService);
-
-        return new App(jsonMapper, userService, authService, financeService, transactionService, menu);
+        return new App(jsonMapper, userService, authService, financeService, transactionService);
     }
 
     public JsonMapper createMapper() {
-        return new JsonMapper();
+        return JsonMapper.builder()
+                .addModule(new JavaTimeModule())
+                .build();
     }
 
     public UserInput createUserInput() {
@@ -98,11 +95,6 @@ public class AppFactory {
         return new FinanceServiceImpl(financeRepository, userService, transactionService, new FinanceMapper(), new TransactionMapper(), new NotificationServiceImpl());
     }
 
-    public Menu createMenu(UserAuth userAuth, UserService userService, FinanceService financeService) {
-        UserInput userInput = createUserInput();
-        UserOutput userOutput = createUserOutput();
-        return new Menu(userOutput, userInput, financeService, userAuth, userService, new TargetServiceImpl(userService, financeService));
-    }
 
     public void initializeLiquibase() {
         LiquibaseConfig liquibaseConfig = new LiquibaseConfig(dbConfig, appProperties.getLiquibase());

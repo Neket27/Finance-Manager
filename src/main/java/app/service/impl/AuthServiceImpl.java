@@ -3,11 +3,14 @@ package app.service.impl;
 import app.auth.Authenticator;
 import app.config.AuthenticationConfig;
 import app.context.UserContext;
+import app.dto.auth.Signin;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
 import app.exception.NotFoundException;
 import app.exception.UserAlreadyExistsException;
 import app.exception.UserIsAlreadyLoggedInException;
+import app.exception.auth.ErrorLoginExeption;
+import app.exception.auth.ErrorRegisterExeption;
 import app.service.AuthService;
 import app.service.UserService;
 import org.slf4j.Logger;
@@ -40,50 +43,47 @@ public class AuthServiceImpl implements AuthService {
      * Регистрирует нового пользователя.
      *
      * @param userDto данные пользователя для регистрации
-     * @return true, если регистрация успешна, иначе false
+     * @return userDto, если регистрация успешна
      */
     @Override
-    public boolean register(CreateUserDto userDto) {
+    public UserDto register(CreateUserDto userDto) {
         try {
-            userService.createUser(userDto);
+            UserDto user = userService.createUser(userDto);
             log.debug("Registered user: " + userDto);
-            return true;
+            return user;
         } catch (UserAlreadyExistsException | UserIsAlreadyLoggedInException e) {
             log.debug("User with email {} is already logged in", userDto.email());
-            return false;
+            throw new ErrorRegisterExeption("User with email " + userDto.email() + " is already logged in");
         }
     }
 
     /**
      * Выполняет вход пользователя.
-     *
-     * @param email    электронная почта пользователя
-     * @param password пароль пользователя
-     * @return true, если вход выполнен успешно, иначе false
      */
     @Override
-    public boolean login(String email, String password) {
+    public UserDto login(Signin signin) {
         UserDto user;
         try {
-            user = userService.getUserByEmail(email);
+            user = userService.getUserByEmail(signin.email());
         } catch (NotFoundException e) {
-            log.debug("User with email {} not found", email);
-            return false;
+            log.debug("User with email {} not found", signin.email());
+            throw new ErrorLoginExeption(e.getMessage());
         }
 
-        if (authenticator.checkCredentials(email, password)) {
+        if (authenticator.checkCredentials(signin.email(), signin.password())) {
             UserContext.setCurrentUser(user);
-            return true;
+            return user;
         }
 
-        if (password.equals(user.password())) {
+        if (signin.password().equals(user.password())) {
             authenticationConfig.addCredential(user);
             UserContext.setCurrentUser(user);
-            log.debug("Authenticated user: " + email);
-            return true;
+            log.debug("Authenticated user: " + signin.email());
+            return user;
         }
-        log.debug("Invalid password or email", email);
-        return false;
+
+        log.debug("Invalid password or email", signin.email());
+        throw new ErrorLoginExeption("Invalid password or email");
     }
 
     /**

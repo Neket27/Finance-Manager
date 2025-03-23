@@ -4,7 +4,6 @@ import app.service.AuthService;
 import app.service.FinanceService;
 import app.service.TransactionService;
 import app.service.UserService;
-import app.util.out.Menu;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +19,5 @@ public class App {
     private final AuthService authService;
     private final FinanceService financeService;
     private final TransactionService transactionService;
-    private final Menu menu;
 
 }

@@ -11,6 +11,5 @@ public abstract class BaseServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) {
         this.app = (App) config.getServletContext().getAttribute(App.class.getName());
-//        this.app = (app) config.getServletContext().getAttribute("app");
     }
 }
