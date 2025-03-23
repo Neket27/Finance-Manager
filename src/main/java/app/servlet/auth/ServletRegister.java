@@ -9,6 +9,7 @@ import jakarta.servlet.ServletConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import app.aspect.validator.ValidateDto;
 
 import java.io.IOException;
 
@@ -28,12 +29,13 @@ public class ServletRegister extends BaseServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         CreateUserDto createUserDto = mapper.readValue(req.getInputStream(), CreateUserDto.class);
-        UserDto userDto = authService.register(createUserDto);
-
-
-        resp.setContentType("application/json");
-        resp.setStatus(HttpServletResponse.SC_CREATED);
-        resp.getWriter().write(mapper.writeValueAsString(userDto));
+        handleRegister(createUserDto, resp);
     }
 
+    private void handleRegister(@ValidateDto CreateUserDto createUserDto, HttpServletResponse resp) throws IOException {
+        UserDto userDto = authService.register(createUserDto);
+        resp.setStatus(HttpServletResponse.SC_CREATED);
+        resp.setContentType("application/json");
+        resp.getWriter().write(mapper.writeValueAsString(userDto));
+    }
 }

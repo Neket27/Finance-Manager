@@ -3,6 +3,7 @@ package app.servlet.transaction;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.aspect.exception.CustomExceptionHandler;
+import app.aspect.validator.ValidateDto;
 import app.service.TransactionService;
 import app.servlet.BaseServlet;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -31,11 +32,14 @@ public class TransactionFilterServlet extends BaseServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         FilterTransactionDto filterTransactionDto = jsonMapper.readValue(req.getInputStream(), FilterTransactionDto.class);
+        handleTransactionFilter(filterTransactionDto, resp);
+    }
+
+    private void handleTransactionFilter(@ValidateDto FilterTransactionDto filterTransactionDto, HttpServletResponse resp) throws IOException {
         List<TransactionDto> transactionDtos = transactionService.getFilteredTransactions(filterTransactionDto);
 
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");
         resp.getOutputStream().write(jsonMapper.writeValueAsBytes(transactionDtos));
     }
-
 }

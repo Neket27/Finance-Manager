@@ -13,6 +13,7 @@ import java.io.IOException;
 @WebServlet("/api/v1/target/progress")
 @CustomExceptionHandler
 public class ProgressServlet extends BaseServlet {
+
     private FinanceService financeService;
 
     @Override

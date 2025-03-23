@@ -7,6 +7,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
 
 @WebServlet("/api/v1/auth/logout")
 public class ServletLogout extends BaseServlet {
@@ -20,9 +21,10 @@ public class ServletLogout extends BaseServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         authService.logout();
-
         resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setContentType("application/json");
+        resp.getWriter().write("{\"message\": \"Вы успешно вышли из системы\"}");
     }
 }

@@ -1,5 +1,6 @@
 package app.servlet.auth;
 
+import app.aspect.validator.ValidateDto;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
 import app.aspect.exception.CustomExceptionHandler;
@@ -29,13 +30,14 @@ public class ServletLogin extends BaseServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        SignIn signin = mapper.readValue(req.getInputStream(), SignIn.class);
-        ResponseLogin responseLogin = authService.login(signin);
+        SignIn signIn = mapper.readValue(req.getInputStream(), SignIn.class);
+        handleLogin(signIn, resp);
+    }
 
+    private void handleLogin(@ValidateDto SignIn signIn, HttpServletResponse resp) throws IOException {
+        ResponseLogin responseLogin = authService.login(signIn);
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");
         resp.getWriter().write(mapper.writeValueAsString(responseLogin));
     }
-
 }
-

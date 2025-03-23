@@ -3,6 +3,7 @@ package app.servlet.transaction;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.aspect.exception.CustomExceptionHandler;
+import app.aspect.validator.ValidateDto;
 import app.service.TransactionService;
 import app.servlet.BaseServlet;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -29,7 +30,13 @@ public class TransactionEditServlet extends BaseServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        TransactionDto dto = transactionService.edit(jsonMapper.readValue(req.getInputStream(), UpdateTransactionDto.class));
+        UpdateTransactionDto updateTransactionDto = jsonMapper.readValue(req.getInputStream(), UpdateTransactionDto.class);
+
+        handleTransactionEdit(updateTransactionDto, resp);
+    }
+
+    private void handleTransactionEdit(@ValidateDto UpdateTransactionDto updateTransactionDto, HttpServletResponse resp) throws IOException {
+        TransactionDto dto = transactionService.edit(updateTransactionDto);
 
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setContentType("application/json");

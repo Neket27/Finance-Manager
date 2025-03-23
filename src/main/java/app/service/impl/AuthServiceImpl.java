@@ -12,7 +12,7 @@ import app.exception.UserAlreadyExistsException;
 import app.exception.UserIsAlreadyLoggedInException;
 import app.exception.auth.ErrorLoginExeption;
 import app.exception.auth.ErrorRegisterExeption;
-import app.aspect.Loggable.loggable;
+import app.aspect.loggable.loggable;
 import app.service.AuthService;
 import app.service.TokenService;
 import app.service.UserService;

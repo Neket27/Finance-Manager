@@ -1,4 +1,4 @@
-package app.aspect.Loggable;
+package app.aspect.loggable;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
