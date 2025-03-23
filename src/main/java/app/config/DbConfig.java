@@ -18,9 +18,12 @@ public class DbConfig {
 
     public Connection getConnection() {
         try {
+            Class.forName("org.postgresql.Driver");
             return DriverManager.getConnection(prop.getUrl(), prop.getUsername(), prop.getPassword());
         } catch (SQLException e) {
             throw new ErrorConnectionDb(e.getMessage());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }

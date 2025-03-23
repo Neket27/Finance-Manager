@@ -22,6 +22,7 @@ import app.util.in.UserAuth;
 import app.util.in.UserInput;
 import app.util.out.Menu;
 import app.util.out.UserOutput;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import java.util.HashMap;
 import java.util.Scanner;
@@ -43,6 +44,8 @@ public class AppFactory {
 
         appFactory.initializeLiquibase();
 
+        JsonMapper jsonMapper = appFactory.createMapper();
+
         UserService userService = appFactory.createUserService();
         AuthService authService = appFactory.createAuthService(userService);
 
@@ -54,11 +57,12 @@ public class AppFactory {
 
         Menu menu = appFactory.createMenu(userAuth, userService, financeService);
 
-        menu.showMenu();
-
-        return new App(userService, authService, financeService, transactionService, menu);
+        return new App(jsonMapper, userService, authService, financeService, transactionService, menu);
     }
 
+    public JsonMapper createMapper() {
+        return new JsonMapper();
+    }
 
     public UserInput createUserInput() {
         return new UserInput(new Scanner(System.in));

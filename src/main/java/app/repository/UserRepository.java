@@ -4,7 +4,7 @@ import app.entity.User;
 
 import java.util.Optional;
 
-public interface UserRepository extends GenericRepository<User, Long> {
+public interface UserRepository extends BaseRepository<User, Long> {
 
     boolean existsByEmail(String email);
 

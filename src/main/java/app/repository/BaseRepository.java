@@ -3,7 +3,7 @@ package app.repository;
 import java.util.Collection;
 import java.util.Optional;
 
-public interface GenericRepository<T, ID> {
+public interface BaseRepository<T, ID> {
 
     Optional<T> findById(ID id);
 

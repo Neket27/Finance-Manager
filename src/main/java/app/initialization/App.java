@@ -5,6 +5,7 @@ import app.service.FinanceService;
 import app.service.TransactionService;
 import app.service.UserService;
 import app.util.out.Menu;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class App {
 
+    private final JsonMapper jsonMapper;
     private final UserService userService;
     private final AuthService authService;
     private final FinanceService financeService;

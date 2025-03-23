@@ -6,7 +6,7 @@ import app.context.UserContext;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
 import app.exception.NotFoundException;
-import app.exception.UserExistException;
+import app.exception.UserAlreadyExistsException;
 import app.exception.UserIsAlreadyLoggedInException;
 import app.service.AuthService;
 import app.service.UserService;
@@ -48,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
             userService.createUser(userDto);
             log.debug("Registered user: " + userDto);
             return true;
-        } catch (UserExistException | UserIsAlreadyLoggedInException e) {
+        } catch (UserAlreadyExistsException | UserIsAlreadyLoggedInException e) {
             log.debug("User with email {} is already logged in", userDto.email());
             return false;
         }

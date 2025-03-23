@@ -6,7 +6,7 @@ import app.entity.TypeTransaction;
 import java.time.Instant;
 import java.util.List;
 
-public interface TransactionRepository extends GenericRepository<Transaction, Long> {
+public interface TransactionRepository extends BaseRepository<Transaction, Long> {
 
     void deleteById(Long id);
 

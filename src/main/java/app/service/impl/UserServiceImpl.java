@@ -2,8 +2,6 @@ package app.service.impl;
 
 import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
-import app.mapper.FinanceMapper;
-import app.repository.FinanceRepository;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
@@ -11,8 +9,10 @@ import app.entity.Finance;
 import app.entity.Role;
 import app.entity.User;
 import app.exception.NotFoundException;
-import app.exception.UserExistException;
+import app.exception.UserAlreadyExistsException;
+import app.mapper.FinanceMapper;
 import app.mapper.UserMapper;
+import app.repository.FinanceRepository;
 import app.repository.UserRepository;
 import app.service.UserService;
 import org.slf4j.Logger;
@@ -54,12 +54,12 @@ public class UserServiceImpl implements UserService {
      * @param createUserDto объект с данными нового пользователя
      * @param  role для первго пользователя устанавливается  Role.Admin
      * @return DTO созданного пользователя
-     * @throws UserExistException если пользователь с таким email уже существует
+     * @throws UserAlreadyExistsException если пользователь с таким email уже существует
      */
     @Override
     public UserDto createUser(CreateUserDto createUserDto) {
         if (userRepository.existsByEmail(createUserDto.email()))
-            throw new UserExistException(String.format("User with email %s already exists", createUserDto.email()));
+            throw new UserAlreadyExistsException(String.format("User with email %s already exists", createUserDto.email()));
 
         User user = userMapper.toEntity(createUserDto);
 
