@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.loggable.Loggable;
 import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.user.CreateUserDto;
@@ -25,6 +26,8 @@ import java.util.List;
 /**
  * Реализация сервиса управления пользователями.
  */
+
+@Loggable
 public class UserServiceImpl implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -52,7 +55,7 @@ public class UserServiceImpl implements UserService {
      * Создает нового пользователя.
      *
      * @param createUserDto объект с данными нового пользователя
-     * @param  role для первго пользователя устанавливается  Role.Admin
+     * @param role          для первго пользователя устанавливается  Role.Admin
      * @return DTO созданного пользователя
      * @throws UserAlreadyExistsException если пользователь с таким email уже существует
      */
@@ -133,7 +136,7 @@ public class UserServiceImpl implements UserService {
     /**
      * Ищет пользователя по id
      *
-     * @param id  пользователя
+     * @param id пользователя
      * @return объект пользователя
      * @throws NotFoundException если пользователь не найден
      */
@@ -145,7 +148,7 @@ public class UserServiceImpl implements UserService {
     /**
      * Ищет пользователя по email
      *
-     * @param email  пользователя
+     * @param email пользователя
      * @return объект пользователя
      * @throws NotFoundException если пользователь не найден
      */

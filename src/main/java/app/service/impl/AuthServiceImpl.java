@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.auditable.Auditable;
 import app.context.UserContext;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
@@ -12,7 +13,7 @@ import app.exception.UserAlreadyExistsException;
 import app.exception.UserIsAlreadyLoggedInException;
 import app.exception.auth.ErrorLoginExeption;
 import app.exception.auth.ErrorRegisterExeption;
-import app.aspect.loggable.loggable;
+import app.aspect.loggable.Loggable;
 import app.service.AuthService;
 import app.service.TokenService;
 import app.service.UserService;
@@ -25,7 +26,7 @@ import java.util.Random;
  * Реализация сервиса аутентификации.
  */
 
-@loggable
+@Loggable
 public class AuthServiceImpl implements AuthService {
 
     private final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
@@ -47,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
      * @return userDto, если регистрация успешна
      */
     @Override
+    @Auditable
     public UserDto register(CreateUserDto userDto) {
         try {
             UserDto user = userService.createUser(userDto);
@@ -62,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
      * Выполняет вход пользователя.
      */
     @Override
+    @Auditable
     public ResponseLogin login(SignIn signin) {
         UserDto user;
 
@@ -99,6 +102,7 @@ public class AuthServiceImpl implements AuthService {
      * @return true, если выход выполнен успешно, иначе false
      */
     @Override
+    @Auditable
     public void logout() {
         UserDto user = UserContext.getCurrentUser();
         if (user == null)

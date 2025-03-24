@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.loggable.Loggable;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
@@ -22,6 +23,8 @@ import java.util.List;
 /**
  * Реализация сервиса управления транзакциями.
  */
+
+@Loggable
 public class TransactionServiceImpl implements TransactionService {
 
     private final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);

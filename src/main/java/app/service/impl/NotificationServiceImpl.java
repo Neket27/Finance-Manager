@@ -1,7 +1,9 @@
 package app.service.impl;
 
+import app.aspect.loggable.Loggable;
 import app.service.NotificationService;
 
+@Loggable
 public class NotificationServiceImpl implements NotificationService {
 
 

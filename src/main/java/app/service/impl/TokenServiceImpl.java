@@ -1,12 +1,12 @@
 package app.service.impl;
 
+import app.aspect.loggable.Loggable;
 import app.entity.Token;
 import app.exception.TokenException;
 import app.repository.TokenRepository;
 import app.service.TokenService;
 
-import java.util.Optional;
-
+@Loggable
 public class TokenServiceImpl implements TokenService {
 
     private final TokenRepository tokenRepository;
@@ -17,17 +17,17 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public Token getTokenById(Long id) throws TokenException {
-        return tokenRepository.findById(id).orElseThrow(()-> new TokenException("Token not found"));
+        return tokenRepository.findById(id).orElseThrow(() -> new TokenException("Token not found"));
     }
 
     @Override
     public Token getTokenByUserId(Long userId) throws TokenException {
-        return tokenRepository.findByUserId(userId).orElseThrow(()-> new TokenException("Token not found"));
+        return tokenRepository.findByUserId(userId).orElseThrow(() -> new TokenException("Token not found"));
     }
 
     @Override
     public Token getTokenByUserEmail(String email) throws TokenException {
-        return tokenRepository.getTokenByUserEmail(email).orElseThrow(()-> new TokenException("Token not found"));
+        return tokenRepository.getTokenByUserEmail(email).orElseThrow(() -> new TokenException("Token not found"));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.loggable.Loggable;
 import app.context.UserContext;
 import app.dto.transaction.TransactionDto;
 import app.dto.user.UserDto;
@@ -20,6 +21,8 @@ import java.util.List;
 /**
  * Реализация сервиса управления финансовыми целями пользователя.
  */
+
+@Loggable
 public class TargetServiceImpl implements TargetService {
 
     private final Logger log = LoggerFactory.getLogger(TargetServiceImpl.class);
