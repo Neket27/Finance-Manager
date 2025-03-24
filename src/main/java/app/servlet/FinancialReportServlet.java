@@ -1,27 +1,25 @@
 package app.servlet;
 
 import app.aspect.exception.CustomExceptionHandler;
+import app.container.Component;
 import app.service.TargetService;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.Map;
 
-@WebServlet("/api/v1/target/report")
+@Component
 @CustomExceptionHandler
 public class FinancialReportServlet extends BaseServlet {
-    private TargetService targetService;
-    private JsonMapper jsonMapper;
 
-    @Override
-    public void init(ServletConfig config) {
-        super.init(config);
-        this.targetService = app.getTargetService();
-        this.jsonMapper = app.getJsonMapper();
+    private  TargetService targetService;
+    private  JsonMapper jsonMapper;
+
+    public FinancialReportServlet(TargetService targetService, JsonMapper jsonMapper) {
+        this.targetService = targetService;
+        this.jsonMapper = jsonMapper;
     }
 
     @Override

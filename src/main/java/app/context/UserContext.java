@@ -1,7 +1,9 @@
 package app.context;
 
+import app.container.Component;
 import app.dto.user.UserDto;
 
+@Component
 public class UserContext {
     private static final ThreadLocal<UserDto> currentUser = new ThreadLocal<>();
 

@@ -1,5 +1,7 @@
 package app.config;
 
+import app.container.Configuration;
+import app.container.PostConstruct;
 import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
@@ -11,7 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 
+@Configuration
 public class LiquibaseConfig {
+
     private final Logger log = LoggerFactory.getLogger(LiquibaseConfig.class);
     private DbConfig dbConfig;
     private AppProperties.LiquibaseProperties prop;
@@ -41,9 +45,10 @@ public class LiquibaseConfig {
         this.prop = prop;
     }
 
+    @PostConstruct
     public void connect() {
         try {
-            try (var stmt = dbConfig.getConnection().createStatement()) {
+            try (var stmt = dbConfig.connection().createStatement()) {
                 stmt.execute("CREATE SCHEMA IF NOT EXISTS public;");
                 stmt.execute("CREATE SCHEMA IF NOT EXISTS metadata;");
                 stmt.execute("CREATE SCHEMA IF NOT EXISTS business;");
@@ -54,7 +59,7 @@ public class LiquibaseConfig {
             }
 
             Database database =
-                    DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(dbConfig.getConnection()));
+                    DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(dbConfig.connection()));
 
             Liquibase _liquibase =
                     new Liquibase(prop.getChangeLogFile(), new ClassLoaderResourceAccessor(), database);

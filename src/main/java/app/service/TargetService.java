@@ -6,7 +6,7 @@ public interface TargetService {
 
     void setMonthlyBudget(BigDecimal budget);
 
-    Boolean isMonthBudgetExceeded(String email);
+    Boolean isMonthBudgetExceeded(Long financeId);
 
     String generateFinancialReport();
 

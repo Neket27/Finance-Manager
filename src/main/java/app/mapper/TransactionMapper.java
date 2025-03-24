@@ -1,5 +1,6 @@
 package app.mapper;
 
+import app.container.Component;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
@@ -7,6 +8,7 @@ import app.entity.Transaction;
 
 import java.util.List;
 
+@Component
 public class TransactionMapper implements BaseMapper<Transaction, TransactionDto> {
 
     @Override

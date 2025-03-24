@@ -1,7 +1,9 @@
 package app.config;
 
+import app.container.Configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Configuration
 public class AppProperties {
 
     private DbProperties db;

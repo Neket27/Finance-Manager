@@ -1,24 +1,22 @@
 package app.servlet.transaction;
 
 import app.aspect.exception.CustomExceptionHandler;
+import app.container.Component;
 import app.service.TransactionService;
 import app.servlet.BaseServlet;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet("/api/v1/transaction/delete")
+@Component
 @CustomExceptionHandler
 public class TransactionDeleteServlet extends BaseServlet {
 
     private TransactionService transactionService;
 
-    @Override
-    public void init(ServletConfig config) {
-        super.init(config);
-        this.transactionService = app.getTransactionService();
+    public TransactionDeleteServlet(TransactionService transactionService) {
+        this.transactionService = transactionService;
     }
+
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {

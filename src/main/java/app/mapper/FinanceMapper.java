@@ -1,5 +1,6 @@
 package app.mapper;
 
+import app.container.Component;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
 import app.entity.Finance;
@@ -7,6 +8,7 @@ import app.entity.Finance;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
 public class FinanceMapper implements BaseMapper<Finance, FinanceDto> {
 
     @Override

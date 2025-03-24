@@ -18,7 +18,7 @@ public class CustomExceptionAspect {
     private final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
     private final GlobalExceptionHandlers handler = new GlobalExceptionHandlers();
 
-    @Around("within(@app.aspect.exception.CustomExceptionHandler *) && execution(* jakarta.servlet.http.HttpServlet+.service(..))")
+    @Around("@within(app.aspect.exception.CustomExceptionHandler) || @annotation(app.aspect.exception.CustomExceptionHandler)")
     public Object handleServletExceptions(ProceedingJoinPoint pjp) throws Throwable {
         try {
             return pjp.proceed();
@@ -52,12 +52,15 @@ public class CustomExceptionAspect {
                 ExceptionHandler exceptionHandler = method.getAnnotation(ExceptionHandler.class);
                 if (exceptionHandler.value().isAssignableFrom(ex.getClass())) {
                     ResponseStatus status = method.getAnnotation(ResponseStatus.class);
-                    int httpStatus = status != null ? status.value() : 500;
-                    return (Response) method.invoke(handler, ex);
+                    int httpStatus = status != null ? status.value() : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+
+                    Response r = (Response) method.invoke(handler, ex);
+                    return new Response(httpStatus, r.error(),Instant.now());
                 }
             }
         }
-        // Фоллбек если нет кастомного обработчика
-        return new Response(500, "Unhandled exception: " + ex.getMessage(), Instant.now());
+
+        return new Response(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unexpected error", Instant.now());
     }
+
 }

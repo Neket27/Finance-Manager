@@ -1,6 +1,6 @@
 package app.service.impl;
 
-import app.aspect.loggable.Loggable;
+import app.container.Component;
 import app.context.UserContext;
 import app.dto.transaction.TransactionDto;
 import app.dto.user.UserDto;
@@ -22,7 +22,7 @@ import java.util.List;
  * Реализация сервиса управления финансовыми целями пользователя.
  */
 
-@Loggable
+@Component
 public class TargetServiceImpl implements TargetService {
 
     private final Logger log = LoggerFactory.getLogger(TargetServiceImpl.class);
@@ -53,16 +53,12 @@ public class TargetServiceImpl implements TargetService {
         log.debug("Месячный бюджет установлен: {}", budget);
     }
 
-    /**
-     * Проверяет, превышен ли месячный бюджет пользователя.
-     *
-     * @param email электронная почта пользователя
-     */
+
     @Override
-    public Boolean isMonthBudgetExceeded(String email) {
+    public Boolean isMonthBudgetExceeded(Long financeId) {
         Finance finance = findFinance(UserContext.getCurrentUser().email());
 
-        List<TransactionDto> transactions = financeService.getTransactions(email);
+        List<TransactionDto> transactions = financeService.getTransactions(financeId);
         Instant thirtyDaysAgo = Instant.now().minus(Duration.ofDays(30));
         BigDecimal totalExpenses = transactions.stream()
                 .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE && t.date().isAfter(thirtyDaysAgo))
@@ -93,15 +89,15 @@ public class TargetServiceImpl implements TargetService {
         reportBuilder.append("==== Финансовый отчет ====\n");
         reportBuilder.append("Текущие накопления: ").append(finance.getCurrentSavings()).append("\n");
         reportBuilder.append("Цель накопления: ").append(finance.getSavingsGoal()).append("\n");
-        reportBuilder.append("Прогресс к цели: ").append(financeService.getProgressTowardsGoal(user.email())).append("%\n");
+        reportBuilder.append("Прогресс к цели: ").append(financeService.getProgressTowardsGoal(user.id())).append("%\n");
 
         reportBuilder.append("Суммарный доход за период: ")
-                .append(financeService.getTotalProfit(LocalDate.now().minusMonths(1), LocalDate.now(), user.email())).append("\n");
+                .append(financeService.getTotalProfit(LocalDate.now().minusMonths(1), LocalDate.now(), user.id())).append("\n");
         reportBuilder.append("Суммарные расходы за период: ")
-                .append(financeService.getTotalExpenses(LocalDate.now().minusMonths(1), LocalDate.now(), user.email())).append("\n");
+                .append(financeService.getTotalExpenses(LocalDate.now().minusMonths(1), LocalDate.now(), user.id())).append("\n");
 
         reportBuilder.append("Расходы по категориям:\n");
-        financeService.getExpensesByCategory(UserContext.getCurrentUser().email()).forEach((category, total) ->
+        financeService.getExpensesByCategory(UserContext.getCurrentUser().id()).forEach((category, total) ->
                 reportBuilder.append(category).append(": ").append(total).append("\n"));
 
         reportBuilder.append("===========================\n");

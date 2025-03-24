@@ -1,25 +1,21 @@
 package app.service.impl;
 
-import app.context.UserContext;
+import app.container.Component;
+import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
-import app.dto.user.UserDto;
 import app.entity.Finance;
-import app.entity.Transaction;
 import app.entity.TypeTransaction;
 import app.exception.EditException;
 import app.exception.LimitAmountBalance;
 import app.exception.NotFoundException;
 import app.mapper.FinanceMapper;
-import app.mapper.TransactionMapper;
 import app.repository.FinanceRepository;
 import app.service.FinanceService;
-import app.service.NotificationService;
 import app.service.TransactionService;
-import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,86 +27,63 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
+@Component
 public class FinanceServiceImpl implements FinanceService {
 
     private final Logger log = LoggerFactory.getLogger(FinanceServiceImpl.class);
     private final FinanceRepository financeRepository;
-    private final UserService userService;
     private final TransactionService transactionService;
     private final FinanceMapper financeMapper;
-    private final TransactionMapper transactionMapper;
-    private final NotificationService notificationService;
 
-    public FinanceServiceImpl(FinanceRepository financeRepository, UserService userService, TransactionService transactionService, FinanceMapper financeMapper, TransactionMapper transactionMapper, NotificationService notificationService) {
+    public FinanceServiceImpl(FinanceRepository financeRepository, TransactionService transactionService, FinanceMapper financeMapper) {
         this.financeRepository = financeRepository;
-        this.userService = userService;
         this.transactionService = transactionService;
         this.financeMapper = financeMapper;
-        this.transactionMapper = transactionMapper;
-        this.notificationService = notificationService;
     }
 
     @Override
-    public TransactionDto addTransactionUser(CreateTransactionDto dto) {
-        UserDto user = UserContext.getCurrentUser();
-        Finance financeUser = this.find(user.financeId());
+    public Long createEmptyFinance(CreateFinanceDto dto) {
+        Finance finance = financeMapper.toEntity(dto);
+        finance = financeRepository.save(finance);
+        return finance.getId();
+    }
+
+    @Override
+    public TransactionDto addTransaction(Long financeId, CreateTransactionDto dto) {
+        Finance finance = find(financeId);
 
         if (dto.typeTransaction().equals(TypeTransaction.EXPENSE) &&
-                transactionAmountExceedsBalance(user.email(), dto.amount())) {
-
-            BigDecimal diff = dto.amount().subtract(financeUser.getCurrentSavings());
-            System.out.println("Внимание! Ваших накоплений не хватает для проведения транзакции. Пополните баланс на: " + diff);
-            throw new LimitAmountBalance("Amount translation limit exceeded");
+                finance.getCurrentSavings().compareTo(dto.amount()) < 0) {
+            BigDecimal diff = dto.amount().subtract(finance.getCurrentSavings());
+            System.out.println("Недостаточно средств, не хватает: " + diff);
+            throw new LimitAmountBalance("Недостаточно средств");
         }
 
         TransactionDto transaction = transactionService.create(dto);
-        financeUser.getTransactionsId().add(transaction.id());
+        finance.getTransactionsId().add(transaction.id());
 
-        updateCurrentSavings(financeUser, transaction.amount(), transaction.typeTransaction());
-
-        financeRepository.save(financeUser);
+        updateCurrentSavings(finance, transaction.amount(), transaction.typeTransaction());
+        financeRepository.save(finance);
         return transaction;
     }
 
     private void updateCurrentSavings(Finance finance, BigDecimal amount, TypeTransaction type) {
-        BigDecimal currentSavings = finance.getCurrentSavings();
         if (type == TypeTransaction.PROFIT) {
-            currentSavings = currentSavings.add(amount);
-        } else if (type == TypeTransaction.EXPENSE) {
-            currentSavings = currentSavings.subtract(amount);
+            finance.setCurrentSavings(finance.getCurrentSavings().add(amount));
+        } else {
+            finance.setCurrentSavings(finance.getCurrentSavings().subtract(amount));
         }
-        finance.setCurrentSavings(currentSavings);
     }
 
-    @Override
-    public Boolean checkMonthlyExpenseLimit(String email) {
-        UserDto user = userService.getUserByEmail(email);
-        Finance finance = find(user.financeId());
-        BigDecimal monthlyExpenses = getTotalExpenses(LocalDate.now().minusMonths(1), LocalDate.now(), email);
-
-        if (monthlyExpenses.compareTo(finance.getMonthlyBudget()) > 0) {
-            notificationService.sendMessage(UserContext.getCurrentUser().email(),
-                    "Внимание! Вы превысили ваш месячный бюджет в " + finance.getMonthlyBudget() + "!");
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public Boolean transactionAmountExceedsBalance(String email, BigDecimal transactionAmount) {
-        UserDto user = userService.getUserByEmail(email);
-        Finance finance = find(user.financeId());
-        return finance.getCurrentSavings().compareTo(transactionAmount) < 0;
-    }
 
     private Finance find(Long id) {
-        return financeRepository.findById(id).orElseThrow(() -> new NotFoundException("Finance not found with id: " + id));
+        return financeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Finance not found id=" + id));
     }
 
     @Override
-    public Double getProgressTowardsGoal(String email) {
-        FinanceDto finance = getFinance(email);
+    public Double getProgressTowardsGoal(Long financeId) {
+        FinanceDto finance = getFinance(financeId);
         BigDecimal current = finance.currentSavings();
         BigDecimal goal = finance.savingsGoal();
         if (goal.compareTo(BigDecimal.ZERO) == 0) {
@@ -120,18 +93,19 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto) {
-        return transactionService.getFilteredTransactions(filterTransactionDto);
-    }
-
-    @Override
-    public Map<String, BigDecimal> getExpensesByCategory(String email) {
-        FinanceDto finance = getFinance(email);
+    public Map<String, BigDecimal> getExpensesByCategory(Long financeId) {
+        FinanceDto finance = getFinance(financeId);
         return finance.transactionsId().stream()
                 .map(transactionService::getTransactionById)
                 .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE)
                 .collect(Collectors.groupingBy(TransactionDto::category,
                         Collectors.reducing(BigDecimal.ZERO, TransactionDto::amount, BigDecimal::add)));
+    }
+
+
+    @Override
+    public List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto) {
+        return transactionService.getFilteredTransactions(filterTransactionDto);
     }
 
     private boolean isWithinDateRange(Instant date, LocalDate startDate, LocalDate endDate) {
@@ -141,14 +115,14 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, String email) {
-        FinanceDto finance = getFinance(email);
+    public BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId) {
+        FinanceDto finance = getFinance(financeId);
         return getTotal(finance, startDate, endDate, TypeTransaction.PROFIT);
     }
 
     @Override
-    public BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, String email) {
-        FinanceDto finance = getFinance(email);
+    public BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, Long financeId) {
+        FinanceDto finance = getFinance(financeId);
         return getTotal(finance, startDate, endDate, TypeTransaction.EXPENSE);
     }
 
@@ -162,14 +136,13 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public boolean removeTransactionUser(Long id) {
-        UserDto user = userService.getUserByEmail(UserContext.getCurrentUser().email());
+    public boolean removeTransactionUser(Long idTransaction, Long financeId) {
         try {
-            transactionService.delete(id);
-            Finance finance = this.find(user.financeId());
-            finance.getTransactionsId().remove(id);
+            transactionService.delete(idTransaction);
+            Finance finance = this.find(financeId);
+            finance.getTransactionsId().remove(idTransaction);
             financeRepository.save(finance);
-            log.debug("Removed transaction with id: {}", id);
+            log.debug("Removed transaction with idTransaction: {}", idTransaction);
             return true;
         } catch (Exception e) {
             return false;
@@ -194,9 +167,8 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public List<TransactionDto> getTransactions(String userId) {
-        UserDto user = userService.getUserByEmail(userId);
-        return transactionService.getTransactionsByFinanceId(user.financeId());
+    public List<TransactionDto> getTransactions(Long financeId) {
+        return transactionService.getTransactionsByFinanceId(financeId);
     }
 
     @Override
@@ -209,9 +181,8 @@ public class FinanceServiceImpl implements FinanceService {
         return this.find(id);
     }
 
-    private FinanceDto getFinance(String email) {
-        UserDto user = userService.getUserByEmail(email);
-        Finance finance = find(user.financeId());
+    private FinanceDto getFinance(Long financeId) {
+        Finance finance = find(financeId);
         List<TransactionDto> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
         finance.setTransactionsId(transactions.stream().map(TransactionDto::id).collect(Collectors.toList()));
         return financeMapper.toDto(finance);

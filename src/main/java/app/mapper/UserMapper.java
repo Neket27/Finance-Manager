@@ -1,5 +1,6 @@
 package app.mapper;
 
+import app.container.Component;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
@@ -8,6 +9,7 @@ import app.entity.User;
 import java.util.Collection;
 import java.util.List;
 
+@Component
 public class UserMapper {
 
     public User toEntity(CreateUserDto userDto) {

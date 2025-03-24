@@ -1,20 +1,19 @@
 package app.service.impl;
 
-import app.aspect.loggable.Loggable;
+import app.container.Component;
 import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
-import app.entity.Finance;
 import app.entity.Role;
 import app.entity.User;
 import app.exception.NotFoundException;
 import app.exception.UserAlreadyExistsException;
 import app.mapper.FinanceMapper;
 import app.mapper.UserMapper;
-import app.repository.FinanceRepository;
 import app.repository.UserRepository;
+import app.service.FinanceService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,60 +26,40 @@ import java.util.List;
  * Реализация сервиса управления пользователями.
  */
 
-@Loggable
+@Component
 public class UserServiceImpl implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
     private final UserMapper userMapper;
     private final UserRepository userRepository;
-    private final FinanceRepository financeRepository;
-    private final FinanceMapper financeMapper;
+    private final FinanceService financeService;
 
-    /**
-     * Конструктор сервиса пользователей.
-     *
-     * @param userMapper        маппер пользователей
-     * @param userRepository    репозиторий пользователей
-     * @param financeRepository репозиторий финансов
-     * @param financeMapper     маппер финансов
-     */
-    public UserServiceImpl(UserMapper userMapper, UserRepository userRepository, FinanceRepository financeRepository, FinanceMapper financeMapper) {
+    public UserServiceImpl(UserMapper userMapper, UserRepository userRepository, FinanceService financeService) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
-        this.financeRepository = financeRepository;
-        this.financeMapper = financeMapper;
+        this.financeService = financeService;
     }
 
-    /**
-     * Создает нового пользователя.
-     *
-     * @param createUserDto объект с данными нового пользователя
-     * @param role          для первго пользователя устанавливается  Role.Admin
-     * @return DTO созданного пользователя
-     * @throws UserAlreadyExistsException если пользователь с таким email уже существует
-     */
     @Override
     public UserDto createUser(CreateUserDto createUserDto) {
         if (userRepository.existsByEmail(createUserDto.email()))
             throw new UserAlreadyExistsException(String.format("User with email %s already exists", createUserDto.email()));
 
         User user = userMapper.toEntity(createUserDto);
+        user.setRole(userRepository.getAll().isEmpty() ? Role.ADMIN : Role.USER);
 
-        if (userRepository.getAll().isEmpty())
-            user.setRole(Role.ADMIN);
-        else
-            user.setRole(Role.USER);
-
-        CreateFinanceDto dto = new CreateFinanceDto.Builder()
-                .currentSavings(BigDecimal.valueOf(0.0))
-                .monthlyBudget(BigDecimal.valueOf(0.0))
-                .savingsGoal(BigDecimal.valueOf(0.0))
-                .totalExpenses(BigDecimal.valueOf(0.0))
+        // создание пустого кошелька
+        CreateFinanceDto financeDto = new CreateFinanceDto.Builder()
+                .currentSavings(BigDecimal.ZERO)
+                .monthlyBudget(BigDecimal.ZERO)
+                .savingsGoal(BigDecimal.ZERO)
+                .totalExpenses(BigDecimal.ZERO)
                 .transactionsId(new ArrayList<>())
                 .build();
 
-        Finance finance = financeRepository.save(financeMapper.toEntity(dto));
-        user.setFinanceId(finance.getId());
+        Long financeId = financeService.createEmptyFinance(financeDto);
+        user.setFinanceId(financeId);
+
         user = userRepository.save(user);
         return userMapper.toDto(user);
     }

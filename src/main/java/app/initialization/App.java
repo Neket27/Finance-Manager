@@ -1,10 +1,11 @@
 package app.initialization;
 
 import app.auth.Authenticator;
+import app.container.Component;
 import app.service.*;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-
-
+//
+//@Component
 public class App {
 
     private final JsonMapper jsonMapper;

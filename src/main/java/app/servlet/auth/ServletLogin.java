@@ -1,31 +1,28 @@
 package app.servlet.auth;
 
+import app.aspect.exception.CustomExceptionHandler;
 import app.aspect.validator.ValidateDto;
+import app.container.Component;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
-import app.aspect.exception.CustomExceptionHandler;
 import app.service.AuthService;
 import app.servlet.BaseServlet;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
-@WebServlet("/api/v1/auth/signin")
+@Component
 @CustomExceptionHandler
 public class ServletLogin extends BaseServlet {
 
     private AuthService authService;
     private JsonMapper mapper;
 
-    @Override
-    public void init(ServletConfig config) {
-        super.init(config);
-        this.authService = app.getAuthService();
-        this.mapper = app.getJsonMapper();
+    public ServletLogin(AuthService authService, JsonMapper mapper) {
+        this.authService = authService;
+        this.mapper = mapper;
     }
 
     @Override

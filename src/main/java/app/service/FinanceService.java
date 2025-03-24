@@ -1,46 +1,44 @@
 package app.service;
 
+import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Finance;
-import app.entity.TypeTransaction;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 public interface FinanceService {
 
-    TransactionDto addTransactionUser(CreateTransactionDto dto);
 
-    Boolean transactionAmountExceedsBalance(String email, BigDecimal transactionAmount);
+    Long createEmptyFinance(CreateFinanceDto dto);
 
-    Double getProgressTowardsGoal(String email);
+    TransactionDto addTransaction(Long financeId, CreateTransactionDto dto);
+
+    BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId);
+
+    BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, Long financeId);
+
+    Double getProgressTowardsGoal(Long financeId);
 
     List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto);
 
-    Map<String, BigDecimal> getExpensesByCategory(String email);
-
-    BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, String email);
-
-    BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, String email);
-
-    boolean removeTransactionUser(Long id);
+    boolean removeTransactionUser(Long idTransaction, Long financeId);
 
     TransactionDto editTransaction(UpdateTransactionDto updateTransactionDto);
 
     Finance save(Finance finance);
 
-    List<TransactionDto> getTransactions(String userId);
-
-    Boolean checkMonthlyExpenseLimit(String email);
+    List<TransactionDto> getTransactions(Long financeId);
 
     FinanceDto getFinanceById(Long id);
 
     Finance findFinanceById(Long id);
+
+    Map<String, BigDecimal> getExpensesByCategory(Long financeId);
 }

@@ -1,11 +1,14 @@
 package app.config;
 
+import app.container.Bean;
+import app.container.Configuration;
 import app.exception.db.ErrorConnectionDb;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+@Configuration
 public class DbConfig {
 
     private AppProperties.DbProperties prop;
@@ -22,7 +25,8 @@ public class DbConfig {
         this.prop = prop;
     }
 
-    public Connection getConnection() {
+    @Bean
+    public Connection connection() {
         try {
             Class.forName("org.postgresql.Driver");
             return DriverManager.getConnection(prop.getUrl(), prop.getUsername(), prop.getPassword());

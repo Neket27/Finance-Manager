@@ -1,23 +1,22 @@
 package app.servlet.auth;
 
+import app.aspect.exception.CustomExceptionHandler;
+import app.container.Component;
 import app.service.AuthService;
 import app.servlet.BaseServlet;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
-@WebServlet("/api/v1/auth/logout")
+@Component
+@CustomExceptionHandler
 public class ServletLogout extends BaseServlet {
 
     private AuthService authService;
 
-    @Override
-    public void init(ServletConfig config) {
-        super.init(config);
-        authService = app.getAuthService();
+    public ServletLogout(AuthService authService) {
+        this.authService = authService;
     }
 
     @Override

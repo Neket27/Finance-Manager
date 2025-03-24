@@ -1,5 +1,6 @@
 package app.repository.jdbc;
 
+import app.container.Component;
 import app.entity.Token;
 import app.exception.db.ErrorDeleteSqlException;
 import app.exception.db.ErrorInsertSqlException;
@@ -14,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+@Component
 public class TokenJdbcRepository implements TokenRepository {
 
     private static final Logger log = LoggerFactory.getLogger(TokenJdbcRepository.class);

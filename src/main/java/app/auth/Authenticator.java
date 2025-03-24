@@ -1,5 +1,6 @@
 package app.auth;
 
+import app.container.Component;
 import app.dto.user.UserDto;
 import app.entity.Token;
 import app.exception.TokenException;
@@ -8,10 +9,11 @@ import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Component
 public class Authenticator {
 
     private static final Logger log = LoggerFactory.getLogger(Authenticator.class);
-    private UserService userService;
+    private final UserService userService;
     private final TokenService tokenService;
 
     public Authenticator(TokenService tokenService, UserService userService) {

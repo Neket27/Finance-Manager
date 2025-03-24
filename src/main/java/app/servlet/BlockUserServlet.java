@@ -1,30 +1,28 @@
 package app.servlet;
 
+import app.aspect.exception.CustomExceptionHandler;
+import app.container.Component;
 import app.context.UserContext;
 import app.dto.user.UserDto;
 import app.entity.Role;
-import app.aspect.exception.CustomExceptionHandler;
 import app.service.UserService;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.Map;
 
-@WebServlet("/api/v1/admin/block-user")
+@Component
 @CustomExceptionHandler
 public class BlockUserServlet extends BaseServlet {
+
     private UserService userService;
     private JsonMapper jsonMapper;
 
-    @Override
-    public void init(ServletConfig config) {
-        super.init(config);
-        this.userService = app.getUserService();
-        this.jsonMapper = app.getJsonMapper();
+    public BlockUserServlet(UserService userService, JsonMapper jsonMapper) {
+        this.userService = userService;
+        this.jsonMapper = jsonMapper;
     }
 
     @Override

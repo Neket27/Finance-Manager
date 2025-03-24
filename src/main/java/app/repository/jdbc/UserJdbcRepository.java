@@ -1,5 +1,6 @@
 package app.repository.jdbc;
 
+import app.container.Component;
 import app.entity.Role;
 import app.entity.User;
 import app.exception.db.ErrorDeleteSqlException;
@@ -15,6 +16,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+@Component
 public class UserJdbcRepository implements UserRepository {
 
     private static final Logger log = LoggerFactory.getLogger(UserJdbcRepository.class);
