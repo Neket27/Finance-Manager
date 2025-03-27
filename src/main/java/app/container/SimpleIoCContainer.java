@@ -1,7 +1,6 @@
 package app.container;
 
 import app.config.AppProperties;
-import app.config.DbConfig;
 import app.util.ConfigLoader;
 
 import java.lang.reflect.Constructor;
@@ -27,6 +26,13 @@ public class SimpleIoCContainer {
     public void autoRegister(String basePackage) throws Exception {
         List<Class<?>> classes = ClassScanner.findAllComponentAndConfigClasses(basePackage);
 
+        // Сначала загружаем конфиг и добавляем его в контейнер
+        AppProperties appProperties = ConfigLoader.loadConfig("application.yml", AppProperties.class);
+        instances.put(AppProperties.class, appProperties);
+        instances.put(AppProperties.DbProperties.class, appProperties.getDb());
+        instances.put(AppProperties.LiquibaseProperties.class, appProperties.getLiquibase());
+
+        AppProperties.LiquibaseProperties k = getInstance(AppProperties.LiquibaseProperties.class);
         // Регистрация интерфейсов и их реализаций
         for (Class<?> clazz : classes) {
             if (clazz.isInterface() || java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
@@ -49,16 +55,15 @@ public class SimpleIoCContainer {
 
             if (clazz.isAnnotationPresent(app.container.Configuration.class)) {
                 Object configInstance = createWithDependencies(clazz);
-                processConfiguration(configInstance);
 
-                AppProperties appProperties = ConfigLoader.loadConfig("application.yml", AppProperties.class);
-                instances.put(AppProperties.class, appProperties);
-                AppProperties.DbProperties dbProperties = appProperties.getDb();
-                instances.put(AppProperties.DbProperties.class, dbProperties);
-                AppProperties.LiquibaseProperties liquibaseProperties = appProperties.getLiquibase();
-                instances.put(AppProperties.LiquibaseProperties.class, liquibaseProperties);
+                // регистрируем сам конфигурационный класс
+                register(clazz, configInstance);
+
+                // Обрабатываем @Bean методы
+                processConfiguration(configInstance);
             }
         }
+
 
         // Создание компонентов
         for (Class<?> clazz : classes) {
@@ -83,6 +88,9 @@ public class SimpleIoCContainer {
      * @throws Exception если не удается создать экземпляр класса
      */
     private Object createWithDependencies(Class<?> clazz) throws Exception {
+        if(clazz.equals(AppProperties.LiquibaseProperties.class))
+            System.out.println("hjkl");
+
         Constructor<?>[] constructors = clazz.getConstructors();
         for (Constructor<?> constructor : constructors) {
             Class<?>[] paramTypes = constructor.getParameterTypes();
@@ -114,6 +122,7 @@ public class SimpleIoCContainer {
 
         // Вызов методов с @PostConstruct
         for (var method : clazz.getDeclaredMethods()) {
+            AppProperties.LiquibaseProperties k = getInstance(AppProperties.LiquibaseProperties.class);
             if (method.isAnnotationPresent(app.container.PostConstruct.class)) {
                 method.setAccessible(true);
                 method.invoke(instance);

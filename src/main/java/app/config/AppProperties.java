@@ -26,6 +26,7 @@ public class AppProperties {
     }
 
 
+    @Configuration
     public static class DbProperties {
         private String url;
         private String username;
@@ -57,6 +58,7 @@ public class AppProperties {
     }
 
 
+    @Configuration
     public static class LiquibaseProperties {
         @JsonProperty("change-log-file")
         private String changeLogFile;

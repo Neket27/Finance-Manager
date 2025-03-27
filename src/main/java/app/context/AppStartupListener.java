@@ -1,6 +1,7 @@
 package app.context;
 
 import app.auth.AuthenticationFilter;
+import app.config.AppProperties;
 import app.container.SimpleIoCContainer;
 import app.exception.IocException;
 import app.servlet.*;
@@ -8,6 +9,7 @@ import app.servlet.auth.ServletLogin;
 import app.servlet.auth.ServletLogout;
 import app.servlet.auth.ServletRegister;
 import app.servlet.transaction.*;
+import app.util.ConfigLoader;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
@@ -22,6 +24,12 @@ public class AppStartupListener implements ServletContextListener {
 
         try {
             container.autoRegister("app");
+
+            AppProperties appProperties = ConfigLoader.loadConfig("application.yml", AppProperties.class);
+            System.out.println("Загруженные AppProperties: " + appProperties);
+            System.out.println("LiquibaseProperties: " + appProperties.getLiquibase());
+            System.out.println("Liquibase changeLog: " + (appProperties.getLiquibase() != null ? appProperties.getLiquibase().getChangeLogFile() : "NULL"));
+
 
             AuthenticationFilter filter = container.getInstance(AuthenticationFilter.class);
             sce.getServletContext()
@@ -77,11 +85,11 @@ public class AppStartupListener implements ServletContextListener {
             sce.getServletContext()
                     .addServlet("DeleteUserServlet", deleteUserServlet)
                     .addMapping("/api/v1/delete/user");
-//
-//            FinancialReportServlet financialReportServlet = container.getInstance(FinancialReportServlet.class);
-//            sce.getServletContext()
-//                    .addServlet("FinancialReportServlet", financialReportServlet)
-//                    .addMapping("/api/v1/financial/report");
+
+            FinancialReportServlet financialReportServlet = container.getInstance(FinancialReportServlet.class);
+            sce.getServletContext()
+                    .addServlet("FinancialReportServlet", financialReportServlet)
+                    .addMapping("/api/v1/financial/report");
 
             MonthlyBudgetServlet monthlyBudgetServlet = container.getInstance(MonthlyBudgetServlet.class);
             sce.getServletContext()
