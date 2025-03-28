@@ -1,23 +1,24 @@
 package app.auth;
 
-import app.container.Component;
 import app.context.UserContext;
 import app.dto.user.UserDto;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class AuthenticationFilter implements Filter {
 
-    private Authenticator authenticator;
+    private final Authenticator authenticator;
 
     @Override
     public void init(FilterConfig filterConfig) {
 
     }
-
 
     /**
      * token как заглушка id пользователя

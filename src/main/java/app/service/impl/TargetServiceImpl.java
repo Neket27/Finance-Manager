@@ -1,7 +1,7 @@
 package app.service.impl;
 
-import app.container.Component;
 import app.context.UserContext;
+import app.dto.finance.FinanceDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.user.UserDto;
 import app.entity.Finance;
@@ -11,18 +11,19 @@ import app.service.TargetService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Реализация сервиса управления финансовыми целями пользователя.
  */
 
-@Component
+@Service
 public class TargetServiceImpl implements TargetService {
 
     private final Logger log = LoggerFactory.getLogger(TargetServiceImpl.class);
@@ -45,11 +46,8 @@ public class TargetServiceImpl implements TargetService {
      *
      * @param budget сумма месячного бюджета
      */
-    @Override
-    public void setMonthlyBudget(BigDecimal budget) {
-        Finance finance = findFinance(UserContext.getCurrentUser().email());
-        finance.setMonthlyBudget(budget);
-        financeService.save(finance);
+    public void updateMonthlyBudget(Long financeId, BigDecimal budget) {
+        financeService.updatetMonthlyBudget(financeId, budget);
         log.debug("Месячный бюджет установлен: {}", budget);
     }
 
@@ -58,7 +56,7 @@ public class TargetServiceImpl implements TargetService {
     public Boolean isMonthBudgetExceeded(Long financeId) {
         Finance finance = findFinance(UserContext.getCurrentUser().email());
 
-        List<TransactionDto> transactions = financeService.getTransactions(financeId);
+        Set<TransactionDto> transactions = financeService.getTransactions(financeId);
         Instant thirtyDaysAgo = Instant.now().minus(Duration.ofDays(30));
         BigDecimal totalExpenses = transactions.stream()
                 .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE && t.date().isAfter(thirtyDaysAgo))
@@ -75,6 +73,18 @@ public class TargetServiceImpl implements TargetService {
         return false;
     }
 
+
+    @Override
+    public Double getProgressTowardsGoal(Long financeId) {
+        FinanceDto finance = financeService.getFinanceById(financeId);
+        BigDecimal current = finance.currentSavings();
+        BigDecimal goal = finance.savingsGoal();
+        if (goal.compareTo(BigDecimal.ZERO) == 0) {
+            return 0.0;
+        }
+        return current.divide(goal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue();
+    }
+
     /**
      * Генерирует финансовый отчет пользователя.
      *
@@ -89,7 +99,7 @@ public class TargetServiceImpl implements TargetService {
         reportBuilder.append("==== Финансовый отчет ====\n");
         reportBuilder.append("Текущие накопления: ").append(finance.getCurrentSavings()).append("\n");
         reportBuilder.append("Цель накопления: ").append(finance.getSavingsGoal()).append("\n");
-        reportBuilder.append("Прогресс к цели: ").append(financeService.getProgressTowardsGoal(user.id())).append("%\n");
+        reportBuilder.append("Прогресс к цели: ").append(getProgressTowardsGoal(user.id())).append("%\n");
 
         reportBuilder.append("Суммарный доход за период: ")
                 .append(financeService.getTotalProfit(LocalDate.now().minusMonths(1), LocalDate.now(), user.id())).append("\n");

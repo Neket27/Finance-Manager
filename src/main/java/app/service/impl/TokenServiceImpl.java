@@ -1,12 +1,12 @@
 package app.service.impl;
 
-import app.container.Component;
 import app.entity.Token;
 import app.exception.TokenException;
 import app.repository.TokenRepository;
 import app.service.TokenService;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 public class TokenServiceImpl implements TokenService {
 
     private final TokenRepository tokenRepository;

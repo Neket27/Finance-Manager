@@ -1,9 +1,10 @@
 package app.mapper;
 
-import app.container.Component;
+
 import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
 import app.entity.Finance;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;

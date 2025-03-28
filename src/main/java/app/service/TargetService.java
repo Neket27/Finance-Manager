@@ -4,9 +4,11 @@ import java.math.BigDecimal;
 
 public interface TargetService {
 
-    void setMonthlyBudget(BigDecimal budget);
+    void updateMonthlyBudget(Long financeId, BigDecimal budget);
 
     Boolean isMonthBudgetExceeded(Long financeId);
+
+    Double getProgressTowardsGoal(Long financeId);
 
     String generateFinancialReport();
 

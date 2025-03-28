@@ -1,7 +1,6 @@
 package app.service.impl;
 
 import app.aspect.auditable.Auditable;
-import app.container.Component;
 import app.context.UserContext;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
@@ -19,6 +18,8 @@ import app.service.TokenService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Random;
 
@@ -26,7 +27,7 @@ import java.util.Random;
  * Реализация сервиса аутентификации.
  */
 
-@Component
+@Service
 public class AuthServiceImpl implements AuthService {
 
     private final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);

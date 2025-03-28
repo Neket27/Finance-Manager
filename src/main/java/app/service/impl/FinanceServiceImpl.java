@@ -1,6 +1,5 @@
 package app.service.impl;
 
-import app.container.Component;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
@@ -18,6 +17,8 @@ import app.service.FinanceService;
 import app.service.TransactionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -25,9 +26,10 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-@Component
+@Service
 public class FinanceServiceImpl implements FinanceService {
 
     private final Logger log = LoggerFactory.getLogger(FinanceServiceImpl.class);
@@ -59,7 +61,7 @@ public class FinanceServiceImpl implements FinanceService {
             throw new LimitAmountBalance("Недостаточно средств");
         }
 
-        TransactionDto transaction = transactionService.create(dto);
+        TransactionDto transaction = transactionService.create(financeId, dto);
         finance.getTransactionsId().add(transaction.id());
 
         updateCurrentSavings(finance, transaction.amount(), transaction.typeTransaction());
@@ -82,17 +84,6 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public Double getProgressTowardsGoal(Long financeId) {
-        FinanceDto finance = getFinance(financeId);
-        BigDecimal current = finance.currentSavings();
-        BigDecimal goal = finance.savingsGoal();
-        if (goal.compareTo(BigDecimal.ZERO) == 0) {
-            return 0.0;
-        }
-        return current.divide(goal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue();
-    }
-
-    @Override
     public Map<String, BigDecimal> getExpensesByCategory(Long financeId) {
         FinanceDto finance = getFinance(financeId);
         return finance.transactionsId().stream()
@@ -102,9 +93,28 @@ public class FinanceServiceImpl implements FinanceService {
                         Collectors.reducing(BigDecimal.ZERO, TransactionDto::amount, BigDecimal::add)));
     }
 
+    @Override
+    public void delete(Long financeId, Long idTransaction) {
+        Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
+        if (transactionsByFinanceId.contains(idTransaction)) {
+            transactionService.delete(idTransaction);
+            Finance finance = this.find(financeId);
+            finance.getTransactionsId().remove(idTransaction);
+            financeRepository.save(finance);
+        } else
+            throw new NotFoundException("Transaction in finance: " + financeId + " not found, id transaction: " + idTransaction);
+    }
 
     @Override
-    public List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto) {
+    public void updatetMonthlyBudget(Long financeId, BigDecimal budget) {
+        Finance finance = find(financeId);
+        finance.setMonthlyBudget(budget);
+        save(finance);
+    }
+
+
+    @Override
+    public List<TransactionDto> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto) {
         return transactionService.getFilteredTransactions(filterTransactionDto);
     }
 
@@ -135,27 +145,28 @@ public class FinanceServiceImpl implements FinanceService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    @Override
-    public boolean removeTransactionUser(Long idTransaction, Long financeId) {
-        try {
-            transactionService.delete(idTransaction);
-            Finance finance = this.find(financeId);
-            finance.getTransactionsId().remove(idTransaction);
-            financeRepository.save(finance);
-            log.debug("Removed transaction with idTransaction: {}", idTransaction);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
+//    @Override
+//    public boolean removeTransactionUser(Long idTransaction, Long financeId) {
+//        try {
+//            transactionService.delete(idTransaction);
+//            Finance finance = this.find(financeId);
+//            finance.getTransactionsId().remove(idTransaction);
+//            financeRepository.save(finance);
+//            log.debug("Removed transaction with idTransaction: {}", idTransaction);
+//            return true;
+//        } catch (Exception e) {
+//            return false;
+//        }
+//    }
 
     @Override
-    public TransactionDto editTransaction(UpdateTransactionDto updateTransactionDto) {
-        try {
+    public TransactionDto editTransaction(Long financeId, UpdateTransactionDto updateTransactionDto) {
+        Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
+        if (transactionsByFinanceId.contains(updateTransactionDto)) {
             TransactionDto transaction = transactionService.edit(updateTransactionDto);
             log.debug("Edited transaction: {}", updateTransactionDto);
             return transaction;
-        } catch (Exception e) {
+        } else {
             log.error("Failed to edit transaction: {}", updateTransactionDto);
             throw new EditException("Failed to edit transaction: " + updateTransactionDto);
         }
@@ -167,7 +178,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
-    public List<TransactionDto> getTransactions(Long financeId) {
+    public Set<TransactionDto> getTransactions(Long financeId) {
         return transactionService.getTransactionsByFinanceId(financeId);
     }
 
@@ -183,7 +194,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     private FinanceDto getFinance(Long financeId) {
         Finance finance = find(financeId);
-        List<TransactionDto> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
+        Set<TransactionDto> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
         finance.setTransactionsId(transactions.stream().map(TransactionDto::id).collect(Collectors.toList()));
         return financeMapper.toDto(finance);
     }

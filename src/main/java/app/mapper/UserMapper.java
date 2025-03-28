@@ -1,10 +1,10 @@
 package app.mapper;
 
-import app.container.Component;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.User;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;

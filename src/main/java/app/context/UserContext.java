@@ -1,7 +1,7 @@
 package app.context;
 
-import app.container.Component;
 import app.dto.user.UserDto;
+import org.springframework.stereotype.Component;
 
 @Component
 public class UserContext {

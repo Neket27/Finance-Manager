@@ -81,4 +81,17 @@ public record TransactionDto(
             return new TransactionDto(id, amount, category, date, description, typeTransaction, financeId);
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        TransactionDto that = (TransactionDto) obj;
+        return this.id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.id.hashCode();
+    }
 }

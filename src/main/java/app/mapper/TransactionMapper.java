@@ -1,12 +1,14 @@
 package app.mapper;
 
-import app.container.Component;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Transaction;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class TransactionMapper implements BaseMapper<Transaction, TransactionDto> {
@@ -45,6 +47,10 @@ public class TransactionMapper implements BaseMapper<Transaction, TransactionDto
     @Override
     public List<TransactionDto> toDtoList(List<Transaction> entityList) {
         return entityList.stream().map(this::toDto).toList();
+    }
+
+    public Set<TransactionDto> toDtoSet(List<Transaction> entityList) {
+        return entityList.stream().map(this::toDto).collect(Collectors.toSet());
     }
 
     public Transaction toEntity(CreateTransactionDto dto) {

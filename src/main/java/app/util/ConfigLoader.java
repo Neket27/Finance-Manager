@@ -1,8 +1,8 @@
 package app.util;
 
-import app.container.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 

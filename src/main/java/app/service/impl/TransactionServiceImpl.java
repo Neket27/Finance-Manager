@@ -1,6 +1,5 @@
 package app.service.impl;
 
-import app.container.Component;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
@@ -16,15 +15,17 @@ import app.repository.TransactionRepository;
 import app.service.TransactionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Реализация сервиса управления транзакциями.
  */
 
-@Component
+@Service
 public class TransactionServiceImpl implements TransactionService {
 
     private final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);
@@ -49,13 +50,11 @@ public class TransactionServiceImpl implements TransactionService {
      * @return созданная транзакция
      */
     @Override
-    public TransactionDto create(CreateTransactionDto dto) {
+    public TransactionDto create(Long financeId, CreateTransactionDto dto) {
         try {
-            UserDto user = UserContext.getCurrentUser();
-
             Transaction transaction = transactionMapper.toEntity(dto);
             transaction.setDate(Instant.now());
-            transaction.setFinanceId(user.financeId());
+            transaction.setFinanceId(financeId);
             transaction = transactionRepository.save(transaction);
 
             log.debug("addTransaction: {}", transaction.toString());
@@ -141,8 +140,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<TransactionDto> getTransactionsByFinanceId(Long id) {
-        return transactionMapper.toDtoList(transactionRepository.findByFinanceId(id));
+    public Set<TransactionDto> getTransactionsByFinanceId(Long id) {
+        return transactionMapper.toDtoSet(transactionRepository.findByFinanceId(id));
     }
 
 }

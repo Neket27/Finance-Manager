@@ -1,6 +1,5 @@
 package app.service.impl;
 
-import app.container.Component;
 import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.user.CreateUserDto;
@@ -10,13 +9,13 @@ import app.entity.Role;
 import app.entity.User;
 import app.exception.NotFoundException;
 import app.exception.UserAlreadyExistsException;
-import app.mapper.FinanceMapper;
 import app.mapper.UserMapper;
 import app.repository.UserRepository;
 import app.service.FinanceService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -26,7 +25,7 @@ import java.util.List;
  * Реализация сервиса управления пользователями.
  */
 
-@Component
+@Service
 public class UserServiceImpl implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
