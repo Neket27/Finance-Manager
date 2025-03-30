@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.auditable.Auditable;
 import app.aspect.loggable.CustomLogging;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
@@ -46,6 +47,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public Long createEmptyFinance(CreateFinanceDto dto) {
         Finance finance = financeMapper.toEntity(dto);
         finance = financeRepository.save(finance);
@@ -53,6 +55,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public TransactionDto createTransaction(Long financeId, CreateTransactionDto dto) {
         Finance finance = find(financeId);
 
@@ -85,6 +88,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public Map<String, BigDecimal> getExpensesByCategory(Long financeId) {
         FinanceDto finance = getFinance(financeId);
         return finance.transactionsId().stream()
@@ -95,6 +99,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public void delete(Long financeId, Long idTransaction) {
         Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
         boolean transactionExists = transactionsByFinanceId.stream()
@@ -111,6 +116,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public void updatetMonthlyBudget(Long financeId, BigDecimal budget) {
         Finance finance = find(financeId);
         finance.setMonthlyBudget(budget);
@@ -118,6 +124,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public List<TransactionDto> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto) {
         return transactionService.getFilteredTransactions(filterTransactionDto);
     }
@@ -129,12 +136,14 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId) {
         FinanceDto finance = getFinance(financeId);
         return getTotal(finance, startDate, endDate, TypeTransaction.PROFIT);
     }
 
     @Override
+    @Auditable
     public BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, Long financeId) {
         FinanceDto finance = getFinance(financeId);
         return getTotal(finance, startDate, endDate, TypeTransaction.EXPENSE);
@@ -150,6 +159,7 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public TransactionDto editTransaction(Long financeId, UpdateTransactionDto updateTransactionDto) {
         Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
         boolean transactionExists = transactionsByFinanceId.stream()
@@ -166,21 +176,25 @@ public class FinanceServiceImpl implements FinanceService {
     }
 
     @Override
+    @Auditable
     public Finance save(Finance finance) {
         return financeRepository.save(finance);
     }
 
     @Override
+    @Auditable
     public Set<TransactionDto> list(Long financeId) {
         return transactionService.getTransactionsByFinanceId(financeId);
     }
 
     @Override
+    @Auditable
     public FinanceDto getFinanceById(Long id) {
         return financeMapper.toDto(this.find(id));
     }
 
     @Override
+    @Auditable
     public Finance findFinanceById(Long id) {
         return this.find(id);
     }

@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.auditable.Auditable;
 import app.aspect.loggable.CustomLogging;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
@@ -38,6 +39,7 @@ public class TargetServiceImpl implements TargetService {
      * @param userService    сервис пользователей
      * @param financeService сервис финансов
      */
+
     public TargetServiceImpl(UserService userService, FinanceService financeService) {
         this.financeService = financeService;
         this.userService = userService;
@@ -48,6 +50,8 @@ public class TargetServiceImpl implements TargetService {
      *
      * @param budget сумма месячного бюджета
      */
+    @Override
+    @Auditable
     public void updateMonthlyBudget(Long financeId, BigDecimal budget) {
         financeService.updatetMonthlyBudget(financeId, budget);
         log.debug("Месячный бюджет установлен: {}", budget);
@@ -55,6 +59,7 @@ public class TargetServiceImpl implements TargetService {
 
 
     @Override
+    @Auditable
     public Boolean isMonthBudgetExceeded(Long financeId) {
         Finance finance = findFinance(UserContext.getCurrentUser().email());
 
@@ -77,6 +82,7 @@ public class TargetServiceImpl implements TargetService {
 
 
     @Override
+    @Auditable
     public Double getProgressTowardsGoal(Long financeId) {
         FinanceDto finance = financeService.getFinanceById(financeId);
         BigDecimal current = finance.currentSavings();
@@ -93,6 +99,7 @@ public class TargetServiceImpl implements TargetService {
      * @return строковое представление финансового отчета
      */
     @Override
+    @Auditable
     public String generateFinancialReport() {
         UserDto user = userService.getUserByEmail(UserContext.getCurrentUser().email());
         Finance finance = financeService.findFinanceById(user.financeId());
@@ -123,6 +130,7 @@ public class TargetServiceImpl implements TargetService {
      * @param savingGoal сумма целевых накоплений
      */
     @Override
+    @Auditable
     public void updateGoalSavings(BigDecimal savingGoal) {
         Finance finance = findFinance(UserContext.getCurrentUser().email());
         finance.setSavingsGoal(savingGoal);

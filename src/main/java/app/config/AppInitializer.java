@@ -2,7 +2,6 @@ package app.config;
 
 import app.App;
 import jakarta.servlet.Filter;
-import org.springdoc.webmvc.ui.SwaggerConfig;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -10,7 +9,7 @@ public class AppInitializer extends AbstractAnnotationConfigDispatcherServletIni
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class[]{App.class, SwaggerConfig.class};
+        return new Class[]{App.class, OpenApiConfig.class, SwaggerConfig.class};
     }
 
     @Override

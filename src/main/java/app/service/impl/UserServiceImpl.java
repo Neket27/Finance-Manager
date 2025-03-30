@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.auditable.Auditable;
 import app.aspect.loggable.CustomLogging;
 import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
@@ -42,6 +43,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public UserDto createUser(CreateUserDto createUserDto) {
         if (userRepository.existsByEmail(createUserDto.email()))
             throw new UserAlreadyExistsException(String.format("User with email %s already exists", createUserDto.email()));
@@ -73,6 +75,7 @@ public class UserServiceImpl implements UserService {
      * @throws IllegalArgumentException если userDto равен null
      */
     @Override
+    @Auditable
     public UserDto updateDataUser(UpdateUserDto userDto, String email) {
         if (userDto == null)
             throw new IllegalArgumentException("User Dto не может быть null");
@@ -89,6 +92,7 @@ public class UserServiceImpl implements UserService {
      * @return true, если удаление прошло успешно, иначе false
      */
     @Override
+    @Auditable
     public boolean remove(String email) {
         try {
             userRepository.delete(this.find(email));
@@ -101,6 +105,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public UserDto getUserByEmail(String email) {
         return userMapper.toDto(this.find(email));
     }
@@ -122,6 +127,7 @@ public class UserServiceImpl implements UserService {
      * @return список DTO пользователей
      */
     @Override
+    @Auditable
     public List<UserDto> list() {
         return userMapper.toListDto(userRepository.getAll());
     }
@@ -133,6 +139,7 @@ public class UserServiceImpl implements UserService {
      * @return true, если блокировка прошла успешно, иначе false
      */
     @Override
+    @Auditable
     public boolean blockUser(String email) {
         try {
             User user = this.find(email);
@@ -154,6 +161,7 @@ public class UserServiceImpl implements UserService {
      * @return true, если роль успешно изменена, иначе false
      */
     @Override
+    @Auditable
     public boolean changeUserRole(String email, Role role) {
         try {
             User user = this.find(email);
@@ -168,6 +176,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public UserDto getUserById(Long id) {
         return userMapper.toDto(find(id));
     }

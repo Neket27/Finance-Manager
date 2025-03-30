@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.auditable.Auditable;
 import app.aspect.loggable.CustomLogging;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
@@ -53,6 +54,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return созданная транзакция
      */
     @Override
+    @Auditable
     public TransactionDto create(Long financeId, CreateTransactionDto dto) {
         try {
             Transaction transaction = transactionMapper.toEntity(dto);
@@ -74,6 +76,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return объект транзакции
      */
     @Override
+    @Auditable
     public TransactionDto getTransactionById(Long id) {
         return transactionMapper.toDto(find(id));
     }
@@ -96,6 +99,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return обновленная транзакция
      */
     @Override
+    @Auditable
     public TransactionDto edit(UpdateTransactionDto dto) {
         Transaction transaction = this.find(dto.id());
         transactionMapper.updateEntity(transaction, dto);
@@ -111,6 +115,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return true, если удаление прошло успешно, иначе false
      */
     @Override
+    @Auditable
     public void delete(Long id) {
         try {
             transactionRepository.deleteById(id);
@@ -128,6 +133,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @return список транзакций
      */
     @Override
+    @Auditable
     public List<TransactionDto> findAll(FinanceDto finance) {
         return finance.transactionsId().stream().map(this::getTransactionById).toList();
     }
@@ -136,6 +142,7 @@ public class TransactionServiceImpl implements TransactionService {
      * Фильтрует транзакции по заданным параметрам.
      */
     @Override
+    @Auditable
     public List<TransactionDto> getFilteredTransactions(FilterTransactionDto f) {
         UserDto user = UserContext.getCurrentUser();
         return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(user.financeId(),
@@ -143,6 +150,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Auditable
     public Set<TransactionDto> getTransactionsByFinanceId(Long id) {
         return transactionMapper.toDtoSet(transactionRepository.findByFinanceId(id));
     }
