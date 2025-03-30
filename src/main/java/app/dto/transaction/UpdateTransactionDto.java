@@ -1,10 +1,12 @@
 package app.dto.transaction;
 
 import app.entity.TypeTransaction;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+
 
 public record UpdateTransactionDto(
 
@@ -21,6 +23,7 @@ public record UpdateTransactionDto(
         String category,
 
         @NotNull(message = "Дата не может быть пустой")
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
         Instant date,
 
         @Size(max = 255, message = "Описание должно содержать не более 255 символов")

@@ -1,6 +1,7 @@
 package app.dto.transaction;
 
 import app.entity.TypeTransaction;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ public record TransactionDto(
         String category,
 
         @NotNull(message = "Дата не может быть пустой")
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
         Instant date,
 
         @Size(max = 255, message = "Описание должно содержать не более 255 символов")
@@ -82,16 +84,4 @@ public record TransactionDto(
         }
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        TransactionDto that = (TransactionDto) obj;
-        return this.id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.id.hashCode();
-    }
 }

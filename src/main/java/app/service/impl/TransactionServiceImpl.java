@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.loggable.CustomLogging;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
@@ -8,14 +9,15 @@ import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.dto.user.UserDto;
 import app.entity.Transaction;
-import app.exception.NotFoundException;
-import app.exception.TransactionException;
+import app.exception.common.CreateException;
+import app.exception.common.DeleteException;
 import app.mapper.TransactionMapper;
 import app.repository.TransactionRepository;
 import app.service.TransactionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionException;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,6 +28,7 @@ import java.util.Set;
  */
 
 @Service
+@CustomLogging
 public class TransactionServiceImpl implements TransactionService {
 
     private final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);
@@ -60,7 +63,7 @@ public class TransactionServiceImpl implements TransactionService {
             log.debug("addTransaction: {}", transaction.toString());
             return transactionMapper.toDto(transaction);
         } catch (Exception e) {
-            throw new TransactionException("Error adding transaction", e);
+            throw new CreateException("Error create transaction", e);
         }
     }
 
@@ -80,10 +83,10 @@ public class TransactionServiceImpl implements TransactionService {
      *
      * @param id идентификатор транзакции
      * @return найденная транзакция
-     * @throws NotFoundException если транзакция не найдена
      */
     private Transaction find(Long id) {
-        return transactionRepository.findById(id).orElseThrow(() -> new NotFoundException("Transaction not found with id: " + id));
+        return transactionRepository.findById(id).orElseThrow(() -> new TransactionException("Transaction not found with id: " + id) {
+        });
     }
 
     /**
@@ -114,7 +117,7 @@ public class TransactionServiceImpl implements TransactionService {
             log.debug("deleteTransaction with id: {}", id);
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new TransactionException("Error deleting transaction", e);
+            throw new DeleteException("Error deleting transaction", e);
         }
     }
 

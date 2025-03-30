@@ -57,10 +57,10 @@ public class TokenJdbcRepository implements TokenRepository {
     @Override
     public Optional<Token> getTokenByUserEmail(String email) {
         String sql = """
-        SELECT t.* FROM business.tokens t
-        JOIN business.users u ON t.user_id = u.id
-        WHERE u.email = ?
-        """;
+                SELECT t.* FROM business.tokens t
+                JOIN business.users u ON t.user_id = u.id
+                WHERE u.email = ?
+                """;
         try {
             return jdbcTemplate.query(sql, tokenRowMapper, email).stream().findFirst();
         } catch (Exception e) {
@@ -94,9 +94,17 @@ public class TokenJdbcRepository implements TokenRepository {
                 RETURNING id
                 """;
         try {
-            Long id = jdbcTemplate.queryForObject(sql, Long.class,
+
+            Long id = entity.getId();
+            if (id == null || id == 0) {
+                id = jdbcTemplate.queryForObject("SELECT NEXTVAL('token_id_seq')", Long.class);
+                entity.setId(id);
+            }
+
+            Long returnedId = jdbcTemplate.queryForObject(sql, Long.class,
                     entity.getId(), entity.getUserId(), entity.getValue(), entity.isExpired());
-            entity.setId(id);
+            entity.setId(returnedId);
+
             return entity;
         } catch (Exception e) {
             throw new ErrorInsertSqlException("Error saving token", e);

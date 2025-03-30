@@ -19,7 +19,7 @@ public interface FinanceService {
 
     Long createEmptyFinance(CreateFinanceDto dto);
 
-    TransactionDto addTransaction(Long financeId, CreateTransactionDto dto);
+    TransactionDto createTransaction(Long financeId, CreateTransactionDto dto);
 
     BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId);
 
@@ -31,7 +31,7 @@ public interface FinanceService {
 
     Finance save(Finance finance);
 
-    Set<TransactionDto> getTransactions(Long financeId);
+    Set<TransactionDto> list(Long financeId);
 
     FinanceDto getFinanceById(Long id);
 

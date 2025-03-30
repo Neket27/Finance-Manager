@@ -1,5 +1,6 @@
 package app.service.impl;
 
+import app.aspect.loggable.CustomLogging;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.TransactionDto;
@@ -24,6 +25,7 @@ import java.util.Set;
  */
 
 @Service
+@CustomLogging
 public class TargetServiceImpl implements TargetService {
 
     private final Logger log = LoggerFactory.getLogger(TargetServiceImpl.class);
@@ -56,7 +58,7 @@ public class TargetServiceImpl implements TargetService {
     public Boolean isMonthBudgetExceeded(Long financeId) {
         Finance finance = findFinance(UserContext.getCurrentUser().email());
 
-        Set<TransactionDto> transactions = financeService.getTransactions(financeId);
+        Set<TransactionDto> transactions = financeService.list(financeId);
         Instant thirtyDaysAgo = Instant.now().minus(Duration.ofDays(30));
         BigDecimal totalExpenses = transactions.stream()
                 .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE && t.date().isAfter(thirtyDaysAgo))

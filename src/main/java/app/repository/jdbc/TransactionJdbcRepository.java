@@ -91,32 +91,35 @@ public class TransactionJdbcRepository implements TransactionRepository {
     public Transaction save(Transaction entity) {
         try {
             String sql = """
-                INSERT INTO business.transactions (id, amount, category, date, description, type_transaction, finance_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (id) DO UPDATE 
-                SET amount = EXCLUDED.amount, 
-                    category = EXCLUDED.category, 
-                    date = EXCLUDED.date, 
-                    description = EXCLUDED.description, 
-                    type_transaction = EXCLUDED.type_transaction, 
-                    finance_id = EXCLUDED.finance_id
-                RETURNING id
-            """;
+            INSERT INTO business.transactions (id, amount, category, date, description, type_transaction, finance_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (id) DO UPDATE 
+            SET amount = EXCLUDED.amount, 
+                category = EXCLUDED.category, 
+                date = EXCLUDED.date, 
+                description = EXCLUDED.description, 
+                type_transaction = EXCLUDED.type_transaction, 
+                finance_id = EXCLUDED.finance_id
+            RETURNING id
+        """;
 
             if (entity.getId() == null || entity.getId() == 0) {
                 entity.setId(jdbcTemplate.queryForObject("SELECT NEXTVAL('transaction_id_seq')", Long.class));
             }
 
-            jdbcTemplate.update(sql, entity.getId(), entity.getAmount(), entity.getCategory(),
+            Long generatedId = jdbcTemplate.queryForObject(sql, Long.class,
+                    entity.getId(), entity.getAmount(), entity.getCategory(),
                     Timestamp.from(entity.getDate()), entity.getDescription(),
                     entity.getTypeTransaction().toString(), entity.getFinanceId());
 
+            entity.setId(generatedId);
             return entity;
         } catch (Exception e) {
             log.error("Error inserting or updating transaction: {}", e.getMessage());
             throw new ErrorInsertSqlException("Error inserting or updating transaction into database", e);
         }
     }
+
 
     @Override
     @Transactional

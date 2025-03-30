@@ -1,10 +1,11 @@
 package app.service.impl;
 
+import app.aspect.loggable.CustomLogging;
 import app.service.NotificationService;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 @Service
+@CustomLogging
 public class NotificationServiceImpl implements NotificationService {
 
 

@@ -1,32 +1,30 @@
 package app.config;
 
 import app.App;
-import app.auth.AuthenticationFilter;
-import jakarta.servlet.FilterRegistration;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRegistration;
-import org.springframework.web.WebApplicationInitializer;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import jakarta.servlet.Filter;
+import org.springdoc.webmvc.ui.SwaggerConfig;
 import org.springframework.web.filter.DelegatingFilterProxy;
-import org.springframework.web.servlet.DispatcherServlet;
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-public class AppInitializer implements WebApplicationInitializer {
+public class AppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
     @Override
-    public void onStartup(ServletContext servletContext) {
+    protected Class<?>[] getRootConfigClasses() {
+        return new Class[]{App.class, SwaggerConfig.class};
+    }
 
-        AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
-        context.register(App.class);
+    @Override
+    protected Class<?>[] getServletConfigClasses() {
+        return null;
+    }
 
-        DispatcherServlet dispatcherServlet = new DispatcherServlet(context);
-        ServletRegistration.Dynamic registration = servletContext.addServlet("dispatcher", dispatcherServlet);
-        registration.setLoadOnStartup(1);
-        registration.addMapping("/");
+    @Override
+    protected String[] getServletMappings() {
+        return new String[]{"/"};
+    }
 
-
-        FilterRegistration.Dynamic authFilter = servletContext.addFilter("authenticationFilter", new DelegatingFilterProxy("authenticationFilter"));
-        authFilter.addMappingForUrlPatterns(null, false, "/*");
-
+    @Override
+    protected Filter[] getServletFilters() {
+        return new Filter[]{new DelegatingFilterProxy("authenticationFilter")};
     }
 }

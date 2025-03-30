@@ -18,4 +18,14 @@ public class UserContext {
     public static void clear() {
         currentUser.remove();
     }
+
+
+    public void setUser(UserDto user) {
+        currentUser.set(user);
+    }
+
+    public static UserDto getUser() {
+        return currentUser.get();
+    }
+
 }

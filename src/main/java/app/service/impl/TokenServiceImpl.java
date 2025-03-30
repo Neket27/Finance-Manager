@@ -1,12 +1,14 @@
 package app.service.impl;
 
+import app.aspect.loggable.CustomLogging;
 import app.entity.Token;
-import app.exception.TokenException;
+import app.exception.common.NotFoundException;
 import app.repository.TokenRepository;
 import app.service.TokenService;
 import org.springframework.stereotype.Service;
 
 @Service
+@CustomLogging
 public class TokenServiceImpl implements TokenService {
 
     private final TokenRepository tokenRepository;
@@ -16,18 +18,18 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public Token getTokenById(Long id) throws TokenException {
-        return tokenRepository.findById(id).orElseThrow(() -> new TokenException("Token not found"));
+    public Token getTokenById(Long id) {
+        return tokenRepository.findById(id).orElseThrow(() -> new NotFoundException("Token with id: " + id+ " not found"));
     }
 
     @Override
-    public Token getTokenByUserId(Long userId) throws TokenException {
-        return tokenRepository.findByUserId(userId).orElseThrow(() -> new TokenException("Token not found"));
+    public Token getTokenByUserId(Long userId){
+        return tokenRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("Token with userId: " + userId+" not found"));
     }
 
     @Override
-    public Token getTokenByUserEmail(String email) throws TokenException {
-        return tokenRepository.getTokenByUserEmail(email).orElseThrow(() -> new TokenException("Token not found"));
+    public Token getTokenByUserEmail(String email) {
+        return tokenRepository.getTokenByUserEmail(email).orElseThrow(() -> new NotFoundException("Token with email  " + email+ "not found"));
     }
 
     @Override

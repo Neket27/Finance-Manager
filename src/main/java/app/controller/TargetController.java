@@ -1,6 +1,7 @@
 package app.controller;
 
 import app.context.UserContext;
+import app.controller.advice.annotation.CustomExceptionHandler;
 import app.service.TargetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 @RestController
 @RequestMapping("/api/v1/target")
 @RequiredArgsConstructor
+@CustomExceptionHandler
 public class TargetController {
 
     private final TargetService targetService;
@@ -23,7 +25,7 @@ public class TargetController {
 
     @PostMapping("/mount/budget")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void setMountBudget(@RequestParam BigDecimal budget) {
+    public void setMountBudget(@RequestParam(name = "budget") BigDecimal budget) {
         targetService.updateMonthlyBudget(getFinanceIdCurrentUser(), budget);
     }
 
@@ -35,7 +37,7 @@ public class TargetController {
 
     @PostMapping("/goal")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void setGoalGoal(@RequestParam BigDecimal goal) {
+    public void setGoalGoal(@RequestParam(name = "goal") BigDecimal goal) {
         targetService.updateGoalSavings(goal);
     }
 

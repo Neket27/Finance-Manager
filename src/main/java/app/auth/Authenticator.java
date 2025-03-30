@@ -3,7 +3,7 @@ package app.auth;
 
 import app.dto.user.UserDto;
 import app.entity.Token;
-import app.exception.TokenException;
+import app.exception.common.NotFoundException;
 import app.service.TokenService;
 import app.service.UserService;
 import org.slf4j.Logger;
@@ -27,10 +27,9 @@ public class Authenticator {
             Token token = tokenService.getTokenByUserId(Long.valueOf(_token));
             return userService.getUserById(token.getUserId());
 
-        } catch (TokenException e) {
+        } catch (NotFoundException e) {
             log.error(e.getMessage());
             return null;
-//            throw new TokenException("Token is invalid");
         }
     }
 
