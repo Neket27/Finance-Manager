@@ -1,4 +1,4 @@
-package app.config.liquibase;
+package app.config;
 
 import jakarta.annotation.PostConstruct;
 import liquibase.Liquibase;
@@ -10,8 +10,7 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -19,14 +18,18 @@ import javax.sql.DataSource;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(LiquibaseProperties.class)
 public class LiquibaseConfig {
 
     private static final Logger log = LoggerFactory.getLogger(LiquibaseConfig.class);
     private final JdbcTemplate jdbcTemplate;
-    private final DataSource dataSource;
+
+    @Value("${liquibase.change-log-file}")
+    private String changeLogFile;
+
+    @Value("${liquibase.schema-name}")
+    private String schemaName;
+
     private String[] schemas = {"public", "metadata", "business"};
-    private final LiquibaseProperties prop;
 
     @PostConstruct
     public void initialize() {
@@ -50,12 +53,12 @@ public class LiquibaseConfig {
     }
 
     private void runLiquibase() throws LiquibaseException {
-        try (var connection = dataSource.getConnection()) {
+        try (var connection = jdbcTemplate.getDataSource().getConnection()) {
             Database database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            database.setLiquibaseSchemaName(prop.getLiquibaseSchema());
+            database.setLiquibaseSchemaName(schemaName);
 
-            try (Liquibase liquibase = new Liquibase(prop.getChangeLog(), new ClassLoaderResourceAccessor(), database)) {
+            try (Liquibase liquibase = new Liquibase(changeLogFile, new ClassLoaderResourceAccessor(), database)) {
                 liquibase.update();
             }
         } catch (Exception e) {

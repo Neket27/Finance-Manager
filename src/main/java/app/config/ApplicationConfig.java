@@ -12,4 +12,5 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @EnableAspectJAutoProxy
 @ConfigurationPropertiesScan
 public class ApplicationConfig {
+
 }

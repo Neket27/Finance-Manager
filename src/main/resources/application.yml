@@ -1,7 +1,16 @@
-db:
-  url: jdbc:postgresql://localhost:5434/db_finance_manager
-  username: db_finance_manager
-  password: db_finance_manager
+spring:
+#  liquibase:
+#    change-log: classpath:db/changelog/changelog-master.yml
+#    default-schema: metadata
+#    user: db_finance_manager
+#    password: db_finance_manager
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5434/db_finance_manager
+    username: db_finance_manager
+    password: db_finance_manager
+
 
 liquibase:
   change-log-file: db/changelog/changelog-master.yml

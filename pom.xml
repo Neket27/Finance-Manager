@@ -19,7 +19,7 @@
         <junit-jupiter>5.7.0</junit-jupiter>
         <mockito-junit-jupiter>5.7.0</mockito-junit-jupiter>
         <logback-classic>1.4.8</logback-classic>
-        <liquibase-core>4.17.2</liquibase-core>
+        <liquibase-core>4.23.0</liquibase-core>
         <postgresql>42.7.1</postgresql>
         <testcontainers.version>1.19.8</testcontainers.version>
         <postgresql-testcontainers>1.19.0</postgresql-testcontainers>
@@ -42,9 +42,44 @@
         <json-path>2.6.0</json-path>
         <jakarta.annotation-api>3.0.0</jakarta.annotation-api>
         <hamcrest-library>2.2</hamcrest-library>
+        <jakarta.el-api>5.0.1</jakarta.el-api>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
     <dependencies>
+
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>8.0.1.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+            <version>5.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.el</groupId>
+            <artifactId>jakarta.el-api</artifactId>
+            <version>5.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.el</groupId>
+            <artifactId>jakarta.el-api</artifactId>
+            <version>${jakarta.el-api}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -125,11 +160,7 @@
             <version>${jackson}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>${snakeyaml}</version>
-        </dependency>
+
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>

@@ -1,5 +1,6 @@
 package app.controller;
 
+import app.aspect.validator.ValidateDto;
 import app.controller.advice.annotation.CustomExceptionHandler;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
@@ -34,7 +35,7 @@ public class AuthController {
     })
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto register(@Valid @RequestBody CreateUserDto dto) {
+    public UserDto register(@ValidateDto @RequestBody CreateUserDto dto) {
         return authService.register(dto);
     }
 
@@ -46,7 +47,7 @@ public class AuthController {
     })
     @PostMapping("/signin")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseLogin login(@Valid @RequestBody SignIn signIn) {
+    public ResponseLogin login(@ValidateDto @RequestBody SignIn signIn) {
         return authService.login(signIn);
     }
 

@@ -1,27 +1,26 @@
 package app.aspect.validator;
 
 import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
+@Component
 @Aspect
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ValidationAspect {
 
     private final Validator validator;
 
-    public ValidationAspect() {
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        this.validator = factory.getValidator();
-    }
 
-    @Pointcut("@annotation(app.validation.ValidateDto)")
+    @Pointcut("@annotation(app.aspect.validator.ValidateDto)")
     public void validateDtoMethods() {
     }
 
