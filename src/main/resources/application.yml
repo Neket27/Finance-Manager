@@ -1,5 +1,3 @@
-
-
 db:
   url: jdbc:postgresql://localhost:5434/db_finance_manager
   username: db_finance_manager
@@ -8,15 +6,3 @@ db:
 liquibase:
   change-log-file: db/changelog/changelog-master.yml
   schema-name: metadata
-
-#springdoc:
-#  packages-to-scan: app.controller
-#  api-docs-path: /api-docs
-#  ui-path: /ui
-
-
-
-#springdoc.swagger-ui:
-#  path: /ui
-#  enabled: true
-#  url: /ui

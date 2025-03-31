@@ -1,20 +1,27 @@
-package app.config;
+package app.config.db;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+
 @Configuration
+@RequiredArgsConstructor
+@EnableConfigurationProperties(DbConfigProperties.class)
 public class DatabaseConfig {
+
+    private final DbConfigProperties prop;
 
     @Bean
     public DriverManagerDataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl("jdbc:postgresql://localhost:5434/db_finance_manager");
-        dataSource.setUsername("db_finance_manager");
-        dataSource.setPassword("db_finance_manager");
+        dataSource.setUrl(prop.getUrl());
+        dataSource.setUsername(prop.getUsername());
+        dataSource.setPassword(prop.getPassword());
         return dataSource;
     }
 

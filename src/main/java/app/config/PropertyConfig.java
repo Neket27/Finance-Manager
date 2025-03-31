@@ -1,5 +1,6 @@
 package app.config;
 
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -10,9 +11,11 @@ public class PropertyConfig {
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer properties() {
-        PropertySourcesPlaceholderConfigurer propertyConfig = new PropertySourcesPlaceholderConfigurer();
-        propertyConfig.setLocation(new ClassPathResource("application.yml"));
-        return propertyConfig;
+        PropertySourcesPlaceholderConfigurer configurer = new PropertySourcesPlaceholderConfigurer();
+        YamlPropertiesFactoryBean yamlPropertiesFactoryBean = new YamlPropertiesFactoryBean();
+        yamlPropertiesFactoryBean.setResources(new ClassPathResource("application.yml"));
+        configurer.setProperties(yamlPropertiesFactoryBean.getObject());
+        return configurer;
     }
 
 }

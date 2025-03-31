@@ -23,7 +23,7 @@
         <postgresql>42.7.1</postgresql>
         <testcontainers.version>1.19.8</testcontainers.version>
         <postgresql-testcontainers>1.19.0</postgresql-testcontainers>
-        <snakeyaml>2.3</snakeyaml>
+        <snakeyaml>2.0</snakeyaml>
         <jackson>2.17.0</jackson>
         <org.projectlombok.version>1.18.30</org.projectlombok.version>
         <jakarta.validation-api>3.1.0</jakarta.validation-api>
@@ -32,7 +32,6 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <mapstruct.version>1.5.2.Final</mapstruct.version>
         <springdoc.version>2.2.0</springdoc.version>
-        <spring.version>5.3.30</spring.version>
         <springfox.version>3.0.0</springfox.version>
         <spring-test>6.2.3</spring-test>
         <junit-jupiter-api>5.7.0</junit-jupiter-api>
@@ -126,6 +125,11 @@
             <version>${jackson}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml}</version>
+        </dependency>
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
