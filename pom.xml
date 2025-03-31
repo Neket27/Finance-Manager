@@ -39,7 +39,7 @@
         <spring-webmvc>6.2.5</spring-webmvc>
         <spring-data-jpa>3.4.1</spring-data-jpa>
         <tomcat-embed-core>10.1.36</tomcat-embed-core>
-        <springdoc-openapi-starter-webmvc-ui>2.2.0</springdoc-openapi-starter-webmvc-ui>
+        <springdoc-openapi-starter-webmvc-ui>2.8.6</springdoc-openapi-starter-webmvc-ui>
         <json-path>2.6.0</json-path>
         <jakarta.annotation-api>3.0.0</jakarta.annotation-api>
         <hamcrest-library>2.2</hamcrest-library>

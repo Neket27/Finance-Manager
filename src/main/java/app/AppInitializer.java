@@ -1,6 +1,6 @@
-package app.config;
+package app;
 
-import app.App;
+import app.config.ApplicationConfig;
 import jakarta.servlet.Filter;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
@@ -9,7 +9,7 @@ public class AppInitializer extends AbstractAnnotationConfigDispatcherServletIni
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class[]{App.class, OpenApiConfig.class, SwaggerConfig.class};
+        return new Class[]{ApplicationConfig.class};
     }
 
     @Override
@@ -26,4 +26,5 @@ public class AppInitializer extends AbstractAnnotationConfigDispatcherServletIni
     protected Filter[] getServletFilters() {
         return new Filter[]{new DelegatingFilterProxy("authenticationFilter")};
     }
+
 }

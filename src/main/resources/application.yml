@@ -9,11 +9,14 @@ liquibase:
   change-log-file: db/changelog/changelog-master.yml
   schema-name: metadata
 
-springdoc:
-  api-docs:
-    path: /api-docs
-    enabled: true
-  swagger-ui:
-    path: /ui
-    enabled: true
-#
+#springdoc:
+#  packages-to-scan: app.controller
+#  api-docs-path: /api-docs
+#  ui-path: /ui
+
+
+
+#springdoc.swagger-ui:
+#  path: /ui
+#  enabled: true
+#  url: /ui
