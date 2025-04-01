@@ -20,11 +20,11 @@ import app.service.impl.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import test.integration.db.TestDatabase;
 import test.integration.db.TestDatabaseFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.spy;
 
 class AuthServiceIT {
 
@@ -33,9 +33,9 @@ class AuthServiceIT {
     @BeforeEach
     void setup() {
         TestDatabase database = TestDatabaseFactory.create();
-        TransactionService transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), new TransactionMapper());
-        FinanceService financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, new FinanceMapper());
-        UserService userService = spy(new UserServiceImpl(new UserMapper(), new UserJdbcRepository(database.jdbcTemplate()), financeService));
+        TransactionService transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), Mappers.getMapper(TransactionMapper.class));
+        FinanceService financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, Mappers.getMapper(FinanceMapper.class));
+        UserService userService = new UserServiceImpl(Mappers.getMapper(UserMapper.class), new UserJdbcRepository(database.jdbcTemplate()), financeService);
         TokenService tokenService = new TokenServiceImpl(new TokenJdbcRepository(database.jdbcTemplate()));
         authService = new AuthServiceImpl(userService, tokenService);
 
@@ -48,9 +48,9 @@ class AuthServiceIT {
     }
 
     @Test
-    void registerSuccess(){
+    void registerSuccess() {
         // Arrange
-        CreateUserDto createUserDto = new CreateUserDto("name","email@mail.ru","password1234");
+        CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
 
         // Act
         UserDto userDto = authService.register(createUserDto);

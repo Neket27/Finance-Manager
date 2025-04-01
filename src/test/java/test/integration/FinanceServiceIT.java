@@ -10,6 +10,7 @@ import app.entity.Role;
 import app.entity.TypeTransaction;
 import app.exception.common.CreateException;
 import app.mapper.FinanceMapper;
+import app.mapper.TransactionMapper;
 import app.repository.jdbc.FinanceJdbcRepository;
 import app.repository.jdbc.TransactionJdbcRepository;
 import app.service.FinanceService;
@@ -19,6 +20,7 @@ import app.service.impl.TransactionServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import test.integration.db.TestDatabase;
 import test.integration.db.TestDatabaseFactory;
 
@@ -50,8 +52,8 @@ class FinanceServiceIT {
                 .build();
 
         UserContext.setCurrentUser(userDto);
-        transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), new app.mapper.TransactionMapper());
-        financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, new FinanceMapper());
+        transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), Mappers.getMapper(TransactionMapper.class));
+        financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, Mappers.getMapper(FinanceMapper.class));
     }
 
 

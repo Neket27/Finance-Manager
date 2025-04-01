@@ -79,7 +79,7 @@ databaseChangeLog:
                   value: 'USER'
               - column:
                   name: finance_id
-                  value: 1
+                  value: 3
 
         - insert:
             tableName: users
@@ -105,7 +105,7 @@ databaseChangeLog:
                   value: 'USER'
               - column:
                   name: finance_id
-                  value: 2
+                  value: 4
 
         - insert:
             tableName: users
@@ -131,7 +131,7 @@ databaseChangeLog:
                   value: 'USER'
               - column:
                   name: finance_id
-                  value: 1
+                  value: 5
 
       rollback:
         - delete:

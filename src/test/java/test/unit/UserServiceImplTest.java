@@ -45,7 +45,7 @@ class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         this.userDto = new UserDto(1L, "name", "email@mail.ru", "password1234", true, Role.USER, 1L);
-        this.user = new User(1L, "name", "email@mail.ru", "password1234", Role.USER, 1L,true);
+        this.user = new User(1L, "name", "email@mail.ru", "password1234", true,Role.USER, 1L);
     }
 
     @Test
@@ -55,7 +55,7 @@ class UserServiceImplTest {
 
         when(userRepository.existsByEmail(createUserDto.email())).thenReturn(false);
         when(financeService.createEmptyFinance(any())).thenReturn(userDto.id());
-        when(userMapper.toEntity(any())).thenReturn(user);
+        when(userMapper.toEntity(any(CreateUserDto.class))).thenReturn(user);
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(userDto);
 

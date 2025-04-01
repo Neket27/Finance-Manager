@@ -19,6 +19,7 @@ import app.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import test.integration.db.TestDatabase;
 import test.integration.db.TestDatabaseFactory;
 
@@ -33,9 +34,9 @@ public class UserServiceIT {
     @BeforeEach
     void setup() {
         TestDatabase database = TestDatabaseFactory.create();
-        TransactionService transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), new TransactionMapper());
-        FinanceService financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, new FinanceMapper());
-        userService = new UserServiceImpl(new UserMapper(), new UserJdbcRepository(database.jdbcTemplate()), financeService);
+        TransactionService transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), Mappers.getMapper(TransactionMapper.class));
+        FinanceService financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, Mappers.getMapper(FinanceMapper.class));
+        userService = new UserServiceImpl(Mappers.getMapper(UserMapper.class), new UserJdbcRepository(database.jdbcTemplate()), financeService);
     }
 
     @AfterEach

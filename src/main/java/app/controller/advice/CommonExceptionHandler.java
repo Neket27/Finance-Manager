@@ -6,7 +6,6 @@ import app.exception.common.DeleteException;
 import app.exception.common.NotFoundException;
 import app.exception.common.UpdateException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -21,8 +20,8 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity handleException(Exception e) {
-        return new ResponseEntity(e.getMessage(), HttpStatus.BAD_REQUEST);
+    public Response handleException(Exception e) {
+        return new Response(e.getMessage(), Instant.now().toString());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

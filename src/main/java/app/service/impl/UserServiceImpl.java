@@ -9,6 +9,7 @@ import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
 import app.entity.User;
+import app.exception.db.ErrorDeleteSqlException;
 import app.exception.user.UserAlreadyExistsException;
 import app.exception.user.UserException;
 import app.mapper.UserMapper;
@@ -50,6 +51,7 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toEntity(createUserDto);
         user.setRole(userRepository.getAll().isEmpty() ? Role.ADMIN : Role.USER);
+        user.setActive(true);
 
         CreateFinanceDto financeDto = new CreateFinanceDto.Builder()
                 .currentSavings(BigDecimal.ZERO)

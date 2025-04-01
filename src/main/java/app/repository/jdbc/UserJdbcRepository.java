@@ -51,7 +51,7 @@ public class UserJdbcRepository implements UserRepository {
     @Override
     public User save(User entity) {
         String sql = """
-                INSERT INTO business.users (id, email, name, password, is_active, role, finance_id)
+                INSERT INTO business.users (id, name, email, password, is_active, role, finance_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET
                     email = EXCLUDED.email,
@@ -73,8 +73,8 @@ public class UserJdbcRepository implements UserRepository {
                     sql,
                     Long.class,
                     entity.getId(),
-                    entity.getEmail(),
                     entity.getName(),
+                    entity.getEmail(),
                     entity.getPassword(),
                     entity.isActive(),
                     entity.getRole().name(),
@@ -92,6 +92,8 @@ public class UserJdbcRepository implements UserRepository {
     public void delete(User entity) {
         String sql = "DELETE FROM business.users WHERE email = ?";
         try {
+            Collection<User> all = getAll();
+            log.info(all.toString());
             int affectedRows = jdbcTemplate.update(sql, entity.getEmail());
             if (affectedRows == 0) {
                 throw new ErrorDeleteSqlException("User not found, nothing deleted.");
@@ -130,9 +132,9 @@ public class UserJdbcRepository implements UserRepository {
                 rs.getString("name"),
                 rs.getString("email"),
                 rs.getString("password"),
+                rs.getBoolean("is_active"),
                 Role.valueOf(rs.getString("role").toUpperCase()),
-                rs.getLong("finance_id"),
-                rs.getBoolean("is_active")
+                rs.getLong("finance_id")
         );
     }
 }

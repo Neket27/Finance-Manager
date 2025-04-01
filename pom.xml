@@ -43,6 +43,8 @@
         <jakarta.annotation-api>3.0.0</jakarta.annotation-api>
         <hamcrest-library>2.2</hamcrest-library>
         <jakarta.el-api>5.0.1</jakarta.el-api>
+        <hibernate-validator>8.0.1.Final</hibernate-validator>
+        <expressly>5.0.0</expressly>
     </properties>
 
     <dependencyManagement>
@@ -61,19 +63,13 @@
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>8.0.1.Final</version>
+            <version>${hibernate-validator}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.expressly</groupId>
             <artifactId>expressly</artifactId>
-            <version>5.0.0</version>
+            <version>${expressly}</version>
         </dependency>
-        <dependency>
-            <groupId>jakarta.el</groupId>
-            <artifactId>jakarta.el-api</artifactId>
-            <version>5.0.1</version>
-        </dependency>
-
         <dependency>
             <groupId>jakarta.el</groupId>
             <artifactId>jakarta.el-api</artifactId>
