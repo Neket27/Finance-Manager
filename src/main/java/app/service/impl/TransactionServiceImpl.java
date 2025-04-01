@@ -15,10 +15,13 @@ import app.exception.common.DeleteException;
 import app.mapper.TransactionMapper;
 import app.repository.TransactionRepository;
 import app.service.TransactionService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,24 +31,15 @@ import java.util.Set;
  * Реализация сервиса управления транзакциями.
  */
 
+@Slf4j
 @Service
 @CustomLogging
+@RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
-    private final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
 
-    /**
-     * Конструктор сервиса транзакций.
-     *
-     * @param transactionRepository репозиторий транзакций
-     * @param transactionMapper     маппер транзакций
-     */
-    public TransactionServiceImpl(TransactionRepository transactionRepository, TransactionMapper transactionMapper) {
-        this.transactionRepository = transactionRepository;
-        this.transactionMapper = transactionMapper;
-    }
 
     /**
      * Создает новую транзакцию.
@@ -55,6 +49,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public TransactionDto create(Long financeId, CreateTransactionDto dto) {
         try {
             Transaction transaction = transactionMapper.toEntity(dto);
@@ -77,6 +72,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
     @Auditable
+    @Transactional
     public TransactionDto getTransactionById(Long id) {
         return transactionMapper.toDto(find(id));
     }
@@ -100,6 +96,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public TransactionDto edit(UpdateTransactionDto dto) {
         Transaction transaction = this.find(dto.id());
         transactionMapper.updateEntity(transaction, dto);
@@ -116,6 +113,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         try {
             transactionRepository.deleteById(id);
@@ -134,6 +132,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
     @Auditable
+    @Transactional
     public List<TransactionDto> findAll(FinanceDto finance) {
         return finance.transactionsId().stream().map(this::getTransactionById).toList();
     }
@@ -143,6 +142,7 @@ public class TransactionServiceImpl implements TransactionService {
      */
     @Override
     @Auditable
+    @Transactional
     public List<TransactionDto> getFilteredTransactions(FilterTransactionDto f) {
         UserDto user = UserContext.getCurrentUser();
         return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(user.financeId(),
@@ -151,6 +151,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Auditable
+    @Transactional
     public Set<TransactionDto> getTransactionsByFinanceId(Long id) {
         return transactionMapper.toDtoSet(transactionRepository.findByFinanceId(id));
     }

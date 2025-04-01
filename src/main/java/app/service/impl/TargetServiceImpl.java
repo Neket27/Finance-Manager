@@ -11,9 +11,12 @@ import app.entity.TypeTransaction;
 import app.service.FinanceService;
 import app.service.TargetService;
 import app.service.UserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -25,25 +28,14 @@ import java.util.Set;
  * Реализация сервиса управления финансовыми целями пользователя.
  */
 
+@Slf4j
 @Service
 @CustomLogging
+@RequiredArgsConstructor
 public class TargetServiceImpl implements TargetService {
 
-    private final Logger log = LoggerFactory.getLogger(TargetServiceImpl.class);
     private final UserService userService;
     private final FinanceService financeService;
-
-    /**
-     * Конструктор сервиса управления целями.
-     *
-     * @param userService    сервис пользователей
-     * @param financeService сервис финансов
-     */
-
-    public TargetServiceImpl(UserService userService, FinanceService financeService) {
-        this.financeService = financeService;
-        this.userService = userService;
-    }
 
     /**
      * Устанавливает месячный бюджет пользователя.
@@ -52,14 +44,15 @@ public class TargetServiceImpl implements TargetService {
      */
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public void updateMonthlyBudget(Long financeId, BigDecimal budget) {
         financeService.updatetMonthlyBudget(financeId, budget);
         log.debug("Месячный бюджет установлен: {}", budget);
     }
 
-
     @Override
     @Auditable
+    @Transactional
     public Boolean isMonthBudgetExceeded(Long financeId) {
         Finance finance = findFinance(UserContext.getCurrentUser().email());
 
@@ -80,9 +73,9 @@ public class TargetServiceImpl implements TargetService {
         return false;
     }
 
-
     @Override
     @Auditable
+    @Transactional
     public Double getProgressTowardsGoal(Long financeId) {
         FinanceDto finance = financeService.getFinanceById(financeId);
         BigDecimal current = finance.currentSavings();
@@ -100,6 +93,7 @@ public class TargetServiceImpl implements TargetService {
      */
     @Override
     @Auditable
+    @Transactional
     public String generateFinancialReport() {
         UserDto user = userService.getUserByEmail(UserContext.getCurrentUser().email());
         Finance finance = financeService.findFinanceById(user.financeId());
@@ -131,6 +125,7 @@ public class TargetServiceImpl implements TargetService {
      */
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public void updateGoalSavings(BigDecimal savingGoal) {
         Finance finance = findFinance(UserContext.getCurrentUser().email());
         finance.setSavingsGoal(savingGoal);

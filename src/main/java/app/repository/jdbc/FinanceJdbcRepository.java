@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -49,7 +48,6 @@ public class FinanceJdbcRepository implements FinanceRepository {
     }
 
     @Override
-    @Transactional
     public Finance save(Finance entity) {
         String sql = """
                     INSERT INTO business.finances (id, monthly_budget, savings_goal, current_savings, total_expenses)
@@ -84,7 +82,6 @@ public class FinanceJdbcRepository implements FinanceRepository {
 
 
     @Override
-    @Transactional
     public void delete(Finance entity) {
         try {
             String sql = "DELETE FROM business.finances WHERE id = ?";

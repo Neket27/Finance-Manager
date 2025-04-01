@@ -87,7 +87,6 @@ public class TransactionJdbcRepository implements TransactionRepository {
     }
 
     @Override
-    @Transactional
     public Transaction save(Transaction entity) {
         try {
             String sql = """
@@ -122,7 +121,6 @@ public class TransactionJdbcRepository implements TransactionRepository {
 
 
     @Override
-    @Transactional
     public void deleteById(Long id) {
         try {
             String sql = "DELETE FROM business.transactions WHERE id = ?";

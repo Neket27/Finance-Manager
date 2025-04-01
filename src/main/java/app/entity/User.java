@@ -1,6 +1,7 @@
 package app.entity;
 
 import lombok.*;
+import org.springframework.data.annotation.Id;
 
 @Getter
 @Setter
@@ -9,6 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 public class User {
 
+    @Id
     private Long id;
     private String name;
     private String email;

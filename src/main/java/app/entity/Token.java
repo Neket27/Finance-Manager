@@ -1,7 +1,10 @@
 package app.entity;
 
+import org.springframework.data.annotation.Id;
+
 public class Token {
 
+    @Id
     private Long id;
     private Long userId;
     private String value;

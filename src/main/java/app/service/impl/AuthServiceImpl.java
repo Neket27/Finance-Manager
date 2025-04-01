@@ -8,34 +8,29 @@ import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Token;
-import app.exception.user.UserException;
-import app.exception.auth.ErrorLogoutException;
-import app.exception.user.UserAlreadyExistsException;
-import app.exception.user.UserIsAlreadyLoggedInException;
 import app.exception.auth.ErrorLoginExeption;
+import app.exception.auth.ErrorLogoutException;
 import app.exception.auth.ErrorRegistrationException;
+import app.exception.user.UserAlreadyExistsException;
+import app.exception.user.UserException;
+import app.exception.user.UserIsAlreadyLoggedInException;
 import app.service.AuthService;
 import app.service.TokenService;
 import app.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
 
+@Slf4j
 @Service
 @CustomLogging
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final UserService userService;
     private TokenService tokenService;
-
-
-    public AuthServiceImpl(UserService userService, TokenService tokenService) {
-        this.userService = userService;
-        this.tokenService = tokenService;
-    }
 
     @Override
     @Auditable

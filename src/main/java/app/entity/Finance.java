@@ -1,11 +1,16 @@
 package app.entity;
 
+import org.springframework.data.annotation.Id;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+//@SequenceGenerator(name = "finance_seq", sequenceName = "finance_id_seq", allocationSize = 1)
 public class Finance {
 
+    @Id
+//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "finance_seq")
     private Long id;
     private BigDecimal monthlyBudget;
     private BigDecimal savingsGoal;

@@ -45,6 +45,7 @@
         <jakarta.el-api>5.0.1</jakarta.el-api>
         <hibernate-validator>8.0.1.Final</hibernate-validator>
         <expressly>5.0.0</expressly>
+        <jakarta.persistence-api>3.2.0</jakarta.persistence-api>
     </properties>
 
     <dependencyManagement>
@@ -59,7 +60,11 @@
 
 
     <dependencies>
-
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>${jakarta.persistence-api}</version>
+        </dependency>
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>

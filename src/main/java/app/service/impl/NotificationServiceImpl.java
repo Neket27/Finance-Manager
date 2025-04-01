@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 @CustomLogging
 public class NotificationServiceImpl implements NotificationService {
 
-
     @Override
     @Auditable
     public void sendMessage(String email, String... messages) {

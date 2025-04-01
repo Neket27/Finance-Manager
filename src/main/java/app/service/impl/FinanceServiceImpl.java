@@ -18,9 +18,12 @@ import app.mapper.FinanceMapper;
 import app.repository.FinanceRepository;
 import app.service.FinanceService;
 import app.service.TransactionService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,23 +34,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @CustomLogging
+@RequiredArgsConstructor
 public class FinanceServiceImpl implements FinanceService {
 
-    private final Logger log = LoggerFactory.getLogger(FinanceServiceImpl.class);
     private final FinanceRepository financeRepository;
     private final TransactionService transactionService;
     private final FinanceMapper financeMapper;
 
-    public FinanceServiceImpl(FinanceRepository financeRepository, TransactionService transactionService, FinanceMapper financeMapper) {
-        this.financeRepository = financeRepository;
-        this.transactionService = transactionService;
-        this.financeMapper = financeMapper;
-    }
-
     @Override
     @Auditable
+    @Transactional
     public Long createEmptyFinance(CreateFinanceDto dto) {
         Finance finance = financeMapper.toEntity(dto);
         finance = financeRepository.save(finance);
@@ -56,6 +55,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public TransactionDto createTransaction(Long financeId, CreateTransactionDto dto) {
         Finance finance = find(financeId);
 
@@ -89,6 +89,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional
     public Map<String, BigDecimal> getExpensesByCategory(Long financeId) {
         FinanceDto finance = getFinance(financeId);
         return finance.transactionsId().stream()
@@ -100,6 +101,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long financeId, Long idTransaction) {
         Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
         boolean transactionExists = transactionsByFinanceId.stream()
@@ -117,6 +119,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public void updatetMonthlyBudget(Long financeId, BigDecimal budget) {
         Finance finance = find(financeId);
         finance.setMonthlyBudget(budget);
@@ -125,6 +128,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional
     public List<TransactionDto> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto) {
         return transactionService.getFilteredTransactions(filterTransactionDto);
     }
@@ -137,6 +141,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional
     public BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId) {
         FinanceDto finance = getFinance(financeId);
         return getTotal(finance, startDate, endDate, TypeTransaction.PROFIT);
@@ -160,6 +165,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public TransactionDto editTransaction(Long financeId, UpdateTransactionDto updateTransactionDto) {
         Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
         boolean transactionExists = transactionsByFinanceId.stream()
@@ -177,24 +183,28 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public Finance save(Finance finance) {
         return financeRepository.save(finance);
     }
 
     @Override
     @Auditable
+    @Transactional
     public Set<TransactionDto> list(Long financeId) {
         return transactionService.getTransactionsByFinanceId(financeId);
     }
 
     @Override
     @Auditable
+    @Transactional
     public FinanceDto getFinanceById(Long id) {
         return financeMapper.toDto(this.find(id));
     }
 
     @Override
     @Auditable
+    @Transactional
     public Finance findFinanceById(Long id) {
         return this.find(id);
     }
