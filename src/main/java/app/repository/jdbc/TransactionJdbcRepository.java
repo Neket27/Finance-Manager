@@ -3,20 +3,23 @@ package app.repository.jdbc;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
 import app.exception.db.ErrorDeleteSqlException;
-import app.exception.db.ErrorInsertSqlException;
 import app.exception.db.ErrorSelectSqlException;
 import app.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -88,35 +91,39 @@ public class TransactionJdbcRepository implements TransactionRepository {
 
     @Override
     public Transaction save(Transaction entity) {
-        try {
-            String sql = """
-            INSERT INTO business.transactions (id, amount, category, date, description, type_transaction, finance_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT (id) DO UPDATE 
-            SET amount = EXCLUDED.amount, 
-                category = EXCLUDED.category, 
-                date = EXCLUDED.date, 
-                description = EXCLUDED.description, 
-                type_transaction = EXCLUDED.type_transaction, 
-                finance_id = EXCLUDED.finance_id
-            RETURNING id
-        """;
+        String sql = """
+                    INSERT INTO business.transactions (amount, category, date, description, type_transaction, finance_id)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    RETURNING id
+                """;
 
-            if (entity.getId() == null || entity.getId() == 0) {
-                entity.setId(jdbcTemplate.queryForObject("SELECT NEXTVAL('transaction_id_seq')", Long.class));
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        int update = jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setBigDecimal(1, entity.getAmount());
+            ps.setString(2, entity.getCategory());
+            ps.setTimestamp(3, Timestamp.from(entity.getDate()));
+            ps.setString(4, entity.getDescription());
+            ps.setString(5, entity.getTypeTransaction().toString());
+            ps.setLong(6, entity.getFinanceId());
+            return ps;
+        }, keyHolder);
+
+        if (update > 0) {
+            List<Map<String, Object>> keys = keyHolder.getKeyList();
+            if (!keys.isEmpty()) {
+                Map<String, Object> generatedKey = keys.get(0);
+                Number generatedId = (Number) generatedKey.get("id");
+                if (generatedId != null) {
+                    long id = generatedId.longValue();
+                    entity.setId(id);
+                    return entity;
+                }
             }
-
-            Long generatedId = jdbcTemplate.queryForObject(sql, Long.class,
-                    entity.getId(), entity.getAmount(), entity.getCategory(),
-                    Timestamp.from(entity.getDate()), entity.getDescription(),
-                    entity.getTypeTransaction().toString(), entity.getFinanceId());
-
-            entity.setId(generatedId);
-            return entity;
-        } catch (Exception e) {
-            log.error("Error inserting or updating transaction: {}", e.getMessage());
-            throw new ErrorInsertSqlException("Error inserting or updating transaction into database", e);
         }
+
+        return entity;
     }
 
 

@@ -2,16 +2,21 @@ package app.repository.jdbc;
 
 import app.entity.Token;
 import app.exception.db.ErrorDeleteSqlException;
-import app.exception.db.ErrorInsertSqlException;
 import app.exception.db.ErrorSelectSqlException;
 import app.repository.TokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -85,52 +90,57 @@ public class TokenJdbcRepository implements TokenRepository {
     @Override
     public Token save(Token entity) {
         String sql = """
-                INSERT INTO business.tokens (id, user_id, value, expired)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT (id) DO UPDATE SET
-                    user_id = EXCLUDED.user_id,
-                    value = EXCLUDED.value,
-                    expired = EXCLUDED.expired
+                INSERT INTO business.tokens (user_id, value, expired)
+                VALUES (?, ?, ?)
                 RETURNING id
                 """;
-        try {
 
-            Long id = entity.getId();
-            if (id == null || id == 0) {
-                id = jdbcTemplate.queryForObject("SELECT NEXTVAL('token_id_seq')", Long.class);
-                entity.setId(id);
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        int update = jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, entity.getUserId());
+            ps.setString(2, entity.getValue());
+            ps.setBoolean(3, entity.isExpired());
+            return ps;
+        }, keyHolder);
+
+        if (update > 0) {
+            List<Map<String, Object>> keys = keyHolder.getKeyList();
+            if (!keys.isEmpty()) {
+                Map<String, Object> generatedKey = keys.get(0);
+                Number generatedId = (Number) generatedKey.get("id");
+                if (generatedId != null) {
+                    long id = generatedId.longValue();
+                    entity.setId(id);
+                    return entity;
+                }
             }
-
-            Long returnedId = jdbcTemplate.queryForObject(sql, Long.class,
-                    entity.getId(), entity.getUserId(), entity.getValue(), entity.isExpired());
-            entity.setId(returnedId);
-
-            return entity;
-        } catch (Exception e) {
-            throw new ErrorInsertSqlException("Error saving token", e);
         }
+
+        return entity;
     }
 
-    @Override
-    public void delete(Token entity) {
-        String sql = "DELETE FROM business.tokens WHERE id = ?";
-        try {
-            int affectedRows = jdbcTemplate.update(sql, entity.getId());
-            if (affectedRows == 0) {
-                throw new ErrorDeleteSqlException("Token not found, nothing deleted.");
-            }
-        } catch (Exception e) {
-            throw new ErrorDeleteSqlException("Error deleting token", e);
+@Override
+public void delete(Token entity) {
+    String sql = "DELETE FROM business.tokens WHERE id = ?";
+    try {
+        int affectedRows = jdbcTemplate.update(sql, entity.getId());
+        if (affectedRows == 0) {
+            throw new ErrorDeleteSqlException("Token not found, nothing deleted.");
         }
+    } catch (Exception e) {
+        throw new ErrorDeleteSqlException("Error deleting token", e);
     }
+}
 
-    @Override
-    public Collection<Token> getAll() {
-        String sql = "SELECT * FROM business.tokens";
-        try {
-            return jdbcTemplate.query(sql, tokenRowMapper);
-        } catch (Exception e) {
-            throw new ErrorSelectSqlException("Error fetching all tokens", e);
-        }
+@Override
+public Collection<Token> getAll() {
+    String sql = "SELECT * FROM business.tokens";
+    try {
+        return jdbcTemplate.query(sql, tokenRowMapper);
+    } catch (Exception e) {
+        throw new ErrorSelectSqlException("Error fetching all tokens", e);
     }
+}
 }

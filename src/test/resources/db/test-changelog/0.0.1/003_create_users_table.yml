@@ -15,6 +15,7 @@ databaseChangeLog:
               - column:
                   name: id
                   type: bigint
+                  defaultValueSequenceNext: user_id_seq
                   constraints:
                     primaryKey: true
                     nullable: false
@@ -40,6 +41,17 @@ databaseChangeLog:
               - column:
                   name: finance_id
                   type: bigint
+
+#        - createIndex:
+#            schemaName: business
+#            indexName: user_unique_idx
+#            tableName: users
+#            unique: true
+#            columns:
+#              - column:
+#                  name: id
+#              - column:
+#                  name: email
 
       rollback:
         - dropTable:

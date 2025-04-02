@@ -3,17 +3,21 @@ package app.repository.jdbc;
 import app.entity.Role;
 import app.entity.User;
 import app.exception.db.ErrorDeleteSqlException;
-import app.exception.db.ErrorInsertSqlException;
 import app.exception.db.ErrorSelectSqlException;
 import app.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -51,42 +55,45 @@ public class UserJdbcRepository implements UserRepository {
     @Override
     public User save(User entity) {
         String sql = """
-                INSERT INTO business.users (id, name, email, password, is_active, role, finance_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (id) DO UPDATE SET
-                    email = EXCLUDED.email,
-                    name = EXCLUDED.name,
-                    password = EXCLUDED.password,
-                    is_active = EXCLUDED.is_active,
-                    role = EXCLUDED.role,
-                    finance_id = EXCLUDED.finance_id
-                RETURNING id
-                """;
-        try {
-            Long id = entity.getId();
-            if (id == null || id == 0) {
-                id = jdbcTemplate.queryForObject("SELECT NEXTVAL('user_id_seq')", Long.class);
-                entity.setId(id);
-            }
+        INSERT INTO business.users (name, email, password, is_active, role, finance_id)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (email) DO UPDATE SET
+            name = EXCLUDED.name,
+            password = EXCLUDED.password,
+            is_active = EXCLUDED.is_active,
+            role = EXCLUDED.role,
+            finance_id = EXCLUDED.finance_id
+        RETURNING id
+        """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
-            Long returnedId = jdbcTemplate.queryForObject(
-                    sql,
-                    Long.class,
-                    entity.getId(),
-                    entity.getName(),
-                    entity.getEmail(),
-                    entity.getPassword(),
-                    entity.isActive(),
-                    entity.getRole().name(),
-                    entity.getFinanceId()
-            );
-            entity.setId(returnedId);
-            return entity;
-        } catch (Exception e) {
-            log.error("Error saving user: {}", e.getMessage());
-            throw new ErrorInsertSqlException("Error saving user", e);
+        int update = jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, entity.getName());
+            ps.setString(2, entity.getEmail());
+            ps.setString(3, entity.getPassword());
+            ps.setBoolean(4, entity.isActive());
+            ps.setString(5, entity.getRole().toString());
+            ps.setLong(6, entity.getFinanceId());
+            return ps;
+        }, keyHolder);
+
+        if (update > 0) {
+            List<Map<String, Object>> keys = keyHolder.getKeyList();
+            if (!keys.isEmpty()) {
+                Map<String, Object> generatedKey = keys.get(0);
+                Number generatedId = (Number) generatedKey.get("id");
+                if (generatedId != null) {
+                    long id = generatedId.longValue();
+                    entity.setId(id);
+                    return entity;
+                }
+            }
         }
+
+        return entity;
     }
+
 
     @Override
     public void delete(User entity) {

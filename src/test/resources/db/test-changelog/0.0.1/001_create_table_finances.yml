@@ -15,6 +15,7 @@ databaseChangeLog:
               - column:
                   name: id
                   type: bigint
+                  defaultValueSequenceNext: finance_id_seq
                   constraints:
                     primaryKey: true
                     nullable: false

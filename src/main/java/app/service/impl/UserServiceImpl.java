@@ -48,6 +48,7 @@ public class UserServiceImpl implements UserService {
             throw new UserAlreadyExistsException(String.format("User with email %s already exists", createUserDto.email()));
 
         User user = userMapper.toEntity(createUserDto);
+        //TODO убрать загрузку всех пользователей
         user.setRole(userRepository.getAll().isEmpty() ? Role.ADMIN : Role.USER);
         user.setActive(true);
 

@@ -2,16 +2,21 @@ package app.repository.jdbc;
 
 import app.entity.Finance;
 import app.exception.db.ErrorDeleteSqlException;
-import app.exception.db.ErrorInsertSqlException;
 import app.exception.db.ErrorSelectSqlException;
 import app.repository.FinanceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -50,8 +55,8 @@ public class FinanceJdbcRepository implements FinanceRepository {
     @Override
     public Finance save(Finance entity) {
         String sql = """
-                    INSERT INTO business.finances (id, monthly_budget, savings_goal, current_savings, total_expenses)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO business.finances (monthly_budget, savings_goal, current_savings, total_expenses)
+                    VALUES (?, ?, ?, ?)
                     ON CONFLICT (id)
                     DO UPDATE SET
                         monthly_budget = EXCLUDED.monthly_budget,
@@ -60,24 +65,31 @@ public class FinanceJdbcRepository implements FinanceRepository {
                         total_expenses = EXCLUDED.total_expenses
                     RETURNING id
                 """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        try {
-            Long id = entity.getId();
-            if (id == null || id == 0) {
-                id = jdbcTemplate.queryForObject("SELECT NEXTVAL('finance_id_seq')", Long.class);
-                entity.setId(id);
+        int update = jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setBigDecimal(1, entity.getMonthlyBudget());
+            ps.setBigDecimal(2, entity.getSavingsGoal());
+            ps.setBigDecimal(3, entity.getCurrentSavings());
+            ps.setBigDecimal(4, entity.getTotalExpenses());
+            return ps;
+        }, keyHolder);
+
+        if (update > 0) {
+            List<Map<String, Object>> keys = keyHolder.getKeyList();
+            if (!keys.isEmpty()) {
+                Map<String, Object> generatedKey = keys.get(0);
+                Number generatedId = (Number) generatedKey.get("id");
+                if (generatedId != null) {
+                    long id = generatedId.longValue();
+                    entity.setId(id);
+                    return entity;
+                }
             }
-
-            Long returnedId = jdbcTemplate.queryForObject(sql, Long.class, id, entity.getMonthlyBudget(),
-                    entity.getSavingsGoal(), entity.getCurrentSavings(), entity.getTotalExpenses());
-
-            entity.setId(returnedId);
-            return entity;
-
-        } catch (Exception e) {
-            log.error("Error saving finance record: {}", e.getMessage());
-            throw new ErrorInsertSqlException("Error saving finance record into database", e);
         }
+
+        return entity;
     }
 
 

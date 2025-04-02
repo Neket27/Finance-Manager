@@ -30,7 +30,7 @@ import java.util.Random;
 public class AuthServiceImpl implements AuthService {
 
     private final UserService userService;
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
     @Override
     @Auditable
