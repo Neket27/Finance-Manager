@@ -8,26 +8,18 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class LiquibaseConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(LiquibaseConfig.class);
     private final JdbcTemplate jdbcTemplate;
-
-    @Value("${liquibase.change-log-file}")
-    private String changeLogFile;
-
-    @Value("${liquibase.schema-name}")
-    private String schemaName;
+    private final LiquibaseProperties prop;
 
     private String[] schemas = {"public", "metadata", "business"};
 
@@ -56,9 +48,9 @@ public class LiquibaseConfig {
         try (var connection = jdbcTemplate.getDataSource().getConnection()) {
             Database database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            database.setLiquibaseSchemaName(schemaName);
+            database.setLiquibaseSchemaName(prop.getLiquibaseSchema());
 
-            try (Liquibase liquibase = new Liquibase(changeLogFile, new ClassLoaderResourceAccessor(), database)) {
+            try (Liquibase liquibase = new Liquibase(prop.getChangeLog(), new ClassLoaderResourceAccessor(), database)) {
                 liquibase.update();
             }
         } catch (Exception e) {

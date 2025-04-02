@@ -1,9 +1,7 @@
 spring:
-#  liquibase:
-#    change-log: classpath:db/changelog/changelog-master.yml
-#    default-schema: metadata
-#    user: db_finance_manager
-#    password: db_finance_manager
+  liquibase:
+    change-log: db/changelog/changelog-master.yml
+    default-schema: metadata
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -12,6 +10,5 @@ spring:
     password: db_finance_manager
 
 
-liquibase:
-  change-log-file: db/changelog/changelog-master.yml
-  schema-name: metadata
+# http://localhost:8080/swagger-ui/index.html
+

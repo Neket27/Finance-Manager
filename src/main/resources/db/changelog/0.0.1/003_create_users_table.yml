@@ -5,7 +5,7 @@ databaseChangeLog:
       changes:
         - createSequence:
             sequenceName: user_id_seq
-            startValue: 1
+            startValue: 6
             incrementBy: 1
 
         - createTable:

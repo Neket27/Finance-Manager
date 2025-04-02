@@ -19,11 +19,11 @@ public class PropertiesConfig {
         configurer.setProperties(yamlPropertiesFactoryBean.getObject());
         return configurer;
     }
-//
-//    @Bean
-//    public LiquibaseProperties liquibaseProperties() {
-//        return new LiquibaseProperties();
-//    }
+
+    @Bean
+    public LiquibaseProperties liquibaseProperties() {
+        return new LiquibaseProperties();
+    }
 
     @Bean
     public DataSourceProperties dataSourceProperties() {
