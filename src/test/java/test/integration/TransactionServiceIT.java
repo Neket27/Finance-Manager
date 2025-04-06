@@ -1,17 +1,18 @@
 package test.integration;
 
-import app.context.UserContext;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
-import app.dto.user.UserDto;
 import app.entity.Role;
+import app.entity.Transaction;
 import app.entity.TypeTransaction;
+import app.entity.User;
 import app.mapper.TransactionMapper;
 import app.repository.jdbc.TransactionJdbcRepository;
 import app.service.TransactionService;
 import app.service.impl.TransactionServiceImpl;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,17 +35,17 @@ class TransactionServiceIT {
     void setup() {
         database = TestDatabaseFactory.create();
 
-        UserDto userDto = new UserDto.Builder()
+        User user = User.builder()
                 .id(1L)
                 .name("name")
                 .email("test@example.com")
                 .password("hashedPassword")
                 .isActive(true)
-                .finance(1L)
+                .financeId(1L)
                 .role(Role.USER)
                 .build();
 
-        UserContext.setCurrentUser(userDto);
+        UserContext.setCurrentUser(user);
         transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), Mappers.getMapper(TransactionMapper.class));
     }
 
@@ -57,21 +58,33 @@ class TransactionServiceIT {
     @Test
     void createTransaction_shouldAddTransactionSuccessfully() {
         // Act
-        TransactionDto transaction = transactionService.create(1L, new CreateTransactionDto(new BigDecimal("150.00"), "Groceries", "Supermarket purchase", TypeTransaction.EXPENSE));
+        Transaction transaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
 
         // Assert
         assertNotNull(transaction);
-        assertNotNull(transaction.id());
-        assertEquals(new BigDecimal("150.00"), transaction.amount());
-        assertEquals("Groceries", transaction.category());
-        assertEquals("Supermarket purchase", transaction.description());
-        assertEquals(TypeTransaction.EXPENSE, transaction.typeTransaction());
+        assertNotNull(transaction.getId());
+        assertEquals(new BigDecimal("150.00"), transaction.getAmount());
+        assertEquals("Groceries", transaction.getCategory());
+        assertEquals("Supermarket purchase", transaction.getDescription());
+        assertEquals(TypeTransaction.EXPENSE, transaction.getTypeTransaction());
     }
 
     @Test
     void getTransactionById_shouldReturnTransaction() {
         // Arrange
-        transactionService.create(1L, new CreateTransactionDto(new BigDecimal("150.00"), "Groceries", "Supermarket purchase", TypeTransaction.EXPENSE));
+        Transaction createTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        transactionService.create(1L, createTransaction);
 
         // Act
         TransactionDto transaction = transactionService.getTransactionById(1L);
@@ -84,7 +97,14 @@ class TransactionServiceIT {
     @Test
     void editTransaction_shouldUpdateTransactionDetails() {
         // Arrange
-        transactionService.create(1L, new CreateTransactionDto(new BigDecimal("150.00"), "Groceries", "Supermarket purchase", TypeTransaction.EXPENSE));
+        Transaction createTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        transactionService.create(1L,createTransaction);
 
 
         // Act
@@ -100,7 +120,13 @@ class TransactionServiceIT {
     @Test
     void deleteTransaction_shouldRemoveTransaction() {
         // Arrange
-        transactionService.create(1L, new CreateTransactionDto(new BigDecimal("150.00"), "Groceries", "Supermarket purchase", TypeTransaction.EXPENSE));
+        Transaction createTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+        transactionService.create(1L,createTransaction);
 
         // Act
         assertDoesNotThrow(() -> transactionService.delete(1L));
@@ -113,7 +139,13 @@ class TransactionServiceIT {
     @Test
     void filterTransactions_shouldReturnMatchingTransactions() {
         // Arrange
-        transactionService.create(1L, new CreateTransactionDto(new BigDecimal("150.00"), "Groceries", "Supermarket purchase", TypeTransaction.EXPENSE));
+        Transaction createTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+        transactionService.create(1L,createTransaction);
 
         // Act
         List<TransactionDto> transactions = transactionService.getFilteredTransactions(new FilterTransactionDto(Instant.now().minusSeconds(86400), Instant.now(), "Groceries", "EXPENSE"));

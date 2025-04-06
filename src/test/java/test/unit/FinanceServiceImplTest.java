@@ -1,6 +1,5 @@
 package test.unit;
 
-import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
@@ -14,13 +13,11 @@ import app.entity.Transaction;
 import app.entity.TypeTransaction;
 import app.exception.common.DeleteException;
 import app.mapper.FinanceMapper;
-import app.mapper.TransactionMapper;
-import app.mapper.UserMapper;
 import app.repository.FinanceRepository;
-import app.service.NotificationService;
 import app.service.TransactionService;
 import app.service.UserService;
 import app.service.impl.FinanceServiceImpl;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,7 +55,7 @@ class FinanceServiceImplTest {
     private FinanceServiceImpl financeService;
 
     private UserDto userDto;
-    private Finance finance;
+    private app.entity.Finance finance;
     private FinanceDto financeDto;
     private TransactionDto transactionDto;
 
@@ -74,7 +71,7 @@ class FinanceServiceImplTest {
                 .role(Role.USER)
                 .build();
 
-        finance = new Finance.Builder()
+        finance = Finance.builder()
                 .id(1L)
                 .currentSavings(BigDecimal.valueOf(1000))
                 .monthlyBudget(BigDecimal.valueOf(500))
@@ -85,7 +82,7 @@ class FinanceServiceImplTest {
         UserContext.setCurrentUser(userDto);
 
         financeDto = new FinanceDto(1L, BigDecimal.valueOf(1000), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(2000), List.of(1L, 2L));
-        transactionDto = new TransactionDto(1L, BigDecimal.valueOf(400), "Food", Instant.now(), "", TypeTransaction.EXPENSE, 1L);
+        transaction= new TransactionDto(1L, BigDecimal.valueOf(400), "Food", Instant.now(), "", TypeTransaction.EXPENSE, 1L);
     }
 
 
@@ -102,14 +99,19 @@ class FinanceServiceImplTest {
 
     @Test
     void createTransaction() {
-        CreateTransactionDto createTransactionDto = new CreateTransactionDto(BigDecimal.valueOf(100), "category", "description", TypeTransaction.EXPENSE);
+        Transaction createTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(100))
+                .category("category")
+                .description("description")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
 
         when(financeRepository.findById(anyLong())).thenReturn(Optional.ofNullable(finance));
-        when(transactionService.create(anyLong(), any())).thenReturn(transactionDto);
+        when(transactionService.create(anyLong(), any())).thenReturn(createTransaction);
 
-        TransactionDto returnTransactionDto = financeService.createTransaction(1L, createTransactionDto);
+        Transaction returnTransactionDto = financeService.createTransaction(1L, createTransaction);
 
-        assertEquals(transactionDto, returnTransactionDto);
+        assertEquals(transaction, returnTransaction);
     }
 
     @Test
@@ -222,7 +224,7 @@ class FinanceServiceImplTest {
     void save() {
         when(financeRepository.save(finance)).thenReturn(finance);
 
-        Finance result = financeService.save(finance);
+        app.entity.Finance result = financeService.save(finance);
 
         assertEquals(finance, result);
     }
@@ -240,18 +242,17 @@ class FinanceServiceImplTest {
     @Test
     void getFinanceById() {
         when(financeRepository.findById(anyLong())).thenReturn(Optional.of(finance));
-        when(financeMapper.toDto(finance)).thenReturn(financeDto);
 
-        FinanceDto result = financeService.getFinanceById(1L);
+        Finance result = financeService.getFinanceById(1L);
 
-        assertEquals(financeDto, result);
+        assertEquals(finance, result);
     }
 
     @Test
     void findFinanceById() {
         when(financeRepository.findById(anyLong())).thenReturn(Optional.of(finance));
 
-        Finance result = financeService.findFinanceById(1L);
+        app.entity.Finance result = financeService.findFinanceById(1L);
 
         assertEquals(finance, result);
     }

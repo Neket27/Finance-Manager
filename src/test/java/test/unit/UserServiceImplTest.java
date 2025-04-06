@@ -1,7 +1,6 @@
 package test.unit;
 
 import app.dto.user.CreateUserDto;
-import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
 import app.entity.User;
@@ -45,36 +44,33 @@ class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         this.userDto = new UserDto(1L, "name", "email@mail.ru", "password1234", true, Role.USER, 1L);
-        this.user = new User(1L, "name", "email@mail.ru", "password1234", true,Role.USER, 1L);
+        this.user = new User(1L, "name", "email@mail.ru", "password1234", true, Role.USER, 1L);
     }
 
     @Test
     void createUser() {
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
 
-
         when(userRepository.existsByEmail(createUserDto.email())).thenReturn(false);
         when(financeService.createEmptyFinance(any())).thenReturn(userDto.id());
-        when(userMapper.toEntity(any(CreateUserDto.class))).thenReturn(user);
         when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userDto);
 
-        UserDto returnUserDto = userService.createUser(createUserDto);
+        User returnUser = userService.createUser(user);
 
-        assertEquals(userDto, returnUserDto);
+        assertEquals(user, returnUser);
 
     }
+
     @Test
     void updateDataUser() {
-        UpdateUserDto updateUserDto = new UpdateUserDto("name", "email@mail.ru", "password1234",  Role.USER, 1L);
+        User updatedUser = new User(1L, "name", "newemail@mail.ru", "newpassword1234", true, Role.USER, 1L);
 
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-        when(userMapper.updateEntity(updateUserDto, user)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userDto);
+        when(userMapper.updateEntity(any(), any())).thenReturn(updatedUser);
 
-        UserDto updatedUser = userService.updateDataUser(updateUserDto, user.getEmail());
+        User returnUser = userService.updateDataUser(updatedUser, user.getEmail());
 
-        assertEquals(userDto, updatedUser);
+        assertEquals(updatedUser, returnUser);
     }
 
     @Test
@@ -90,24 +86,22 @@ class UserServiceImplTest {
     @Test
     void getUserByEmail() {
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(userDto);
 
-        UserDto foundUser = userService.getUserByEmail(user.getEmail());
+        User foundUser = userService.getUserByEmail(user.getEmail());
 
-        assertEquals(userDto, foundUser);
+        assertEquals(user, foundUser);
     }
 
     @Test
     void list() {
         List<User> users = List.of(user);
-        List<UserDto> userDtos = List.of(userDto);
 
         when(userRepository.getAll()).thenReturn(users);
-        when(userMapper.toListDto(users)).thenReturn(userDtos);
+        when(userMapper.toList(users)).thenReturn(users);
 
-        List<UserDto> result = userService.list();
+        List<User> result = userService.list();
 
-        assertEquals(userDtos, result);
+        assertEquals(users, result);
     }
 
     @Test
@@ -135,11 +129,10 @@ class UserServiceImplTest {
     @Test
     void getUserById() {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(userDto);
 
-        UserDto result = userService.getUserById(user.getId());
+        User result = userService.getUserById(user.getId());
 
-        assertEquals(userDto, result);
+        assertEquals(user, result);
     }
 
 }

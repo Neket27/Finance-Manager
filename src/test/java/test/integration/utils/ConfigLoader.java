@@ -1,12 +1,10 @@
-package app.util;
+package test.integration.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 
-@Component
 public class ConfigLoader {
     public static <T> T loadConfig(String fileName, Class<T> clazz) {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());

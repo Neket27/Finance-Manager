@@ -6,9 +6,7 @@ import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Transaction;
-import app.entity.TypeTransaction;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -18,7 +16,7 @@ public interface TransactionService {
 
     TransactionDto edit(UpdateTransactionDto updateTransactionDto);
 
-    TransactionDto create(Long financeId, CreateTransactionDto dto);
+    Transaction create(Long financeId, Transaction transaction);
 
     void delete(Long id);
 

@@ -1,9 +1,9 @@
 package test.integration.db;
 
 
-import app.util.ConfigLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import test.integration.utils.ConfigLoader;
 import test.integration.db.config.AppProperties;
 import test.integration.db.config.LiquibaseConfig;
 import test.integration.db.config.PostgresContainer;

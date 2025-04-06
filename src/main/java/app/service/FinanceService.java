@@ -1,12 +1,10 @@
 package app.service;
 
-import app.dto.finance.CreateFinanceDto;
-import app.dto.finance.FinanceDto;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Finance;
+import app.entity.Transaction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,10 +14,9 @@ import java.util.Set;
 
 public interface FinanceService {
 
+    Long createEmptyFinance(Finance finance);
 
-    Long createEmptyFinance(CreateFinanceDto dto);
-
-    TransactionDto createTransaction(Long financeId, CreateTransactionDto dto);
+    Transaction createTransaction(Long financeId, Transaction transaction);
 
     BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId);
 
@@ -33,7 +30,7 @@ public interface FinanceService {
 
     Set<TransactionDto> list(Long financeId);
 
-    FinanceDto getFinanceById(Long id);
+    Finance getFinanceById(Long id);
 
     Finance findFinanceById(Long id);
 

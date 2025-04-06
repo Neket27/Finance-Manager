@@ -1,14 +1,15 @@
 package app.controller;
 
-import app.context.UserContext;
 import app.controller.advice.annotation.CustomExceptionHandler;
 import app.entity.Role;
+import app.entity.User;
 import app.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import neket27.context.UserContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,7 +24,7 @@ public class UserController {
 
     /**
      * Блокировка пользователя.
-     *
+     * <p>
      * Этот метод позволяет администратору заблокировать пользователя по его электронной почте.
      * Блокировка осуществляется только если у текущего пользователя роль ADMIN.
      *
@@ -38,7 +39,8 @@ public class UserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void blockUser(
             @RequestParam(name = "email") @Parameter(description = "Электронная почта пользователя, которого необходимо заблокировать.") String email) {
-        if (UserContext.getCurrentUser().role().equals(Role.ADMIN)) {
+        User user = (User) UserContext.getCurrentUser();
+        if (user.getRole().equals(Role.ADMIN)) {
             userService.blockUser(email);
         } else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Доступ запрещен. Только для администраторов.");
@@ -47,7 +49,7 @@ public class UserController {
 
     /**
      * Удаление пользователя.
-     *
+     * <p>
      * Этот метод позволяет администратору удалить пользователя по его электронной почте.
      * Удаление доступно только для пользователей с ролью ADMIN.
      *
@@ -62,7 +64,8 @@ public class UserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
             @RequestParam(name = "email") @Parameter(description = "Электронная почта пользователя, которого необходимо удалить.") String email) {
-        if (UserContext.getCurrentUser().role().equals(Role.ADMIN)) {
+        User user = (User) UserContext.getCurrentUser();
+        if (user.getRole().equals(Role.ADMIN)) {
             userService.remove(email);
         } else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Доступ запрещен. Только для администраторов.");

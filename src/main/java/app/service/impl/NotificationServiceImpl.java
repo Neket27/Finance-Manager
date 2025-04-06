@@ -1,8 +1,8 @@
 package app.service.impl;
 
-import app.aspect.auditable.Auditable;
-import app.aspect.loggable.CustomLogging;
 import app.service.NotificationService;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -1,10 +1,10 @@
 package test.unit;
 
-import app.context.UserContext;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
+import app.entity.User;
 import app.exception.auth.ErrorLoginExeption;
 import app.exception.auth.ErrorLogoutException;
 import app.exception.auth.ErrorRegistrationException;
@@ -13,6 +13,7 @@ import app.exception.user.UserIsAlreadyLoggedInException;
 import app.service.TokenService;
 import app.service.UserService;
 import app.service.impl.AuthServiceImpl;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,13 +37,13 @@ class AuthServiceImplTest {
     private AuthServiceImpl authService;
 
     private CreateUserDto createUserDto;
-    private UserDto userDto;
+    private User user;
     private SignIn signInDto;
 
     @BeforeEach
     void setUp() {
         createUserDto = new CreateUserDto("name", "test@example.com", "password123");
-        userDto = new UserDto.Builder()
+        user = User.builder()
                 .id(1L)
                 .email("test@example.com")
                 .password("password123")
@@ -56,47 +57,47 @@ class AuthServiceImplTest {
     @Test
     void register_Success() {
         // Arrange
-        when(userService.createUser(createUserDto)).thenReturn(userDto);
+        when(userService.createUser(user)).thenReturn(user);
         // Act
-        UserDto result = authService.register(createUserDto);
+        User result = authService.register(user);
         // Assert
         assertNotNull(result);
-        assertEquals(userDto, result);
-        verify(userService, times(1)).createUser(createUserDto);
+        assertEquals(user, result);
+        verify(userService, times(1)).createUser(user);
     }
 
     @Test
     void register_UserAlreadyLoggedIn() {
         // Arrange
         doThrow(new UserIsAlreadyLoggedInException("User already logged in"))
-                .when(userService).createUser(createUserDto);
+                .when(userService).createUser(user);
         // Act & Assert
-        ErrorRegistrationException exception = assertThrows(ErrorRegistrationException.class, () -> authService.register(createUserDto));
-        assertEquals("User with email " + createUserDto.email() + " is already logged in", exception.getMessage());
-        verify(userService, times(1)).createUser(createUserDto);
+        ErrorRegistrationException exception = assertThrows(ErrorRegistrationException.class, () -> authService.register(user));
+        assertEquals("User with email " + user.getEmail() + " is already logged in", exception.getMessage());
+        verify(userService, times(1)).createUser(user);
     }
 
     @Test
     void register_UserExists() {
         // Arrange
         doThrow(new UserAlreadyExistsException("User already exists"))
-                .when(userService).createUser(createUserDto);
+                .when(userService).createUser(user);
         // Act & Assert
-        ErrorRegistrationException exception = assertThrows(ErrorRegistrationException.class, () -> authService.register(createUserDto));
+        ErrorRegistrationException exception = assertThrows(ErrorRegistrationException.class, () -> authService.register(user));
         assertEquals("User with email " + createUserDto.email() + " is already logged in", exception.getMessage());
-        verify(userService, times(1)).createUser(createUserDto);
+        verify(userService, times(1)).createUser(user);
     }
 
     @Test
     void login_Success() {
         // Arrange
-        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(userService.getUserByEmail("test@example.com")).thenReturn(user);
         // Act
         ResponseLogin result = authService.login(signInDto);
         // Assert
         assertNotNull(result);
-        assertEquals(userDto.id().toString(), result.token());
-        assertEquals(userDto, UserContext.getCurrentUser());
+        assertEquals(user.getId().toString(), result.token());
+        assertEquals(user, UserContext.getCurrentUser());
         verify(tokenService, times(1)).saveToken(any());
     }
 
@@ -113,7 +114,7 @@ class AuthServiceImplTest {
     @Test
     void login_InvalidPassword() {
         // Arrange
-        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(userService.getUserByEmail("test@example.com")).thenReturn(user);
         // Act & Assert
         ErrorLoginExeption exception = assertThrows(ErrorLoginExeption.class, () -> authService.login(new SignIn("test@example.com", "wrongpassword")));
         assertEquals("Invalid password or email", exception.getMessage());
@@ -134,7 +135,7 @@ class AuthServiceImplTest {
     @Test
     void login_EmptyPassword() {
         // Arrange
-        when(userService.getUserByEmail("test@example.com")).thenReturn(userDto);
+        when(userService.getUserByEmail("test@example.com")).thenReturn(user);
         // Act & Assert
         ErrorLoginExeption exception = assertThrows(ErrorLoginExeption.class, () -> authService.login(new SignIn("test@example.com", "")));
         assertEquals("Invalid password or email", exception.getMessage());
@@ -144,15 +145,15 @@ class AuthServiceImplTest {
     @Test
     void logout_Success() {
         // Arrange
-        UserContext.setCurrentUser(userDto);
+        UserContext.setCurrentUser(user);
 //        when(tokenService.deleteTokenByUserId(userDto.id())).thenReturn(true);
-        doNothing().when(tokenService).deleteTokenByUserId(userDto.id());
+        doNothing().when(tokenService).deleteTokenByUserId(user.getId());
 
         // Act
         authService.logout();
         // Assert
         assertNull(UserContext.getCurrentUser());
-        verify(tokenService, times(1)).deleteTokenByUserId(userDto.id());
+        verify(tokenService, times(1)).deleteTokenByUserId(user.getId());
     }
 
     @Test

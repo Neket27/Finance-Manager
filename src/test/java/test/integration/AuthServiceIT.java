@@ -1,10 +1,10 @@
 package test.integration;
 
-import app.context.UserContext;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
+import app.entity.User;
 import app.exception.auth.ErrorLoginExeption;
 import app.exception.auth.ErrorLogoutException;
 import app.exception.auth.ErrorRegistrationException;
@@ -17,6 +17,7 @@ import app.repository.jdbc.TransactionJdbcRepository;
 import app.repository.jdbc.UserJdbcRepository;
 import app.service.*;
 import app.service.impl.*;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AuthServiceIT {
 
     private AuthService authService;
+    private UserMapper userMapper;
 
     @BeforeEach
     void setup() {
@@ -38,6 +40,7 @@ class AuthServiceIT {
         UserService userService = new UserServiceImpl(Mappers.getMapper(UserMapper.class), new UserJdbcRepository(database.jdbcTemplate()), financeService);
         TokenService tokenService = new TokenServiceImpl(new TokenJdbcRepository(database.jdbcTemplate()));
         authService = new AuthServiceImpl(userService, tokenService);
+        userMapper = Mappers.getMapper(UserMapper.class);
 
     }
 
@@ -51,9 +54,10 @@ class AuthServiceIT {
     void registerSuccess() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-
+        User entity = userMapper.toEntity(createUserDto);
         // Act
-        UserDto userDto = authService.register(createUserDto);
+        User user = authService.register(entity);
+        UserDto userDto = userMapper.toDto(user);
 
         // Assert
         assertEquals(createUserDto.name(), userDto.name());
@@ -65,22 +69,24 @@ class AuthServiceIT {
     void loginSuccess() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-        UserDto registeredUser = authService.register(createUserDto);
-        SignIn signIn = new SignIn(registeredUser.email(), registeredUser.password());
+        User entity = userMapper.toEntity(createUserDto);
+        User registeredUser = authService.register(entity);
+        SignIn signIn = new SignIn(registeredUser.getEmail(), registeredUser.getPassword());
 
         // Act
         ResponseLogin response = authService.login(signIn);
 
         // Assert
         assertNotNull(response);
-        assertEquals(registeredUser.id().toString(), response.token());
+        assertEquals(registeredUser.getId().toString(), response.token());
     }
 
     @Test
     void loginFailure_WrongPassword() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-        authService.register(createUserDto);
+        User entity = userMapper.toEntity(createUserDto);
+        authService.register(entity);
         SignIn signIn = new SignIn(createUserDto.email(), "wrongpassword");
 
         // Act & Assert
@@ -100,8 +106,9 @@ class AuthServiceIT {
     void logoutSuccess() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-        UserDto registeredUser = authService.register(createUserDto);
-        SignIn signIn = new SignIn(registeredUser.email(), registeredUser.password());
+        User entity = userMapper.toEntity(createUserDto);
+        User registeredUser = authService.register(entity);
+        SignIn signIn = new SignIn(registeredUser.getEmail(), registeredUser.getPassword());
         authService.login(signIn);
 
         // Act & Assert
@@ -118,17 +125,19 @@ class AuthServiceIT {
     void registerFailure_EmailAlreadyExists() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-        authService.register(createUserDto);
+        User entity = userMapper.toEntity(createUserDto);
+        authService.register(entity);
 
         // Act & Assert
-        assertThrows(ErrorRegistrationException.class, () -> authService.register(createUserDto));
+        assertThrows(ErrorRegistrationException.class, () -> authService.register(entity));
     }
 
     @Test
     void loginFailure_EmptyPassword() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-        authService.register(createUserDto);
+        User entity = userMapper.toEntity(createUserDto);
+        authService.register(entity);
         SignIn signIn = new SignIn(createUserDto.email(), "");
 
         // Act & Assert
@@ -139,7 +148,8 @@ class AuthServiceIT {
     void loginFailure_EmptyEmail() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-        authService.register(createUserDto);
+        User entity = userMapper.toEntity(createUserDto);
+        authService.register(entity);
         SignIn signIn = new SignIn("", createUserDto.password());
 
         // Act & Assert
@@ -150,7 +160,8 @@ class AuthServiceIT {
     void logoutSuccess_AfterMultipleLogins() {
         // Arrange
         CreateUserDto createUserDto = new CreateUserDto("name", "email@mail.ru", "password1234");
-        authService.register(createUserDto);
+        User entity = userMapper.toEntity(createUserDto);
+        authService.register(entity);
         SignIn signIn = new SignIn(createUserDto.email(), createUserDto.password());
         authService.login(signIn);
         authService.login(signIn);

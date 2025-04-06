@@ -1,13 +1,10 @@
 package test.integration;
 
-import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
-import app.dto.user.UserDto;
-import app.entity.Role;
-import app.entity.TypeTransaction;
+import app.entity.*;
 import app.exception.common.CreateException;
 import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
@@ -17,6 +14,7 @@ import app.service.FinanceService;
 import app.service.TransactionService;
 import app.service.impl.FinanceServiceImpl;
 import app.service.impl.TransactionServiceImpl;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,17 +39,17 @@ class FinanceServiceIT {
     void setup() {
         database = TestDatabaseFactory.create();
 
-        UserDto userDto = new UserDto.Builder()
+        User user = User.builder()
                 .id(1L)
                 .name("name")
                 .email("test@example.com")
                 .password("hashedPassword")
                 .isActive(true)
-                .finance(1L)
+                .financeId(1L)
                 .role(Role.USER)
                 .build();
 
-        UserContext.setCurrentUser(userDto);
+        UserContext.setCurrentUser(user);
         transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), Mappers.getMapper(TransactionMapper.class));
         financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, Mappers.getMapper(FinanceMapper.class));
     }
@@ -65,47 +63,97 @@ class FinanceServiceIT {
 
     @Test
     void createTransaction_shouldAddTransactionSuccessfully() {
-        // Arrange
-        Long financeId = financeService.createEmptyFinance(new CreateFinanceDto(BigDecimal.valueOf(5000), BigDecimal.valueOf(10000), BigDecimal.valueOf(3000), BigDecimal.ZERO, List.of(1L)));
-        CreateTransactionDto transactionDto = new CreateTransactionDto(
-                BigDecimal.valueOf(1000),
-                "Food",
-                "Groceries shopping",
-                TypeTransaction.EXPENSE
-        );
+        // Arrange,
+
+        Finance finance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(5000))
+                .savingsGoal(BigDecimal.valueOf(10000))
+                .currentSavings(BigDecimal.valueOf(3000))
+                .totalExpenses(BigDecimal.ZERO)
+                .transactionsId(List.of(1L))
+                .build();
+
+        Long financeId = financeService.createEmptyFinance(finance);
+
+        Transaction createTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(1000))
+                .category("Food")
+                .description("Groceries shopping")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
 
         // Act
-        TransactionDto transaction = financeService.createTransaction(financeId, transactionDto);
+        Transaction transaction = financeService.createTransaction(financeId, createTransaction);
 
         // Assert
         assertNotNull(transaction);
-        assertEquals(BigDecimal.valueOf(1000), transaction.amount());
-        assertEquals("Food", transaction.category());
-        assertEquals("Groceries shopping", transaction.description());
+        assertEquals(BigDecimal.valueOf(1000), transaction.getAmount());
+        assertEquals("Food", transaction.getCategory());
+        assertEquals("Groceries shopping", transaction.getDescription());
     }
 
     @Test
     void createTransaction_shouldThrowExceptionWhenInsufficientFunds() {
         // Arrange
-        Long financeId = financeService.createEmptyFinance(new CreateFinanceDto(BigDecimal.valueOf(5000), BigDecimal.valueOf(10000), BigDecimal.valueOf(500), BigDecimal.ZERO, List.of(1L)));
-        CreateTransactionDto transactionDto = new CreateTransactionDto(
-                BigDecimal.valueOf(2000),
-                "Rent",
-                "Monthly rent payment",
-                TypeTransaction.EXPENSE
-        );
+        Finance finance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(5000))
+                .savingsGoal(BigDecimal.valueOf(10000))
+                .currentSavings(BigDecimal.valueOf(500))
+                .totalExpenses(BigDecimal.ZERO)
+                .transactionsId(List.of(1L))
+                .build();
+
+
+        Long financeId = financeService.createEmptyFinance(finance);
+        Transaction transaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(2000))
+                .category("Rent")
+                .description("Monthly rent payment")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
 
         // Act & Assert
-        assertThrows(CreateException.class, () -> financeService.createTransaction(financeId, transactionDto));
+        assertThrows(CreateException.class, () -> financeService.createTransaction(financeId, transaction));
     }
 
     @Test
     void getExpensesByCategory_shouldReturnCorrectExpenses() {
         // Arrange
-        Long financeId = financeService.createEmptyFinance(new CreateFinanceDto(BigDecimal.valueOf(5000), BigDecimal.valueOf(10000), BigDecimal.valueOf(3000), BigDecimal.ZERO, List.of(1L)));
-        financeService.createTransaction(financeId, new CreateTransactionDto(BigDecimal.valueOf(1000), "Food", "Lunch", TypeTransaction.EXPENSE));
-        financeService.createTransaction(financeId, new CreateTransactionDto(BigDecimal.valueOf(500), "Entertainment", "Movie", TypeTransaction.EXPENSE));
-        financeService.createTransaction(financeId, new CreateTransactionDto(BigDecimal.valueOf(200), "Food", "Snacks", TypeTransaction.EXPENSE));
+        Finance createFinance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(5000))
+                .savingsGoal(BigDecimal.valueOf(10000))
+                .currentSavings(BigDecimal.valueOf(3000))
+                .totalExpenses(BigDecimal.ZERO)
+                .transactionsId(List.of(1L))
+                .build();
+
+        Long financeId = financeService.createEmptyFinance(createFinance);
+
+        Transaction lunchTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(1000))
+                .category("Food")
+                .description("Lunch")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        Transaction movieTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(500))
+                .category("Entertainment")
+                .description("Movie")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        Transaction snacksTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(200))
+                .category("Food")
+                .description("Snacks")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        financeService.createTransaction(financeId, lunchTransaction);
+        financeService.createTransaction(financeId, movieTransaction);
+        financeService.createTransaction(financeId, snacksTransaction);
 
         // Act
         Map<String, BigDecimal> expenses = financeService.getExpensesByCategory(financeId);
@@ -117,11 +165,46 @@ class FinanceServiceIT {
 
     @Test
     void filterTransactions_shouldReturnCorrectTransactions() {
-        // Arrange
-        Long financeId = financeService.createEmptyFinance(new CreateFinanceDto(BigDecimal.valueOf(5000), BigDecimal.valueOf(10000), BigDecimal.valueOf(3000), BigDecimal.ZERO, List.of(1L)));
-        financeService.createTransaction(financeId, new CreateTransactionDto(BigDecimal.valueOf(1000), "Food", "Lunch", TypeTransaction.EXPENSE));
-        financeService.createTransaction(financeId, new CreateTransactionDto(BigDecimal.valueOf(500), "Entertainment", "Movie", TypeTransaction.EXPENSE));
-        FilterTransactionDto filterDto = new FilterTransactionDto(Instant.now().minusSeconds(86400), Instant.now().plusSeconds(86400), "Food", "EXPENSE");
+        Finance createFinance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(5000))
+                .savingsGoal(BigDecimal.valueOf(10000))
+                .currentSavings(BigDecimal.valueOf(3000))
+                .totalExpenses(BigDecimal.ZERO)
+                .transactionsId(List.of(1L))
+                .build();
+
+        Long financeId = financeService.createEmptyFinance(createFinance);
+
+        Transaction lunchTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(1000))
+                .category("Food")
+                .description("Lunch")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        Transaction movieTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(500))
+                .category("Entertainment")
+                .description("Movie")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        Transaction snacksTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(200))
+                .category("Food")
+                .description("Snacks")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        financeService.createTransaction(financeId, lunchTransaction);
+        financeService.createTransaction(financeId, movieTransaction);
+
+        FilterTransactionDto filterDto = FilterTransactionDto.builder()
+                .startDate(Instant.now().minusSeconds(86400))
+                .endDate(Instant.now().plusSeconds(86400))
+                .category("Food")
+                .typeTransaction("EXPENSE")
+                .build();
 
         // Act
         List<TransactionDto> transactions = financeService.filterTransactions(financeId, filterDto);
@@ -134,47 +217,116 @@ class FinanceServiceIT {
     @Test
     void createTransaction_shouldReturnCorrectTransactionType() {
         // Arrange
-        Long financeId = financeService.createEmptyFinance(new CreateFinanceDto(BigDecimal.valueOf(1000), BigDecimal.valueOf(5000), BigDecimal.valueOf(1000), BigDecimal.ZERO, List.of(1L)));
-        CreateTransactionDto transactionDto = new CreateTransactionDto(
-                BigDecimal.valueOf(500),
-                "Salary",
-                "Monthly salary",
-                TypeTransaction.PROFIT
-        );
+        Finance createFinance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(1000))
+                .savingsGoal(BigDecimal.valueOf(5000))
+                .currentSavings(BigDecimal.valueOf(1000))
+                .totalExpenses(BigDecimal.ZERO)
+                .transactionsId(List.of(1L))
+                .build();
+
+        Long financeId = financeService.createEmptyFinance(createFinance);
+
+
+        Transaction createTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(500))
+                .category("Food")
+                .description("Lunch")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
 
         // Act
-        TransactionDto transaction = financeService.createTransaction(financeId, transactionDto);
+        Transaction transaction = financeService.createTransaction(financeId, createTransaction);
 
         // Assert
         assertNotNull(transaction);
-        assertEquals(TypeTransaction.PROFIT, transaction.typeTransaction());
+        assertEquals(TypeTransaction.PROFIT, transaction.getTypeTransaction());
     }
 
     @Test
     void createTransaction_shouldHandleMultipleTransactions() {
         // Arrange
-        Long financeId = financeService.createEmptyFinance(new CreateFinanceDto(BigDecimal.valueOf(5000), BigDecimal.valueOf(10000), BigDecimal.valueOf(3000), BigDecimal.ZERO, List.of(1L)));
-        CreateTransactionDto transactionDto1 = new CreateTransactionDto(BigDecimal.valueOf(1000), "Food", "Dinner", TypeTransaction.EXPENSE);
-        CreateTransactionDto transactionDto2 = new CreateTransactionDto(BigDecimal.valueOf(1500), "Entertainment", "Concert", TypeTransaction.EXPENSE);
+        Finance createFinance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(5000))
+                .savingsGoal(BigDecimal.valueOf(10000))
+                .currentSavings(BigDecimal.valueOf(3000))
+                .totalExpenses(BigDecimal.ZERO)
+                .transactionsId(List.of(1L))
+                .build();
+
+        Long financeId = financeService.createEmptyFinance(createFinance);
+
+        Transaction t1 = Transaction.builder()
+                .amount(BigDecimal.valueOf(1000))
+                .category("Food")
+                .description("Dinner")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .date(Instant.now()) // или нужная дата
+                .financeId(financeId) // передай актуальный ID, если есть
+                .build();
+
+        Transaction t2 = Transaction.builder()
+                .amount(BigDecimal.valueOf(1500))
+                .category("Entertainment")
+                .description("Concert")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .date(Instant.now())
+                .financeId(financeId)
+                .build();
 
         // Act
-        TransactionDto transaction1 = financeService.createTransaction(financeId, transactionDto1);
-        TransactionDto transaction2 = financeService.createTransaction(financeId, transactionDto2);
+        Transaction transaction1 = financeService.createTransaction(financeId, t1);
+        Transaction transaction2 = financeService.createTransaction(financeId, t2);
 
         // Assert
         assertNotNull(transaction1);
         assertNotNull(transaction2);
-        assertEquals(BigDecimal.valueOf(1000), transaction1.amount());
-        assertEquals(BigDecimal.valueOf(1500), transaction2.amount());
+        assertEquals(BigDecimal.valueOf(1000), transaction1.getAmount());
+        assertEquals(BigDecimal.valueOf(1500), transaction2.getAmount());
     }
 
     @Test
     void filterTransactions_shouldReturnNoTransactionsWhenNoMatch() {
         // Arrange
-        Long financeId = financeService.createEmptyFinance(new CreateFinanceDto(BigDecimal.valueOf(5000), BigDecimal.valueOf(10000), BigDecimal.valueOf(3000), BigDecimal.ZERO, List.of(1L)));
-        financeService.createTransaction(financeId, new CreateTransactionDto(BigDecimal.valueOf(1000), "Food", "Lunch", TypeTransaction.EXPENSE));
-        financeService.createTransaction(financeId, new CreateTransactionDto(BigDecimal.valueOf(500), "Entertainment", "Movie", TypeTransaction.EXPENSE));
-        FilterTransactionDto filterDto = new FilterTransactionDto(Instant.now().minusSeconds(86400), Instant.now().plusSeconds(86400), "Travel", "EXPENSE");
+        Finance createFinance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(5000))
+                .savingsGoal(BigDecimal.valueOf(10000))
+                .currentSavings(BigDecimal.valueOf(3000))
+                .totalExpenses(BigDecimal.ZERO)
+                .transactionsId(List.of(1L))
+                .build();
+
+        Long financeId = financeService.createEmptyFinance(createFinance);
+
+        Transaction lunchTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(1000))
+                .category("Food")
+                .description("Lunch")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .date(Instant.now()) // или конкретная дата, если нужно
+                .financeId(financeId)
+                .build();
+
+        Transaction movieTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(500))
+                .category("Entertainment")
+                .description("Movie")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .date(Instant.now())
+                .financeId(financeId)
+                .build();
+
+
+        financeService.createTransaction(financeId, lunchTransaction);
+        financeService.createTransaction(financeId, movieTransaction);
+
+        FilterTransactionDto filterDto = FilterTransactionDto.builder()
+                .startDate(Instant.now().minusSeconds(86400))
+                .endDate(Instant.now().plusSeconds(86400))
+                .category("Travel")
+                .typeTransaction("EXPENSE")
+                .build();
+
 
         // Act
         List<TransactionDto> transactions = financeService.filterTransactions(financeId, filterDto);

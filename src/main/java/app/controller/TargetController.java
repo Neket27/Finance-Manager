@@ -1,13 +1,14 @@
 package app.controller;
 
-import app.context.UserContext;
 import app.controller.advice.annotation.CustomExceptionHandler;
+import app.entity.User;
 import app.service.TargetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import neket27.context.UserContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -86,6 +87,7 @@ public class TargetController {
     }
 
     private Long getFinanceIdCurrentUser() {
-        return UserContext.getCurrentUser().financeId();
+        User user = (User) UserContext.getCurrentUser();
+        return user.getFinanceId();
     }
 }

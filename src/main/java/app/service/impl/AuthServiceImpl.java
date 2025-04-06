@@ -1,13 +1,10 @@
 package app.service.impl;
 
-import app.aspect.auditable.Auditable;
-import app.aspect.loggable.CustomLogging;
-import app.context.UserContext;
+
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
-import app.dto.user.CreateUserDto;
-import app.dto.user.UserDto;
 import app.entity.Token;
+import app.entity.User;
 import app.exception.auth.ErrorLoginExeption;
 import app.exception.auth.ErrorLogoutException;
 import app.exception.auth.ErrorRegistrationException;
@@ -17,8 +14,11 @@ import app.exception.user.UserIsAlreadyLoggedInException;
 import app.service.AuthService;
 import app.service.TokenService;
 import app.service.UserService;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import neket27.context.UserContext;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
@@ -34,21 +34,21 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Auditable
-    public UserDto register(CreateUserDto userDto) {
+    public User register(User user) {
         try {
-            UserDto user = userService.createUser(userDto);
-            log.debug("Registered user: " + userDto);
-            return user;
+            User _user = userService.createUser(user);
+            log.debug("Registered user: " + user);
+            return _user;
         } catch (UserAlreadyExistsException | UserIsAlreadyLoggedInException e) {
-            log.debug("User with email {} is already logged in", userDto.email());
-            throw new ErrorRegistrationException("User with email " + userDto.email() + " is already logged in");
+            log.debug("User with email {} is already logged in", user.getEmail());
+            throw new ErrorRegistrationException("User with email " + user.getEmail() + " is already logged in");
         }
     }
 
     @Override
     @Auditable
     public ResponseLogin login(SignIn signin) {
-        UserDto user;
+        User user;
 
         try {
             user = userService.getUserByEmail(signin.email());
@@ -59,18 +59,18 @@ public class AuthServiceImpl implements AuthService {
         }
 
 
-        if (signin.password().equals(user.password())) {
+        if (signin.password().equals(user.getPassword())) {
             Integer key = new Random().nextInt(100);
 
             Token token = new Token.Builder()
-                    .userId(user.id())
+                    .userId(user.getId())
                     .value(key.toString())
                     .build();
             tokenService.saveToken(token);
 
             UserContext.setCurrentUser(user);
             log.debug("Authenticated user: " + signin.email());
-            return new ResponseLogin(user.id().toString());
+            return new ResponseLogin(user.getId().toString());
         }
 
         log.debug("Invalid password or email", signin.email());
@@ -80,11 +80,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Auditable
     public void logout() {
-        UserDto user = UserContext.getCurrentUser();
+        app.entity.User user = (app.entity.User) UserContext.getCurrentUser();
         if (user == null)
             throw new ErrorLogoutException("You are not logged in");
 
-        tokenService.deleteTokenByUserId(user.id());
+        tokenService.deleteTokenByUserId(user.getId());
 
         UserContext.clear();
     }

@@ -3,6 +3,7 @@ package app.auth;
 
 import app.dto.user.UserDto;
 import app.entity.Token;
+import app.entity.User;
 import app.exception.common.NotFoundException;
 import app.service.TokenService;
 import app.service.UserService;
@@ -22,7 +23,7 @@ public class Authenticator {
         this.userService = userService;
     }
 
-    public UserDto authenticate(String _token) {
+    public User authenticate(String _token) {
         try {
             Token token = tokenService.getTokenByUserId(Long.valueOf(_token));
             return userService.getUserById(token.getUserId());

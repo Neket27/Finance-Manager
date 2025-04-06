@@ -10,18 +10,19 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
+@EnableConfigurationProperties(LiquibaseConfigProperties.class)
 public class LiquibaseConfig {
 
     private final JdbcTemplate jdbcTemplate;
     private final LiquibaseProperties prop;
-
-    private String[] schemas = {"public", "metadata", "business"};
+    private final LiquibaseConfigProperties liquibaseConfigProperties;
 
     @PostConstruct
     public void initialize() {
@@ -37,7 +38,7 @@ public class LiquibaseConfig {
 
     private void createSchemas() {
 
-        for (String schema : schemas) {
+        for (String schema : liquibaseConfigProperties.getCreateSchemaLocations()) {
             jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
         }
         jdbcTemplate.execute("SET search_path TO metadata, business, public");

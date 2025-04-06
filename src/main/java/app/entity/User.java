@@ -1,6 +1,7 @@
 package app.entity;
 
 import lombok.*;
+import neket27.entity.UserDetails;
 import org.springframework.data.annotation.Id;
 
 @Getter
@@ -8,7 +9,7 @@ import org.springframework.data.annotation.Id;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class User implements UserDetails {
 
     @Id
     private Long id;
@@ -18,4 +19,5 @@ public class User {
     private boolean isActive;
     private Role role;
     private Long financeId;
+
 }

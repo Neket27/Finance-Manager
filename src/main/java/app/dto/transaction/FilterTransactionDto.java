@@ -2,9 +2,11 @@ package app.dto.transaction;
 
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.time.Instant;
 
+@Builder
 public record FilterTransactionDto(
 
         Instant startDate,

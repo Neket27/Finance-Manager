@@ -1,12 +1,12 @@
 package test.controller;
 
-import app.context.UserContext;
 import app.controller.UserController;
-import app.dto.user.UserDto;
 import app.entity.Role;
+import app.entity.User;
 import app.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 
 @ExtendWith(MockitoExtension.class)
-public class UserControllerTes {
+public class UserControllerTest {
 
     private MockMvc mockMvc;
     private UserContext userContext;
@@ -40,7 +40,7 @@ public class UserControllerTes {
         this.mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
         this.userContext = new UserContext();
 
-        this.userContext.setUser(new UserDto(1L, "name", "email@mail.ru", "password", true, Role.ADMIN, 1L));
+        this.userContext.setUser(new User(1L, "name", "email@mail.ru", "password", true, Role.ADMIN, 1L));
     }
 
     @Test
@@ -62,7 +62,7 @@ public class UserControllerTes {
         String email = "test@example.com";
 
         UserContext userContext = new UserContext();
-        userContext.setUser(new UserDto(1L, "name", "email@mail.ru", "password", true, Role.USER, 1L));
+        userContext.setUser(new User(1L, "name", "email@mail.ru", "password", true, Role.USER, 1L));
 
         mockMvc.perform(post("/api/v1/user/block")
                         .param("email", email))
@@ -89,7 +89,7 @@ public class UserControllerTes {
         String email = "test@example.com";
 
         UserContext userContext = new UserContext();
-        userContext.setUser(new UserDto(1L, "name", "email@mail.ru", "password", true, Role.USER, 1L));
+        userContext.setUser(new User(1L, "name", "email@mail.ru", "password", true, Role.USER, 1L));
 
         mockMvc.perform(post("/api/v1/user/delete")
                         .param("email", email))

@@ -1,18 +1,18 @@
 package test.unit;
 
-import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
-import app.dto.user.UserDto;
 import app.entity.Role;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
+import app.entity.User;
 import app.mapper.TransactionMapper;
 import app.repository.TransactionRepository;
 import app.service.impl.TransactionServiceImpl;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +42,7 @@ class TransactionServiceImplTest {
     @Mock
     private TransactionMapper transactionMapper;
 
-    private Transaction transaction;
+    private app.entity.Transaction transaction;
 
     private TransactionDto transactionDto;
 
@@ -52,18 +52,18 @@ class TransactionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        this.transaction = new Transaction(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, financeId);
+        this.transaction = new app.entity.Transaction(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, financeId);
         this.transactionDto = new TransactionDto(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, financeId);
         this.userContext = new UserContext();
 
-        UserDto userDto = new UserDto.Builder()
+        User userDto = User.builder()
                 .id(1L)
                 .name("name")
                 .email("test@example.com")
                 .password("password123")
                 .role(Role.USER)
                 .isActive(true)
-                .finance(financeId)
+                .financeId(financeId)
                 .build();
 
         userContext.setUser(userDto);
@@ -73,13 +73,19 @@ class TransactionServiceImplTest {
     void create() {
         CreateTransactionDto createTransactionDto = new CreateTransactionDto(BigDecimal.valueOf(100), "category", "description", TypeTransaction.PROFIT);
 
-        when(transactionMapper.toEntity(createTransactionDto)).thenReturn(transaction);
+        Transaction lunchTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(1000))
+                .category("Food")
+                .description("Lunch")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .date(Instant.now()) // или конкретная дата, если нужно
+                .financeId(financeId)
+                .build();
+
         when(transactionRepository.save(transaction)).thenReturn(transaction);
-        when(transactionMapper.toDto(transaction)).thenReturn(transactionDto);
+        Transaction returnTransaction = transactionService.create(financeId, lunchTransaction);
 
-        TransactionDto returnTransactionDto = transactionService.create(financeId, createTransactionDto);
-
-        assertEquals(transactionDto, returnTransactionDto);
+        assertEquals(transaction, returnTransaction);
 
     }
 

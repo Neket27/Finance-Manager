@@ -7,6 +7,8 @@ import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
+import app.entity.User;
+import app.mapper.UserMapper;
 import app.service.AuthService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,21 +37,25 @@ public class AuthControllerTest {
 
     @Mock
     private AuthService authServiceMock;
+
+    @Mock
+    private UserMapper userMapper;
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     public void setUp() {
-        this.authController = new AuthController(authServiceMock);
+        this.authController = new AuthController(authServiceMock, userMapper);
         mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
     }
 
+    private final User user = new User(1L, "name", "email@mail.com", "1234QWAS", true, Role.USER, 1L);
     private final UserDto userDto = new UserDto(1L, "name", "email@mail.com", "1234QWAS", true, Role.USER, 1L);
 
     @Test
     void registerSuccess() throws Exception {
         CreateUserDto createUserDto = new CreateUserDto(userDto.name(), userDto.email(), userDto.password());
 
-        when(authServiceMock.register(createUserDto)).thenReturn(userDto);
+        when(authServiceMock.register(user)).thenReturn(user);
 
         mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)

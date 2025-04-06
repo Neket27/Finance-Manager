@@ -8,5 +8,7 @@ public interface UserRepository extends BaseRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
+    boolean tableIsEmpty();
+
     Optional<User> findByEmail(String email);
 }

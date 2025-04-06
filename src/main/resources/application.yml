@@ -9,6 +9,18 @@ spring:
     username: db_finance_manager
     password: db_finance_manager
 
+custom:
+  liquibase:
+    create-schema-locations:
+      - public
+      - metadata
+      - business
 
-# http://localhost:8080/swagger-ui/index.html
+# swagger-ui custom path
+springdoc:
+  swagger-ui:
+    path: /ui
 
+logging:
+  level:
+    app: debug

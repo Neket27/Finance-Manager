@@ -1,12 +1,13 @@
 package test.controller;
 
-import app.context.UserContext;
 import app.controller.TargetController;
 import app.dto.user.UserDto;
 import app.entity.Role;
+import app.entity.User;
 import app.service.TargetService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import neket27.context.UserContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +43,7 @@ class TargetControllerTest {
         this.mockMvc = MockMvcBuilders.standaloneSetup(targetController).build();
         this.userContext = new UserContext();
 
-        this.userContext.setUser(new UserDto(1L, "name", "email@mail.ru", "password", true, Role.USER, 1L));
+        this.userContext.setUser(new User(1L, "name", "email@mail.ru", "password", true, Role.USER, 1L));
     }
 
     @Test

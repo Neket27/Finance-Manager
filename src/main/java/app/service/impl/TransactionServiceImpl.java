@@ -1,24 +1,21 @@
 package app.service.impl;
 
-import app.aspect.auditable.Auditable;
-import app.aspect.loggable.CustomLogging;
-import app.context.UserContext;
 import app.dto.finance.FinanceDto;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
-import app.dto.user.UserDto;
 import app.entity.Transaction;
+import app.entity.User;
 import app.exception.common.CreateException;
 import app.exception.common.DeleteException;
 import app.mapper.TransactionMapper;
 import app.repository.TransactionRepository;
 import app.service.TransactionService;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import neket27.context.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,15 +47,14 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
-    public TransactionDto create(Long financeId, CreateTransactionDto dto) {
+    public Transaction create(Long financeId, Transaction transaction) {
         try {
-            Transaction transaction = transactionMapper.toEntity(dto);
             transaction.setDate(Instant.now());
             transaction.setFinanceId(financeId);
             transaction = transactionRepository.save(transaction);
 
             log.debug("addTransaction: {}", transaction.toString());
-            return transactionMapper.toDto(transaction);
+            return transaction;
         } catch (Exception e) {
             throw new CreateException("Error create transaction", e);
         }
@@ -83,7 +79,7 @@ public class TransactionServiceImpl implements TransactionService {
      * @param id идентификатор транзакции
      * @return найденная транзакция
      */
-    private Transaction find(Long id) {
+    private app.entity.Transaction find(Long id) {
         return transactionRepository.findById(id).orElseThrow(() -> new TransactionException("Transaction not found with id: " + id) {
         });
     }
@@ -98,7 +94,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Auditable
     @Transactional(rollbackFor = Exception.class)
     public TransactionDto edit(UpdateTransactionDto dto) {
-        Transaction transaction = this.find(dto.id());
+        app.entity.Transaction transaction = this.find(dto.id());
         transactionMapper.updateEntity(transaction, dto);
         transactionRepository.save(transaction);
         log.debug("Транзакция обновлена: {}", transaction);
@@ -144,8 +140,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Auditable
     @Transactional
     public List<TransactionDto> getFilteredTransactions(FilterTransactionDto f) {
-        UserDto user = UserContext.getCurrentUser();
-        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(user.financeId(),
+        User user = (User) UserContext.getCurrentUser();
+        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(user.getFinanceId(),
                 f.startDate(), f.endDate(), f.category(), f.typeTransaction()));
     }
 

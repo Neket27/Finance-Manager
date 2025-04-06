@@ -1,11 +1,13 @@
 package app.controller;
 
-import app.context.UserContext;
 import app.controller.advice.annotation.CustomExceptionHandler;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
+import app.entity.Transaction;
+import app.entity.User;
+import app.mapper.TransactionMapper;
 import app.service.FinanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import neket27.context.UserContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +32,7 @@ import java.util.Set;
 public class FinanceController {
 
     private final FinanceService financeService;
+    private final TransactionMapper transactionMapper;
 
 
     /**
@@ -47,7 +51,8 @@ public class FinanceController {
     @ResponseStatus(HttpStatus.CREATED)
     public TransactionDto create(
             @Valid @RequestBody @Parameter(description = "Данные для создания транзакции") CreateTransactionDto dto) {
-        return financeService.createTransaction(getFinanceIdCurrentUser(), dto);
+        Transaction transaction = financeService.createTransaction(getFinanceIdCurrentUser(), transactionMapper.toEntity(dto));
+        return transactionMapper.toDto(transaction);
     }
 
     /**
@@ -124,7 +129,8 @@ public class FinanceController {
     }
 
     private Long getFinanceIdCurrentUser() {
-        return UserContext.getCurrentUser().financeId();
+        User user = (User) UserContext.getCurrentUser();
+        return user.getFinanceId();
     }
 
 }

@@ -1,11 +1,11 @@
 package app.service.impl;
 
-import app.aspect.auditable.Auditable;
-import app.aspect.loggable.CustomLogging;
 import app.entity.Token;
 import app.exception.common.NotFoundException;
 import app.repository.TokenRepository;
 import app.service.TokenService;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,21 +21,21 @@ public class TokenServiceImpl implements TokenService {
     @Auditable
     @Transactional
     public Token getTokenById(Long id) {
-        return tokenRepository.findById(id).orElseThrow(() -> new NotFoundException("Token with id: " + id+ " not found"));
+        return tokenRepository.findById(id).orElseThrow(() -> new NotFoundException("Token with id: " + id + " not found"));
     }
 
     @Override
     @Auditable
     @Transactional
-    public Token getTokenByUserId(Long userId){
-        return tokenRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("Token with userId: " + userId+" not found"));
+    public Token getTokenByUserId(Long userId) {
+        return tokenRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("Token with userId: " + userId + " not found"));
     }
 
     @Override
     @Auditable
     @Transactional
     public Token getTokenByUserEmail(String email) {
-        return tokenRepository.getTokenByUserEmail(email).orElseThrow(() -> new NotFoundException("Token with email  " + email+ "not found"));
+        return tokenRepository.getTokenByUserEmail(email).orElseThrow(() -> new NotFoundException("Token with email  " + email + "not found"));
     }
 
     @Override

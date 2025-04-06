@@ -4,24 +4,25 @@ import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
+import app.entity.User;
 
 import java.util.List;
 
 public interface UserService {
 
-    UserDto createUser(CreateUserDto createUserDto);
+    User createUser(User user);
 
-    UserDto updateDataUser(UpdateUserDto userDto, String email);
+    User updateDataUser(User user, String email);
 
     boolean remove(String email);
 
-    UserDto getUserByEmail(String email);
+    User getUserByEmail(String email);
 
-    List<UserDto> list();
+    List<User> list();
 
     boolean blockUser (String email);
 
     boolean changeUserRole(String email, Role role);
 
-    UserDto getUserById(Long id);
+    User getUserById(Long id);
 }

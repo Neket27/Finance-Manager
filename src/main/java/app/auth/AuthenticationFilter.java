@@ -1,10 +1,11 @@
 package app.auth;
 
-import app.context.UserContext;
 import app.dto.user.UserDto;
+import app.entity.User;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import neket27.context.UserContext;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class AuthenticationFilter implements Filter {
 
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
-                UserDto user = authenticator.authenticate(token);
+                User user = authenticator.authenticate(token);
                 if (user != null) {
                     UserContext.setCurrentUser(user);
                 }

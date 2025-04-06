@@ -13,14 +13,14 @@ import java.util.Collection;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface UserMapper extends BaseMapper<User, UserDto> {
+public interface UserMapper extends BaseMapper<app.entity.User, UserDto> {
 
     @Mapping(source = "name", target = "name")
     @Mapping(source = "email", target = "email")
     @Mapping(source = "password", target = "password")
     @Mapping(source = "role", target = "role")
     @Mapping(source = "financeId", target = "financeId")
-    User updateEntity(UpdateUserDto userDto, @MappingTarget User user);
+    User updateEntity(User userNewData, @MappingTarget User user);
 
     @Mapping(source = "name", target = "name")
     @Mapping(source = "email", target = "email")
@@ -29,4 +29,5 @@ public interface UserMapper extends BaseMapper<User, UserDto> {
 
     List<UserDto> toListDto(Collection<User> users);
 
+    List<User> toList(Collection<User> all);
 }

@@ -31,6 +31,13 @@ public class UserJdbcRepository implements UserRepository {
     }
 
     @Override
+    public boolean tableIsEmpty() {
+        String sql = "SELECT * FROM business.users LIMIT 1";
+        Integer integer = jdbcTemplate.queryForObject(sql, Integer.class);
+        return integer == null;
+    }
+
+    @Override
     public Optional<User> findById(Long id) {
         String sql = "SELECT * FROM business.users WHERE id = ?";
         return queryForOptional(sql, id);
@@ -55,16 +62,16 @@ public class UserJdbcRepository implements UserRepository {
     @Override
     public User save(User entity) {
         String sql = """
-        INSERT INTO business.users (name, email, password, is_active, role, finance_id)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT (email) DO UPDATE SET
-            name = EXCLUDED.name,
-            password = EXCLUDED.password,
-            is_active = EXCLUDED.is_active,
-            role = EXCLUDED.role,
-            finance_id = EXCLUDED.finance_id
-        RETURNING id
-        """;
+                INSERT INTO business.users (name, email, password, is_active, role, finance_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (email) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    password = EXCLUDED.password,
+                    is_active = EXCLUDED.is_active,
+                    role = EXCLUDED.role,
+                    finance_id = EXCLUDED.finance_id
+                RETURNING id
+                """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         int update = jdbcTemplate.update(con -> {

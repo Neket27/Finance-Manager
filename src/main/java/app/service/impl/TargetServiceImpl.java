@@ -1,20 +1,17 @@
 package app.service.impl;
 
-import app.aspect.auditable.Auditable;
-import app.aspect.loggable.CustomLogging;
-import app.context.UserContext;
-import app.dto.finance.FinanceDto;
 import app.dto.transaction.TransactionDto;
-import app.dto.user.UserDto;
 import app.entity.Finance;
 import app.entity.TypeTransaction;
+import app.entity.User;
 import app.service.FinanceService;
 import app.service.TargetService;
 import app.service.UserService;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import neket27.context.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +51,8 @@ public class TargetServiceImpl implements TargetService {
     @Auditable
     @Transactional
     public Boolean isMonthBudgetExceeded(Long financeId) {
-        Finance finance = findFinance(UserContext.getCurrentUser().email());
+        app.entity.User user = (app.entity.User) UserContext.getCurrentUser();
+        app.entity.Finance finance = findFinance(user.getEmail());
 
         Set<TransactionDto> transactions = financeService.list(financeId);
         Instant thirtyDaysAgo = Instant.now().minus(Duration.ofDays(30));
@@ -77,9 +75,9 @@ public class TargetServiceImpl implements TargetService {
     @Auditable
     @Transactional
     public Double getProgressTowardsGoal(Long financeId) {
-        FinanceDto finance = financeService.getFinanceById(financeId);
-        BigDecimal current = finance.currentSavings();
-        BigDecimal goal = finance.savingsGoal();
+        Finance finance = financeService.getFinanceById(financeId);
+        BigDecimal current = finance.getCurrentSavings();
+        BigDecimal goal = finance.getSavingsGoal();
         if (goal.compareTo(BigDecimal.ZERO) == 0) {
             return 0.0;
         }
@@ -95,22 +93,22 @@ public class TargetServiceImpl implements TargetService {
     @Auditable
     @Transactional
     public String generateFinancialReport() {
-        UserDto user = userService.getUserByEmail(UserContext.getCurrentUser().email());
-        Finance finance = financeService.findFinanceById(user.financeId());
+        User user = (User) UserContext.getCurrentUser();
+        Finance finance = financeService.findFinanceById(user.getFinanceId());
         StringBuilder reportBuilder = new StringBuilder();
 
         reportBuilder.append("==== Финансовый отчет ====\n");
         reportBuilder.append("Текущие накопления: ").append(finance.getCurrentSavings()).append("\n");
         reportBuilder.append("Цель накопления: ").append(finance.getSavingsGoal()).append("\n");
-        reportBuilder.append("Прогресс к цели: ").append(getProgressTowardsGoal(user.id())).append("%\n");
+        reportBuilder.append("Прогресс к цели: ").append(getProgressTowardsGoal(user.getFinanceId())).append("%\n");
 
         reportBuilder.append("Суммарный доход за период: ")
-                .append(financeService.getTotalProfit(LocalDate.now().minusMonths(1), LocalDate.now(), user.id())).append("\n");
+                .append(financeService.getTotalProfit(LocalDate.now().minusMonths(1), LocalDate.now(), user.getFinanceId())).append("\n");
         reportBuilder.append("Суммарные расходы за период: ")
-                .append(financeService.getTotalExpenses(LocalDate.now().minusMonths(1), LocalDate.now(), user.id())).append("\n");
+                .append(financeService.getTotalExpenses(LocalDate.now().minusMonths(1), LocalDate.now(), user.getFinanceId())).append("\n");
 
         reportBuilder.append("Расходы по категориям:\n");
-        financeService.getExpensesByCategory(UserContext.getCurrentUser().id()).forEach((category, total) ->
+        financeService.getExpensesByCategory(((app.entity.User) UserContext.getCurrentUser()).getFinanceId()).forEach((category, total) ->
                 reportBuilder.append(category).append(": ").append(total).append("\n"));
 
         reportBuilder.append("===========================\n");
@@ -127,7 +125,8 @@ public class TargetServiceImpl implements TargetService {
     @Auditable
     @Transactional(rollbackFor = Exception.class)
     public void updateGoalSavings(BigDecimal savingGoal) {
-        Finance finance = findFinance(UserContext.getCurrentUser().email());
+        app.entity.User user = (app.entity.User) UserContext.getCurrentUser();
+        app.entity.Finance finance = findFinance(user.getEmail());
         finance.setSavingsGoal(savingGoal);
         financeService.save(finance);
         log.debug("Цель накопления установлена: {}", savingGoal);
@@ -139,8 +138,8 @@ public class TargetServiceImpl implements TargetService {
      * @param email электронная почта пользователя
      * @return объект Finance, содержащий финансовые данные пользователя
      */
-    private Finance findFinance(String email) {
-        UserDto user = userService.getUserByEmail(email);
-        return financeService.findFinanceById(user.financeId());
+    private app.entity.Finance findFinance(String email) {
+        User user = userService.getUserByEmail(email);
+        return financeService.findFinanceById(user.getFinanceId());
     }
 }

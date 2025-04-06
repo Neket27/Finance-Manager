@@ -1,12 +1,8 @@
 package app.service.impl;
 
-import app.aspect.auditable.Auditable;
-import app.aspect.loggable.CustomLogging;
-import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
-import app.dto.user.CreateUserDto;
-import app.dto.user.UpdateUserDto;
-import app.dto.user.UserDto;
+import app.dto.finance.FinanceDto;
+import app.entity.Finance;
 import app.entity.Role;
 import app.entity.User;
 import app.exception.user.UserAlreadyExistsException;
@@ -15,10 +11,11 @@ import app.mapper.UserMapper;
 import app.repository.UserRepository;
 import app.service.FinanceService;
 import app.service.UserService;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import neket27.context.UserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,16 +40,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
-    public UserDto createUser(CreateUserDto createUserDto) {
-        if (userRepository.existsByEmail(createUserDto.email()))
-            throw new UserAlreadyExistsException(String.format("User with email %s already exists", createUserDto.email()));
+    public User createUser(User user) {
+        if (userRepository.existsByEmail(user.getEmail()))
+            throw new UserAlreadyExistsException(String.format("User with email %s already exists", user.getEmail()));
 
-        User user = userMapper.toEntity(createUserDto);
-        //TODO убрать загрузку всех пользователей
-        user.setRole(userRepository.getAll().isEmpty() ? Role.ADMIN : Role.USER);
+        user.setRole(userRepository.tableIsEmpty() ? Role.ADMIN : Role.USER);
         user.setActive(true);
 
-        CreateFinanceDto financeDto = new CreateFinanceDto.Builder()
+        Finance finance = Finance.builder()
                 .currentSavings(BigDecimal.ZERO)
                 .monthlyBudget(BigDecimal.ZERO)
                 .savingsGoal(BigDecimal.ZERO)
@@ -60,31 +55,22 @@ public class UserServiceImpl implements UserService {
                 .transactionsId(new ArrayList<>())
                 .build();
 
-        Long financeId = financeService.createEmptyFinance(financeDto);
+        Long financeId = financeService.createEmptyFinance(finance);
         user.setFinanceId(financeId);
 
-        user = userRepository.save(user);
-        return userMapper.toDto(user);
+        return userRepository.save(user);
     }
 
-    /**
-     * Обновляет данные пользователя.
-     *
-     * @param userDto объект с обновленными данными пользователя
-     * @param email   email пользователя
-     * @return DTO обновленного пользователя
-     * @throws IllegalArgumentException если userDto равен null
-     */
+
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
-    public UserDto updateDataUser(UpdateUserDto userDto, String email) {
-        if (userDto == null)
+    public User updateDataUser(User user, String email) {
+        if (user == null)
             throw new IllegalArgumentException("User Dto не может быть null");
 
-        User user = this.find(email);
-        user = userMapper.updateEntity(userDto, user);
-        return userMapper.toDto(user);
+        User _user = this.find(email);
+        return userMapper.updateEntity(_user, user);
     }
 
     /**
@@ -110,17 +96,17 @@ public class UserServiceImpl implements UserService {
     @Override
     @Auditable
     @Transactional
-    public UserDto getUserByEmail(String email) {
-        return userMapper.toDto(this.find(email));
+    public User getUserByEmail(String email) {
+        return find(email);
     }
 
-    private User find(Long id) {
+    private app.entity.User find(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserException(String.format("User with id %s not found", id)));
     }
 
 
-    private User find(String email) {
+    private app.entity.User find(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserException(String.format("User with email %s not found", email)));
     }
@@ -133,8 +119,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Auditable
     @Transactional
-    public List<UserDto> list() {
-        return userMapper.toListDto(userRepository.getAll());
+    public List<User> list() {
+        return userMapper.toList(userRepository.getAll());
     }
 
     /**
@@ -148,7 +134,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public boolean blockUser(String email) {
         try {
-            User user = this.find(email);
+            app.entity.User user = this.find(email);
             user.setActive(false);
             userRepository.save(user);
             log.debug("Пользователь {} заблокирован.", email);
@@ -171,10 +157,10 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public boolean changeUserRole(String email, Role role) {
         try {
-            User user = this.find(email);
+            app.entity.User user = this.find(email);
             user.setRole(role);
             userRepository.save(user);
-            UserContext.setCurrentUser(userMapper.toDto(user));
+            UserContext.setCurrentUser(user);
             return true;
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -185,7 +171,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Auditable
     @Transactional
-    public UserDto getUserById(Long id) {
-        return userMapper.toDto(find(id));
+    public User getUserById(Long id) {
+        return find(id);
     }
 }

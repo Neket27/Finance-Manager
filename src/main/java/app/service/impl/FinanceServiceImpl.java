@@ -1,14 +1,11 @@
 package app.service.impl;
 
-import app.aspect.auditable.Auditable;
-import app.aspect.loggable.CustomLogging;
-import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Finance;
+import app.entity.Transaction;
 import app.entity.TypeTransaction;
 import app.exception.common.CreateException;
 import app.exception.common.DeleteException;
@@ -18,10 +15,10 @@ import app.mapper.FinanceMapper;
 import app.repository.FinanceRepository;
 import app.service.FinanceService;
 import app.service.TransactionService;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +44,7 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     @Auditable
     @Transactional
-    public Long createEmptyFinance(CreateFinanceDto dto) {
-        Finance finance = financeMapper.toEntity(dto);
+    public Long createEmptyFinance(Finance finance) {
         finance = financeRepository.save(finance);
         return finance.getId();
     }
@@ -56,25 +52,25 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
-    public TransactionDto createTransaction(Long financeId, CreateTransactionDto dto) {
+    public Transaction createTransaction(Long financeId, Transaction transaction) {
         Finance finance = find(financeId);
 
-        if (dto.typeTransaction().equals(TypeTransaction.EXPENSE) &&
-                finance.getCurrentSavings().compareTo(dto.amount()) < 0) {
-            BigDecimal diff = dto.amount().subtract(finance.getCurrentSavings());
+        if (transaction.getTypeTransaction().equals(TypeTransaction.EXPENSE) &&
+                finance.getCurrentSavings().compareTo(transaction.getAmount()) < 0) {
+            BigDecimal diff = transaction.getAmount().subtract(finance.getCurrentSavings());
             System.out.println("Недостаточно средств, не хватает: " + diff);
             throw new CreateException("Недостаточно средств");
         }
 
-        TransactionDto transaction = transactionService.create(financeId, dto);
-        finance.getTransactionsId().add(transaction.id());
+        Transaction _transaction = transactionService.create(financeId, transaction);
+        finance.getTransactionsId().add(transaction.getId());
 
-        updateCurrentSavings(finance, transaction.amount(), transaction.typeTransaction());
+        updateCurrentSavings(finance, _transaction.getAmount(), _transaction.getTypeTransaction());
         financeRepository.save(finance);
         return transaction;
     }
 
-    private void updateCurrentSavings(Finance finance, BigDecimal amount, TypeTransaction type) {
+    private void updateCurrentSavings(app.entity.Finance finance, BigDecimal amount, TypeTransaction type) {
         if (type == TypeTransaction.PROFIT) {
             finance.setCurrentSavings(finance.getCurrentSavings().add(amount));
         } else {
@@ -82,7 +78,7 @@ public class FinanceServiceImpl implements FinanceService {
         }
     }
 
-    private Finance find(Long id) {
+    private app.entity.Finance find(Long id) {
         return financeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Finance not found id=" + id));
     }
@@ -109,7 +105,7 @@ public class FinanceServiceImpl implements FinanceService {
 
         if (transactionExists) {
             transactionService.delete(idTransaction);
-            Finance finance = this.find(financeId);
+            app.entity.Finance finance = this.find(financeId);
             finance.getTransactionsId().remove(idTransaction);
             financeRepository.save(finance);
         } else {
@@ -121,7 +117,7 @@ public class FinanceServiceImpl implements FinanceService {
     @Auditable
     @Transactional(rollbackFor = Exception.class)
     public void updatetMonthlyBudget(Long financeId, BigDecimal budget) {
-        Finance finance = find(financeId);
+        app.entity.Finance finance = find(financeId);
         finance.setMonthlyBudget(budget);
         save(finance);
     }
@@ -184,7 +180,7 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
-    public Finance save(Finance finance) {
+    public Finance save(app.entity.Finance finance) {
         return financeRepository.save(finance);
     }
 
@@ -198,8 +194,8 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     @Auditable
     @Transactional
-    public FinanceDto getFinanceById(Long id) {
-        return financeMapper.toDto(this.find(id));
+    public Finance getFinanceById(Long id) {
+        return find(id);
     }
 
     @Override
