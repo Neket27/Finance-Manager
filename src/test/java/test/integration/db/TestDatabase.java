@@ -16,9 +16,9 @@ import test.integration.db.config.PostgresContainer;
 @RequiredArgsConstructor
 public class TestDatabase {
 
-    public final JdbcTemplate getJdbcTemplate;
-    public final PostgresContainer container;
-    public final LiquibaseConfig liquibaseConfig;
+    private final JdbcTemplate getJdbcTemplate;
+    private final PostgresContainer container;
+    private final LiquibaseConfig liquibaseConfig;
 
     public void stop() {
         container.stopContainer();
@@ -29,20 +29,20 @@ public class TestDatabase {
 
     }
 
-    @Bean
-    public JdbcTemplate jdbcTemplate() {
-        return getJdbcTemplate;
-    }
-
-    @Bean
-    public PostgresContainer postgresContainer() {
-        return container;
-    }
-
-    @Bean
-    LiquibaseConfig liquibaseConfig() {
-        return liquibaseConfig;
-    }
+//    @Bean
+//    public JdbcTemplate jdbcTemplate() {
+//        return getJdbcTemplate;
+//    }
+//
+//    @Bean
+//    public PostgresContainer postgresContainer() {
+//        return container;
+//    }
+//
+//    @Bean
+//    LiquibaseConfig liquibaseConfig() {
+//        return liquibaseConfig;
+//    }
 
 }
 

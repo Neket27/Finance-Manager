@@ -31,17 +31,10 @@ public class PostgresContainer {
         postgres = null;
     }
 
-//    public Connection getConnection() {
-//        try {
-//            return DriverManager.getConnection(
-//                    postgres.getJdbcUrl(),
-//                    postgres.getUsername(),
-//                    postgres.getPassword()
-//            );
-//        } catch (SQLException e) {
-//            throw new RuntimeException("Could not connect to PostgreSQL", e);
-//        }
-//    }
+    public PostgreSQLContainer<?> getPostgres() {
+        return postgres;
+    }
+
 
     public DriverManagerDataSource driverManagerDataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
@@ -51,6 +44,7 @@ public class PostgresContainer {
         dataSource.setPassword(postgres.getPassword());
         return dataSource;
     }
+
 
 
 //    public void clear() {

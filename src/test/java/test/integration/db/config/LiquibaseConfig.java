@@ -7,9 +7,11 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+@Configuration
 public class LiquibaseConfig {
 
     private final Logger log = LoggerFactory.getLogger(LiquibaseConfig.class);

@@ -2,6 +2,8 @@ package test.integration.db;
 
 
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -11,10 +13,12 @@ import test.integration.db.config.LiquibaseConfig;
 import test.integration.db.config.PostgresContainer;
 
 @Configuration
+@Getter
+@Setter
 public class TestDatabaseFactory {
 
     private static PostgresContainer container;
-    public static AppProperties appProperties;
+    private static AppProperties appProperties;
 
     @PostConstruct
     public static TestDatabase create() {
