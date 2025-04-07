@@ -1,6 +1,5 @@
 package app.auth;
 
-import app.dto.user.UserDto;
 import app.entity.User;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
