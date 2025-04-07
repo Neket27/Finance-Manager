@@ -22,13 +22,13 @@ public interface FinanceService {
 
     BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, Long financeId);
 
-    List<TransactionDto> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto);
+    List<Transaction> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto);
 
-    TransactionDto editTransaction(Long financeId, UpdateTransactionDto updateTransactionDto);
+    Transaction editTransaction(Long financeId, Transaction updateTransaction);
 
     Finance save(Finance finance);
 
-    Set<TransactionDto> list(Long financeId);
+    Set<Transaction> list(Long financeId);
 
     Finance getFinanceById(Long id);
 

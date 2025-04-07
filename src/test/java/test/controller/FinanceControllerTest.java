@@ -9,6 +9,7 @@ import app.entity.Role;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
 import app.entity.User;
+import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
 import app.service.FinanceService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,8 +35,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -70,29 +70,41 @@ class FinanceControllerTest {
 
     @Test
     void createSuccess() throws Exception {
-        Transaction createTransaction = Transaction.builder()
+        Instant instant = Instant.now();
+
+        CreateTransactionDto createTransactionDto = CreateTransactionDto.builder()
                 .amount(BigDecimal.valueOf(100))
                 .category("category")
                 .description("description")
                 .typeTransaction(TypeTransaction.PROFIT)
                 .build();
 
-        Transaction transaction = new Transaction(1L, createTransaction.getAmount(), createTransaction.getCategory(), Instant.now(), createTransaction.getDescription(), TypeTransaction.PROFIT, 1L);
+        Transaction transaction = Transaction.builder()
+                .id(1L)
+                .amount(BigDecimal.valueOf(100))
+                .category("category")
+                .description("description")
+                .typeTransaction(TypeTransaction.PROFIT)
+                .date(instant)
+                .build();
 
-        when(financeService.createTransaction(1L, createTransaction)).thenReturn(transaction);
+
+        when(financeService.createTransaction(eq(1L), any(Transaction.class)))
+                .thenReturn(transaction);
 
         mockMvc.perform(post("/api/v1/transaction")
                         .contentType(MediaType.APPLICATION_JSON)
                         .characterEncoding("UTF-8")
-                        .content(asJsonString(createTransaction)))
+                        .content(asJsonString(createTransactionDto))) // Используем DTO для запроса
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(transaction.getId()))
-                .andExpect(jsonPath("$.category").value(createTransaction.getCategory()))
-                .andExpect(jsonPath("$.description").value(createTransaction.getDescription()))
-                .andExpect(jsonPath("$.amount").value(createTransaction.getAmount()))
+                .andExpect(jsonPath("$.category").value(transaction.getCategory()))
+                .andExpect(jsonPath("$.description").value(transaction.getDescription()))
+                .andExpect(jsonPath("$.amount").value(transaction.getAmount()))
                 .andExpect(jsonPath("$.date").value(transaction.getDate().truncatedTo(ChronoUnit.MILLIS).toString()))
                 .andExpect(jsonPath("$.financeId").value(transaction.getFinanceId()));
     }
+
 
     @Test
     public void createFail() throws Exception {
@@ -119,22 +131,51 @@ class FinanceControllerTest {
 
     @Test
     void update() throws Exception {
-        UpdateTransactionDto updateTransactionDto = new UpdateTransactionDto(1L, BigDecimal.valueOf(50), "category2", Instant.now().truncatedTo(ChronoUnit.MILLIS), "description2", TypeTransaction.EXPENSE);
-        TransactionDto transactionDto = new TransactionDto(1L, updateTransactionDto.amount(), updateTransactionDto.category(), updateTransactionDto.date(), updateTransactionDto.description(), TypeTransaction.PROFIT, 1L);
 
-        when(financeService.editTransaction(1L, updateTransactionDto)).thenReturn(transactionDto);
+        Instant instant = Instant.now();
+
+        UpdateTransactionDto updateTransactionDto = UpdateTransactionDto.builder()
+                .id(1L)
+                .amount(BigDecimal.valueOf(500))
+                .category("category")
+                .description("description")
+                .typeTransaction(TypeTransaction.PROFIT)
+                .date(instant)
+                .build();
+
+        Transaction transaction = Transaction.builder()
+                .id(1L)
+                .amount(BigDecimal.valueOf(100))
+                .category("category")
+                .description("description")
+                .typeTransaction(TypeTransaction.PROFIT)
+                .date(instant)
+                .build();
+
+
+        TransactionDto transactionDto = TransactionDto.builder()
+                .id(1L)
+                .amount(BigDecimal.valueOf(100))
+                .category("category")
+                .description("description")
+                .typeTransaction(TypeTransaction.PROFIT)
+                .date(instant)
+                .build();
+
+
+        when(financeService.editTransaction(eq(1L), any(Transaction.class))).thenReturn(transaction);
 
         mockMvc.perform(put("/api/v1/transaction")
                         .contentType(MediaType.APPLICATION_JSON)
                         .characterEncoding("UTF-8")
                         .content(asJsonString(updateTransactionDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(transactionDto.id()))
-                .andExpect(jsonPath("$.category").value(updateTransactionDto.category()))
-                .andExpect(jsonPath("$.description").value(updateTransactionDto.description()))
-                .andExpect(jsonPath("$.amount").value(updateTransactionDto.amount()))
-                .andExpect(jsonPath("$.date").value(transactionDto.date().truncatedTo(ChronoUnit.MILLIS).toString()))
-                .andExpect(jsonPath("$.financeId").value(transactionDto.financeId()));
+                .andExpect(jsonPath("$.id").value(transaction.getId()))
+                .andExpect(jsonPath("$.category").value(transaction.getCategory()))
+                .andExpect(jsonPath("$.description").value(transaction.getDescription()))
+                .andExpect(jsonPath("$.amount").value(transaction.getAmount()))
+                .andExpect(jsonPath("$.date").value(transaction.getDate().truncatedTo(ChronoUnit.MILLIS).toString()))
+                .andExpect(jsonPath("$.financeId").value(transaction.getFinanceId()));
     }
 
     @Test
@@ -150,8 +191,14 @@ class FinanceControllerTest {
 
     @Test
     void listFilterTransaction() throws Exception {
-        TransactionDto transactionDto = new TransactionDto(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, 1L);
-        List<TransactionDto> transactionDtos = List.of(transactionDto);
+        Transaction transaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        List<Transaction> transactionDtos = List.of(transaction);
         FilterTransactionDto filterTransactionDto = new FilterTransactionDto(
                 Instant.now().minus(Duration.ofDays(1L)),
                 Instant.now(),
@@ -171,8 +218,14 @@ class FinanceControllerTest {
 
     @Test
     void listAll() throws Exception {
-        TransactionDto transactionDto = new TransactionDto(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, 1L);
-        Set<TransactionDto> transactionDtos = Set.of(transactionDto);
+        Transaction transaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+
+        Set<Transaction> transactionDtos = Set.of(transaction);
         FilterTransactionDto filterTransactionDto = new FilterTransactionDto(Instant.now().minus(Duration.ofDays(1L)), Instant.now(), "category", TypeTransaction.PROFIT.name());
 
         when(financeService.list(anyLong())).thenReturn(transactionDtos);
@@ -186,8 +239,7 @@ class FinanceControllerTest {
 
     private String asJsonString(Object obj) {
         try {
-            String s = objectMapper.writeValueAsString(obj);
-            return s;
+            return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

@@ -5,9 +5,11 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 
+@Builder
 public record CreateTransactionDto(
 
         @NotNull(message = "Сумма не может быть null")
@@ -24,35 +26,4 @@ public record CreateTransactionDto(
         @NotNull(message = "Тип транзакции должен быть указан")
         TypeTransaction typeTransaction
 ) {
-
-    public static class Builder {
-        private BigDecimal amount = BigDecimal.ZERO;
-        private String category;
-        private String description;
-        private TypeTransaction typeTransaction;
-
-        public Builder amount(BigDecimal amount) {
-            this.amount = amount != null ? amount : BigDecimal.ZERO;
-            return this;
-        }
-
-        public Builder category(String category) {
-            this.category = category;
-            return this;
-        }
-
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public Builder typeTransaction(TypeTransaction typeTransaction) {
-            this.typeTransaction = typeTransaction;
-            return this;
-        }
-
-        public CreateTransactionDto build() {
-            return new CreateTransactionDto(amount, category, description, typeTransaction);
-        }
-    }
 }

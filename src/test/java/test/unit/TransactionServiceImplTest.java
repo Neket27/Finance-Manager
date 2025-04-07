@@ -94,7 +94,7 @@ class TransactionServiceImplTest {
         when(transactionRepository.findById(transaction.getId())).thenReturn(Optional.of(transaction));
         when(transactionMapper.toDto(transaction)).thenReturn(transactionDto);
 
-        TransactionDto result = transactionService.getTransactionById(transaction.getId());
+        Transaction result = transactionService.getTransactionById(transaction.getId());
 
         assertEquals(transactionDto, result);
     }
@@ -102,15 +102,13 @@ class TransactionServiceImplTest {
     @Test
     void edit() {
         UpdateTransactionDto updateTransactionDto = new UpdateTransactionDto(transaction.getId(), BigDecimal.valueOf(200), "newCategory", Instant.now(), "newDescription", TypeTransaction.EXPENSE);
-        TransactionDto updatedTransactionDto = new TransactionDto(1L, updateTransactionDto.amount(), updateTransactionDto.category(), updateTransactionDto.date(), updateTransactionDto.description(), updateTransactionDto.typeTransaction(), financeId);
+        Transaction updatedTransaction = new Transaction(1L, updateTransactionDto.amount(), updateTransactionDto.category(), updateTransactionDto.date(), updateTransactionDto.description(), updateTransactionDto.typeTransaction(), financeId);
         when(transactionRepository.findById(transaction.getId())).thenReturn(Optional.of(transaction));
-        when(transactionMapper.updateEntity(transaction, updateTransactionDto)).thenReturn(transaction);
         when(transactionRepository.save(transaction)).thenReturn(transaction);
-        when(transactionMapper.toDto(transaction)).thenReturn(updatedTransactionDto);
 
-        TransactionDto returnUpdatedTransaction = transactionService.edit(updateTransactionDto);
+        Transaction returnUpdatedTransaction = transactionService.edit(updatedTransaction);
 
-        assertEquals(updatedTransactionDto, returnUpdatedTransaction);
+        assertEquals(updatedTransaction, returnUpdatedTransaction);
     }
 
     @Test
@@ -130,7 +128,7 @@ class TransactionServiceImplTest {
 
         when(transactionMapper.toDto(transaction)).thenReturn(transactionDto);
         when(transactionRepository.findById(transactionDto.id())).thenReturn(Optional.of(transaction));
-        List<TransactionDto> result = transactionService.findAll(financeDto);
+        List<Transaction> result = transactionService.findAll(financeDto);
 
         assertEquals(transactionDtos, result);
     }
@@ -144,7 +142,7 @@ class TransactionServiceImplTest {
 
         when(transactionMapper.toDtoList(List.of(transaction))).thenReturn(List.of(transactionDto));
 
-        List<TransactionDto> filteredTransactions = transactionService.getFilteredTransactions(filterDto);
+        List<Transaction> filteredTransactions = transactionService.getFilteredTransactions(filterDto);
 
         assertNotNull(filteredTransactions);
         assertFalse(filteredTransactions.isEmpty());
@@ -152,14 +150,13 @@ class TransactionServiceImplTest {
 
     @Test
     void getTransactionsByFinanceId() {
-        Set<TransactionDto> transactionDtos = Set.of(transactionDto);
+        Set<Transaction> transactions = Set.of(transaction);
 
         when(transactionRepository.findByFinanceId(financeId)).thenReturn(List.of(transaction));
-        when(transactionMapper.toDtoSet(List.of(transaction))).thenReturn(transactionDtos);
 
-        Set<TransactionDto> result = transactionService.getTransactionsByFinanceId(financeId);
+        Set<Transaction> result = transactionService.getTransactionsByFinanceId(financeId);
 
-        assertEquals(transactionDtos, result);
+        assertEquals(transactions, result);
     }
 
 }

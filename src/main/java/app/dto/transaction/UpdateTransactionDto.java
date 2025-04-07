@@ -3,11 +3,12 @@ package app.dto.transaction;
 import app.entity.TypeTransaction;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
-
+@Builder
 public record UpdateTransactionDto(
 
         @NotNull(message = "ID не может быть пустым")

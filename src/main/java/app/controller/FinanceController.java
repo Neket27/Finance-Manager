@@ -7,6 +7,7 @@ import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Transaction;
 import app.entity.User;
+import app.mapper.FinanceMapper;
 import app.mapper.TransactionMapper;
 import app.service.FinanceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,7 +90,8 @@ public class FinanceController {
     @ResponseStatus(HttpStatus.OK)
     public TransactionDto update(
             @Valid @RequestBody @Parameter(description = "Данные для обновления транзакции") UpdateTransactionDto dto) {
-        return financeService.editTransaction(getFinanceIdCurrentUser(), dto);
+        Transaction transaction = financeService.editTransaction(getFinanceIdCurrentUser(), transactionMapper.toEntity(dto));
+        return transactionMapper.toDto(transaction);
     }
 
     /**
@@ -108,7 +110,8 @@ public class FinanceController {
     @ResponseStatus(HttpStatus.OK)
     public List<TransactionDto> listFilterTransaction(
             @Valid @RequestBody @Parameter(description = "Фильтры для транзакций") FilterTransactionDto dto) {
-        return financeService.filterTransactions(getFinanceIdCurrentUser(), dto);
+        List<Transaction> transactions = financeService.filterTransactions(getFinanceIdCurrentUser(), dto);
+        return transactionMapper.toDtoList(transactions);
     }
 
     /**
@@ -125,7 +128,8 @@ public class FinanceController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Set<TransactionDto> listAll() {
-        return financeService.list(getFinanceIdCurrentUser());
+        Set<Transaction> finances = financeService.list(getFinanceIdCurrentUser());
+        return transactionMapper.toDtoSet(finances);
     }
 
     private Long getFinanceIdCurrentUser() {

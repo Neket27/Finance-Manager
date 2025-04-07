@@ -12,17 +12,17 @@ import java.util.Set;
 
 public interface TransactionService {
 
-    TransactionDto getTransactionById(Long id);
+    Transaction getTransactionById(Long id);
 
-    TransactionDto edit(UpdateTransactionDto updateTransactionDto);
+    Transaction edit(Transaction transaction);
 
     Transaction create(Long financeId, Transaction transaction);
 
     void delete(Long id);
 
-    List<TransactionDto> findAll(FinanceDto finance);
+    List<Transaction> findAll(FinanceDto finance);
 
-    List<TransactionDto> getFilteredTransactions(FilterTransactionDto filterTransactionDto);
+    List<Transaction> getFilteredTransactions(FilterTransactionDto filterTransactionDto);
 
-    Set<TransactionDto> getTransactionsByFinanceId(Long id);
+    Set<Transaction> getTransactionsByFinanceId(Long id);
 }

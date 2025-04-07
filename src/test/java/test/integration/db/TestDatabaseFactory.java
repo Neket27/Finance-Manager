@@ -1,6 +1,8 @@
 package test.integration.db;
 
 
+import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import test.integration.utils.ConfigLoader;
@@ -8,11 +10,13 @@ import test.integration.db.config.AppProperties;
 import test.integration.db.config.LiquibaseConfig;
 import test.integration.db.config.PostgresContainer;
 
+@Configuration
 public class TestDatabaseFactory {
 
     private static PostgresContainer container;
     public static AppProperties appProperties;
 
+    @PostConstruct
     public static TestDatabase create() {
         if (container == null) {
             appProperties = ConfigLoader.loadConfig("application-test.yml", AppProperties.class);

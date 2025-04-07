@@ -1,9 +1,6 @@
 package test.integration;
 
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
-import app.dto.transaction.TransactionDto;
-import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Role;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
@@ -17,6 +14,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import test.integration.db.TestDatabase;
 import test.integration.db.TestDatabaseFactory;
 
@@ -26,6 +25,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ActiveProfiles("test")
+@Testcontainers
 class TransactionServiceIT {
 
     private TransactionService transactionService;
@@ -58,17 +59,19 @@ class TransactionServiceIT {
     @Test
     void createTransaction_shouldAddTransactionSuccessfully() {
         // Act
-        Transaction transaction = Transaction.builder()
+        Transaction createTransaction = Transaction.builder()
                 .amount(BigDecimal.valueOf(150.00))
                 .category("Groceries")
                 .description("Supermarket purchase")
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .build();
 
+        Transaction transaction = transactionService.create(1L, createTransaction);
+
         // Assert
         assertNotNull(transaction);
         assertNotNull(transaction.getId());
-        assertEquals(new BigDecimal("150.00"), transaction.getAmount());
+        assertEquals(BigDecimal.valueOf(150).stripTrailingZeros(), transaction.getAmount().stripTrailingZeros());
         assertEquals("Groceries", transaction.getCategory());
         assertEquals("Supermarket purchase", transaction.getDescription());
         assertEquals(TypeTransaction.EXPENSE, transaction.getTypeTransaction());
@@ -84,14 +87,14 @@ class TransactionServiceIT {
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .build();
 
-        transactionService.create(1L, createTransaction);
+        Transaction t = transactionService.create(1L, createTransaction);
 
         // Act
-        TransactionDto transaction = transactionService.getTransactionById(1L);
+        Transaction transaction = transactionService.getTransactionById(t.getId());
 
         // Assert
         assertNotNull(transaction);
-        assertEquals(1L, transaction.id());
+        assertEquals(1L, transaction.getId());
     }
 
     @Test
@@ -104,17 +107,27 @@ class TransactionServiceIT {
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .build();
 
-        transactionService.create(1L,createTransaction);
+        Transaction transaction = transactionService.create(1L, createTransaction);
+
+        Transaction updateTransaction = Transaction.builder()
+                .id(transaction.getId())
+                .amount(BigDecimal.valueOf(200.00))
+                .category("Bills")
+                .description("Electricity bill")
+                .date(Instant.now())
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .financeId(1L)
+                .build();
 
 
         // Act
-        TransactionDto updatedTransaction = transactionService.edit(new UpdateTransactionDto(1L, new BigDecimal("200.00"), "Bills", Instant.now(), "Electricity bill", TypeTransaction.EXPENSE));
+        Transaction updatedTransaction = transactionService.edit(updateTransaction);
 
         // Assert
         assertNotNull(updatedTransaction);
-        assertEquals(new BigDecimal("200.00"), updatedTransaction.amount());
-        assertEquals("Bills", updatedTransaction.category());
-        assertEquals("Electricity bill", updatedTransaction.description());
+        assertEquals(BigDecimal.valueOf(200).stripTrailingZeros(), updatedTransaction.getAmount().stripTrailingZeros());
+        assertEquals("Bills", updatedTransaction.getCategory());
+        assertEquals("Electricity bill", updatedTransaction.getDescription());
     }
 
     @Test
@@ -126,7 +139,7 @@ class TransactionServiceIT {
                 .description("Supermarket purchase")
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .build();
-        transactionService.create(1L,createTransaction);
+        transactionService.create(1L, createTransaction);
 
         // Act
         assertDoesNotThrow(() -> transactionService.delete(1L));
@@ -145,21 +158,21 @@ class TransactionServiceIT {
                 .description("Supermarket purchase")
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .build();
-        transactionService.create(1L,createTransaction);
+        transactionService.create(1L, createTransaction);
 
         // Act
-        List<TransactionDto> transactions = transactionService.getFilteredTransactions(new FilterTransactionDto(Instant.now().minusSeconds(86400), Instant.now(), "Groceries", "EXPENSE"));
+        List<Transaction> transactions = transactionService.getFilteredTransactions(new FilterTransactionDto(Instant.now().minusSeconds(86400), Instant.now(), "Groceries", "EXPENSE"));
 
         // Assert
         assertNotNull(transactions);
         assertFalse(transactions.isEmpty());
-        assertEquals("Groceries", transactions.get(0).category());
+        assertEquals("Groceries", transactions.get(0).getCategory());
     }
 
     @Test
     void filterTransactions_shouldReturnEmptyListWhenNoMatch() {
         // Act
-        List<TransactionDto> transactions = transactionService.getFilteredTransactions(new FilterTransactionDto(Instant.now().minusSeconds(86400), Instant.now(), "Entertainment", "EXPENSE"));
+        List<Transaction> transactions = transactionService.getFilteredTransactions(new FilterTransactionDto(Instant.now().minusSeconds(86400), Instant.now(), "Entertainment", "EXPENSE"));
 
         // Assert
         assertNotNull(transactions);
@@ -169,7 +182,13 @@ class TransactionServiceIT {
     @Test
     void editTransaction_shouldFailIfTransactionNotFound() {
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> transactionService.edit(new UpdateTransactionDto(999L, new BigDecimal("200.00"), "Bills", Instant.now(), "Electricity bill", TypeTransaction.EXPENSE)));
+        Transaction updateTransaction = Transaction.builder()
+                .amount(BigDecimal.valueOf(150.00))
+                .category("Groceries")
+                .description("Supermarket purchase")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .build();
+        assertThrows(RuntimeException.class, () -> transactionService.edit(updateTransaction));
     }
 
 }

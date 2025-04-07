@@ -3,7 +3,6 @@ package app.service.impl;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
-import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Transaction;
 import app.entity.User;
 import app.exception.common.CreateException;
@@ -21,8 +20,10 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Реализация сервиса управления транзакциями.
@@ -38,12 +39,6 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionMapper transactionMapper;
 
 
-    /**
-     * Создает новую транзакцию.
-     *
-     * @param dto данные для создания транзакции
-     * @return созданная транзакция
-     */
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
@@ -69,8 +64,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Auditable
     @Transactional
-    public TransactionDto getTransactionById(Long id) {
-        return transactionMapper.toDto(find(id));
+    public Transaction getTransactionById(Long id) {
+        return find(id);
     }
 
     /**
@@ -84,21 +79,15 @@ public class TransactionServiceImpl implements TransactionService {
         });
     }
 
-    /**
-     * Редактирует существующую транзакцию.
-     *
-     * @param dto данные для обновления транзакции
-     * @return обновленная транзакция
-     */
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
-    public TransactionDto edit(UpdateTransactionDto dto) {
-        app.entity.Transaction transaction = this.find(dto.id());
-        transactionMapper.updateEntity(transaction, dto);
-        transactionRepository.save(transaction);
+    public Transaction edit(Transaction updatedTransaction) {
+        Transaction transaction = this.find(updatedTransaction.getId());
+        transactionMapper.updateEntity(transaction, updatedTransaction);
+        transaction = transactionRepository.save(transaction);
         log.debug("Транзакция обновлена: {}", transaction);
-        return transactionMapper.toDto(transaction);
+        return transaction;
     }
 
     /**
@@ -129,7 +118,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Auditable
     @Transactional
-    public List<TransactionDto> findAll(FinanceDto finance) {
+    public List<Transaction> findAll(FinanceDto finance) {
         return finance.transactionsId().stream().map(this::getTransactionById).toList();
     }
 
@@ -139,17 +128,17 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Auditable
     @Transactional
-    public List<TransactionDto> getFilteredTransactions(FilterTransactionDto f) {
+    public List<Transaction> getFilteredTransactions(FilterTransactionDto f) {
         User user = (User) UserContext.getCurrentUser();
-        return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(user.getFinanceId(),
-                f.startDate(), f.endDate(), f.category(), f.typeTransaction()));
+        return transactionRepository.getFilteredTransactions(user.getFinanceId(),
+                f.startDate(), f.endDate(), f.category(), f.typeTransaction());
     }
 
     @Override
     @Auditable
     @Transactional
-    public Set<TransactionDto> getTransactionsByFinanceId(Long id) {
-        return transactionMapper.toDtoSet(transactionRepository.findByFinanceId(id));
+    public Set<Transaction> getTransactionsByFinanceId(Long id) {
+        return new HashSet<>(transactionRepository.findByFinanceId(id));
     }
 
 }

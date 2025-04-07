@@ -2,8 +2,6 @@ package app.service.impl;
 
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.FilterTransactionDto;
-import app.dto.transaction.TransactionDto;
-import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Finance;
 import app.entity.Transaction;
 import app.entity.TypeTransaction;
@@ -90,18 +88,18 @@ public class FinanceServiceImpl implements FinanceService {
         FinanceDto finance = getFinance(financeId);
         return finance.transactionsId().stream()
                 .map(transactionService::getTransactionById)
-                .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE)
-                .collect(Collectors.groupingBy(TransactionDto::category,
-                        Collectors.reducing(BigDecimal.ZERO, TransactionDto::amount, BigDecimal::add)));
+                .filter(t -> t.getTypeTransaction() == TypeTransaction.EXPENSE)
+                .collect(Collectors.groupingBy(Transaction::getCategory,
+                        Collectors.reducing(BigDecimal.ZERO, Transaction::getAmount, BigDecimal::add)));
     }
 
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long financeId, Long idTransaction) {
-        Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
+        Set<Transaction> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
         boolean transactionExists = transactionsByFinanceId.stream()
-                .anyMatch(transaction -> transaction.id().equals(idTransaction));
+                .anyMatch(transaction -> transaction.getId().equals(idTransaction));
 
         if (transactionExists) {
             transactionService.delete(idTransaction);
@@ -125,7 +123,7 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     @Auditable
     @Transactional
-    public List<TransactionDto> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto) {
+    public List<Transaction> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto) {
         return transactionService.getFilteredTransactions(filterTransactionDto);
     }
 
@@ -153,27 +151,27 @@ public class FinanceServiceImpl implements FinanceService {
     private BigDecimal getTotal(FinanceDto finance, LocalDate startDate, LocalDate endDate, TypeTransaction typeTransaction) {
         return finance.transactionsId().stream()
                 .map(transactionService::getTransactionById)
-                .filter(t -> t.typeTransaction().equals(typeTransaction))
-                .filter(t -> isWithinDateRange(t.date(), startDate, endDate))
-                .map(TransactionDto::amount)
+                .filter(t -> t.getTypeTransaction().equals(typeTransaction))
+                .filter(t -> isWithinDateRange(t.getDate(), startDate, endDate))
+                .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override
     @Auditable
     @Transactional(rollbackFor = Exception.class)
-    public TransactionDto editTransaction(Long financeId, UpdateTransactionDto updateTransactionDto) {
-        Set<TransactionDto> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
+    public Transaction editTransaction(Long financeId, Transaction updateTransaction) {
+        Set<Transaction> transactionsByFinanceId = transactionService.getTransactionsByFinanceId(financeId);
         boolean transactionExists = transactionsByFinanceId.stream()
-                .anyMatch(transaction -> transaction.id().equals(updateTransactionDto.id()));
+                .anyMatch(transaction -> transaction.getId().equals(updateTransaction.getId()));
 
         if (transactionExists) {
-            TransactionDto transaction = transactionService.edit(updateTransactionDto);
-            log.debug("Edited transaction: {}", updateTransactionDto);
+            Transaction transaction = transactionService.edit(updateTransaction);
+            log.debug("Edited transaction: {}", updateTransaction);
             return transaction;
         } else {
-            log.error("Failed to edit transaction: {}", updateTransactionDto);
-            throw new UpdateException("Failed to edit transaction: " + updateTransactionDto);
+            log.error("Failed to edit transaction: {}", updateTransaction);
+            throw new UpdateException("Failed to edit transaction: " + updateTransaction);
         }
     }
 
@@ -187,7 +185,7 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     @Auditable
     @Transactional
-    public Set<TransactionDto> list(Long financeId) {
+    public Set<Transaction> list(Long financeId) {
         return transactionService.getTransactionsByFinanceId(financeId);
     }
 
@@ -207,8 +205,8 @@ public class FinanceServiceImpl implements FinanceService {
 
     private FinanceDto getFinance(Long financeId) {
         Finance finance = find(financeId);
-        Set<TransactionDto> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
-        finance.setTransactionsId(transactions.stream().map(TransactionDto::id).collect(Collectors.toList()));
+        Set<Transaction> transactions = transactionService.getTransactionsByFinanceId(finance.getId());
+        finance.setTransactionsId(transactions.stream().map(Transaction::getId).collect(Collectors.toList()));
         return financeMapper.toDto(finance);
     }
 }

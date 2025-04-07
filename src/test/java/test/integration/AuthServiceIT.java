@@ -22,11 +22,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import test.integration.db.TestDatabase;
 import test.integration.db.TestDatabaseFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ActiveProfiles("test")
+@Testcontainers
 class AuthServiceIT {
 
     private AuthService authService;
@@ -49,6 +53,7 @@ class AuthServiceIT {
         UserContext.clear();
         TestDatabaseFactory.reset();
     }
+
 
     @Test
     void registerSuccess() {

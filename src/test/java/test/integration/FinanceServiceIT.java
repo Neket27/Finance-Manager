@@ -1,9 +1,6 @@
 package test.integration;
 
-import app.dto.finance.CreateFinanceDto;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
-import app.dto.transaction.TransactionDto;
 import app.entity.*;
 import app.exception.common.CreateException;
 import app.mapper.FinanceMapper;
@@ -33,11 +30,11 @@ class FinanceServiceIT {
 
     private FinanceService financeService;
     private TransactionService transactionService;
-    private TestDatabase database;
 
     @BeforeEach
     void setup() {
-        database = TestDatabaseFactory.create();
+
+        TestDatabase database = TestDatabaseFactory.create();
 
         User user = User.builder()
                 .id(1L)
@@ -54,11 +51,9 @@ class FinanceServiceIT {
         financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, Mappers.getMapper(FinanceMapper.class));
     }
 
-
     @AfterEach
     void tearDown() {
         UserContext.clear();
-        TestDatabaseFactory.reset();
     }
 
     @Test
@@ -189,13 +184,6 @@ class FinanceServiceIT {
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .build();
 
-        Transaction snacksTransaction = Transaction.builder()
-                .amount(BigDecimal.valueOf(200))
-                .category("Food")
-                .description("Snacks")
-                .typeTransaction(TypeTransaction.EXPENSE)
-                .build();
-
         financeService.createTransaction(financeId, lunchTransaction);
         financeService.createTransaction(financeId, movieTransaction);
 
@@ -207,11 +195,11 @@ class FinanceServiceIT {
                 .build();
 
         // Act
-        List<TransactionDto> transactions = financeService.filterTransactions(financeId, filterDto);
+        List<Transaction> transactions = financeService.filterTransactions(financeId, filterDto);
 
         // Assert
         assertEquals(1, transactions.size());
-        assertEquals("Food", transactions.get(0).category());
+        assertEquals("Food", transactions.get(0).getCategory());
     }
 
     @Test
@@ -232,7 +220,7 @@ class FinanceServiceIT {
                 .amount(BigDecimal.valueOf(500))
                 .category("Food")
                 .description("Lunch")
-                .typeTransaction(TypeTransaction.EXPENSE)
+                .typeTransaction(TypeTransaction.PROFIT)
                 .build();
 
         // Act
@@ -329,7 +317,7 @@ class FinanceServiceIT {
 
 
         // Act
-        List<TransactionDto> transactions = financeService.filterTransactions(financeId, filterDto);
+        List<Transaction> transactions = financeService.filterTransactions(financeId, filterDto);
 
         // Assert
         assertTrue(transactions.isEmpty());

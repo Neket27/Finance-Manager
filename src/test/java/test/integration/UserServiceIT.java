@@ -1,7 +1,6 @@
 package test.integration;
 
 import app.dto.user.CreateUserDto;
-import app.dto.user.UpdateUserDto;
 import app.entity.Role;
 import app.entity.User;
 import app.mapper.FinanceMapper;
@@ -21,6 +20,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import test.integration.db.TestDatabase;
 import test.integration.db.TestDatabaseFactory;
 
@@ -28,6 +29,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ActiveProfiles("test")
+@Testcontainers
 public class UserServiceIT {
 
     private UserService userService;

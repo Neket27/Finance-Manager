@@ -55,7 +55,9 @@ public class AuthControllerTest {
     void registerSuccess() throws Exception {
         CreateUserDto createUserDto = new CreateUserDto(userDto.name(), userDto.email(), userDto.password());
 
+        when(userMapper.toEntity(createUserDto)).thenReturn(user);
         when(authServiceMock.register(user)).thenReturn(user);
+        when(userMapper.toDto(user)).thenReturn(userDto);
 
         mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)

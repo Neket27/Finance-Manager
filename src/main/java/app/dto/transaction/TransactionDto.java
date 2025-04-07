@@ -3,10 +3,12 @@ package app.dto.transaction;
 import app.entity.TypeTransaction;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
+@Builder
 public record TransactionDto(
 
         @NotNull(message = "ID не может быть пустым")
@@ -35,53 +37,4 @@ public record TransactionDto(
         @Positive(message = "Finance ID должен быть положительным числом")
         Long financeId
 ) {
-    public static class Builder {
-        private Long id;
-        private BigDecimal amount = BigDecimal.ZERO;
-        private String category;
-        private Instant date;
-        private String description;
-        private TypeTransaction typeTransaction;
-        Long financeId;
-
-        public Builder id(Long id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder amount(BigDecimal amount) {
-            this.amount = amount != null ? amount : BigDecimal.ZERO;
-            return this;
-        }
-
-        public Builder category(String category) {
-            this.category = category;
-            return this;
-        }
-
-        public Builder date(Instant date) {
-            this.date = date;
-            return this;
-        }
-
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public Builder typeTransaction(TypeTransaction typeTransaction) {
-            this.typeTransaction = typeTransaction;
-            return this;
-        }
-
-        public Builder financeId(Long financeId) {
-            this.financeId = financeId;
-            return this;
-        }
-
-        public TransactionDto build() {
-            return new TransactionDto(id, amount, category, date, description, typeTransaction, financeId);
-        }
-    }
-
 }

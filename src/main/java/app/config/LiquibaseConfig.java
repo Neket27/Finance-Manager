@@ -12,12 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 @Slf4j
 @Configuration
+@Profile("!test")
 @RequiredArgsConstructor
-@EnableConfigurationProperties(LiquibaseConfigProperties.class)
+@EnableConfigurationProperties({LiquibaseConfigProperties.class, LiquibaseProperties.class})
 public class LiquibaseConfig {
 
     private final JdbcTemplate jdbcTemplate;

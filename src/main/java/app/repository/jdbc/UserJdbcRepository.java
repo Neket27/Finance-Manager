@@ -7,6 +7,7 @@ import app.exception.db.ErrorSelectSqlException;
 import app.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -30,12 +31,16 @@ public class UserJdbcRepository implements UserRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Override
     public boolean tableIsEmpty() {
-        String sql = "SELECT * FROM business.users LIMIT 1";
-        Integer integer = jdbcTemplate.queryForObject(sql, Integer.class);
-        return integer == null;
+        String sql = "SELECT 1 FROM business.users LIMIT 1";
+        try {
+            jdbcTemplate.queryForObject(sql, Integer.class);
+            return false;
+        } catch (EmptyResultDataAccessException e) {
+            return true;
+        }
     }
+
 
     @Override
     public Optional<User> findById(Long id) {

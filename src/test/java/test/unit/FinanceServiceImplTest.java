@@ -55,9 +55,9 @@ class FinanceServiceImplTest {
     private FinanceServiceImpl financeService;
 
     private UserDto userDto;
-    private app.entity.Finance finance;
+    private Finance finance;
     private FinanceDto financeDto;
-    private TransactionDto transactionDto;
+    private Transaction transaction;
 
     @BeforeEach
     void setUp() {
@@ -82,18 +82,23 @@ class FinanceServiceImplTest {
         UserContext.setCurrentUser(userDto);
 
         financeDto = new FinanceDto(1L, BigDecimal.valueOf(1000), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(2000), List.of(1L, 2L));
-        transaction= new TransactionDto(1L, BigDecimal.valueOf(400), "Food", Instant.now(), "", TypeTransaction.EXPENSE, 1L);
+        transaction= new Transaction(1L, BigDecimal.valueOf(400), "Food", Instant.now(), "", TypeTransaction.EXPENSE, 1L);
     }
 
 
     @Test
     void createEmptyFinance() {
-        CreateFinanceDto financeDto = new CreateFinanceDto(BigDecimal.valueOf(100), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(2000), List.of(1L));
+        Finance createFinance = Finance.builder()
+                .monthlyBudget(BigDecimal.valueOf(100))
+                .savingsGoal(BigDecimal.valueOf(500))
+                .currentSavings(BigDecimal.valueOf(600))
+                .totalExpenses(BigDecimal.valueOf(2000))
+                .transactionsId(List.of(1L))
+                .build();
 
-        when(financeMapper.toEntity(financeDto)).thenReturn(finance);
         when(financeRepository.save(finance)).thenReturn(finance);
 
-        Long idFinance = financeService.createEmptyFinance(financeDto);
+        Long idFinance = financeService.createEmptyFinance(createFinance);
         assertNotNull(idFinance);
     }
 
@@ -109,7 +114,7 @@ class FinanceServiceImplTest {
         when(financeRepository.findById(anyLong())).thenReturn(Optional.ofNullable(finance));
         when(transactionService.create(anyLong(), any())).thenReturn(createTransaction);
 
-        Transaction returnTransactionDto = financeService.createTransaction(1L, createTransaction);
+        Transaction returnTransaction = financeService.createTransaction(1L, createTransaction);
 
         assertEquals(transaction, returnTransaction);
     }
@@ -117,14 +122,14 @@ class FinanceServiceImplTest {
     @Test
     void getExpensesByCategory() {
 
-        when(transactionService.getTransactionById(anyLong())).thenReturn(transactionDto);
+        when(transactionService.getTransactionById(anyLong())).thenReturn(transaction);
         when( financeRepository.findById(anyLong())).thenReturn(Optional.ofNullable(finance));
-        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transactionDto));
+        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transaction));
         when(financeMapper.toDto(finance)).thenReturn(financeDto);
 
         var expensesByCategory =financeService.getExpensesByCategory(finance.getId());
 
-        assertEquals(Map.of(transactionDto.category(), BigDecimal.valueOf(800)), expensesByCategory);
+        assertEquals(Map.of(transaction.getCategory(), BigDecimal.valueOf(800)), expensesByCategory);
 
     }
 
@@ -133,7 +138,7 @@ class FinanceServiceImplTest {
         Long financeId = 1L;
         Long transactionId = 1L;
 
-        when(transactionService.getTransactionsByFinanceId(financeId)).thenReturn(Set.of(transactionDto));
+        when(transactionService.getTransactionsByFinanceId(financeId)).thenReturn(Set.of(transaction));
         when(financeRepository.findById(financeId)).thenReturn(Optional.ofNullable(finance));
         when(financeRepository.findById(financeId)).thenReturn(Optional.of(finance));
 
@@ -148,7 +153,7 @@ class FinanceServiceImplTest {
         Long financeId = 1L;
         Long transactionId = 999L;
 
-        when(transactionService.getTransactionsByFinanceId(financeId)).thenReturn(Set.of(transactionDto));
+        when(transactionService.getTransactionsByFinanceId(financeId)).thenReturn(Set.of(transaction));
 
         assertThrows(DeleteException.class, () -> financeService.delete(financeId, transactionId));
     }
@@ -170,12 +175,12 @@ class FinanceServiceImplTest {
     void filterTransactions() {
         FilterTransactionDto filter = new FilterTransactionDto(Instant.now(),Instant.now(),"category","PROFIT");
 
-        when(transactionService.getFilteredTransactions(filter)).thenReturn(List.of(transactionDto));
+        when(transactionService.getFilteredTransactions(filter)).thenReturn(List.of(transaction));
 
-        List<TransactionDto> result = financeService.filterTransactions(1L, filter);
+        List<Transaction> result = financeService.filterTransactions(1L, filter);
 
         assertEquals(1, result.size());
-        assertEquals(transactionDto, result.get(0));
+        assertEquals(transaction, result.get(0));
     }
 
     @Test
@@ -183,9 +188,9 @@ class FinanceServiceImplTest {
         LocalDate startDate = LocalDate.now().minusDays(10);
         LocalDate endDate = LocalDate.now();
 
-        when(transactionService.getTransactionById(anyLong())).thenReturn(transactionDto);
+        when(transactionService.getTransactionById(anyLong())).thenReturn(transaction);
         when(financeRepository.findById(anyLong())).thenReturn(Optional.of(finance));
-        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transactionDto));
+        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transaction));
         when(financeMapper.toDto(finance)).thenReturn(financeDto);
 
         BigDecimal totalProfit = financeService.getTotalProfit(startDate, endDate, finance.getId());
@@ -198,9 +203,9 @@ class FinanceServiceImplTest {
         LocalDate startDate = LocalDate.now().minusDays(10);
         LocalDate endDate = LocalDate.now();
 
-        when(transactionService.getTransactionById(anyLong())).thenReturn(transactionDto);
+        when(transactionService.getTransactionById(anyLong())).thenReturn(transaction);
         when(financeRepository.findById(anyLong())).thenReturn(Optional.of(finance));
-        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transactionDto));
+        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transaction));
         when(financeMapper.toDto(finance)).thenReturn(financeDto);
 
         BigDecimal totalExpenses = financeService.getTotalExpenses(startDate, endDate, finance.getId());
@@ -212,12 +217,12 @@ class FinanceServiceImplTest {
     void editTransaction() {
         UpdateTransactionDto updateTransactionDto = new UpdateTransactionDto(1L, BigDecimal.valueOf(10), "ct", Instant.now(), "d", TypeTransaction.EXPENSE);
 
-        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transactionDto));
-        when(transactionService.edit(any())).thenReturn(transactionDto);
+        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transaction));
+        when(transactionService.edit(any())).thenReturn(transaction);
 
-        TransactionDto result = financeService.editTransaction(1L, updateTransactionDto);
+        Transaction result = financeService.editTransaction(1L, transaction);
 
-        assertEquals(transactionDto, result);
+        assertEquals(transaction, result);
     }
 
     @Test
@@ -231,12 +236,12 @@ class FinanceServiceImplTest {
 
     @Test
     void list() {
-        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transactionDto));
+        when(transactionService.getTransactionsByFinanceId(anyLong())).thenReturn(Set.of(transaction));
 
-        Set<TransactionDto> result = financeService.list(1L);
+        Set<Transaction> result = financeService.list(1L);
 
         assertEquals(1, result.size());
-        assertTrue(result.contains(transactionDto));
+        assertTrue(result.contains(transaction));
     }
 
     @Test

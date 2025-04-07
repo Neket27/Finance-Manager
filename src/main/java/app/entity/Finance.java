@@ -4,6 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -19,6 +20,6 @@ public class Finance {
     private BigDecimal savingsGoal;
     private BigDecimal currentSavings;
     private BigDecimal totalExpenses;
-    private List<Long> transactionsId;
+    private List<Long> transactionsId = new ArrayList<>();
 
 }

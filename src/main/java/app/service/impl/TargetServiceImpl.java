@@ -2,6 +2,7 @@ package app.service.impl;
 
 import app.dto.transaction.TransactionDto;
 import app.entity.Finance;
+import app.entity.Transaction;
 import app.entity.TypeTransaction;
 import app.entity.User;
 import app.service.FinanceService;
@@ -54,11 +55,11 @@ public class TargetServiceImpl implements TargetService {
         app.entity.User user = (app.entity.User) UserContext.getCurrentUser();
         app.entity.Finance finance = findFinance(user.getEmail());
 
-        Set<TransactionDto> transactions = financeService.list(financeId);
+        Set<Transaction> transactions = financeService.list(financeId);
         Instant thirtyDaysAgo = Instant.now().minus(Duration.ofDays(30));
         BigDecimal totalExpenses = transactions.stream()
-                .filter(t -> t.typeTransaction() == TypeTransaction.EXPENSE && t.date().isAfter(thirtyDaysAgo))
-                .map(TransactionDto::amount)
+                .filter(t -> t.getTypeTransaction() == TypeTransaction.EXPENSE && t.getDate().isAfter(thirtyDaysAgo))
+                .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal monthlyBudget = finance.getMonthlyBudget();
