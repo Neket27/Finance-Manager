@@ -1,0 +1,70 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001_create_finances_table
+      author: Nikita Kulga
+      changes:
+        - createSequence:
+            sequenceName: finance_id_seq
+            startValue: 1
+            incrementBy: 1
+
+        - createTable:
+            schemaName: business
+            tableName: finances
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  defaultValueSequenceNext: finance_id_seq
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    unique: true
+              - column:
+                  name: monthly_budget
+                  type: decimal(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: savings_goal
+                  type: decimal(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_savings
+                  type: decimal(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_expenses
+                  type: decimal(19, 2)
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            schemaName: business
+            tableName: finance_transactions
+            columns:
+              - column:
+                  name: finance_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_finance_transactions
+                    references: business.finances(id)
+
+              - column:
+                  name: transaction_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+      rollback:
+        - dropTable:
+            schemaName: business
+            tableName: finance_transactions
+        - dropTable:
+            schemaName: business
+            tableName: finances
+        - dropSequence:
+            sequenceName: finance_id_seq

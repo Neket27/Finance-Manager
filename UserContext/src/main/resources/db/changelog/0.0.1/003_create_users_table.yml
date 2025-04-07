@@ -1,0 +1,50 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003_create_users_table
+      author: Nikita Kulga
+      changes:
+        - createSequence:
+            sequenceName: user_id_seq
+            startValue: 6
+            incrementBy: 1
+
+        - createTable:
+            schemaName: business
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  defaultValueSequenceNext: user_id_seq
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: varchar(255)
+              - column:
+                  name: is_active
+                  type: boolean
+              - column:
+                  name: role
+                  type: varchar(32)
+              - column:
+                  name: finance_id
+                  type: bigint
+
+      rollback:
+        - dropTable:
+            schemaName: business
+            tableName: users
+        - dropSequence:
+            sequenceName: user_id_seq
