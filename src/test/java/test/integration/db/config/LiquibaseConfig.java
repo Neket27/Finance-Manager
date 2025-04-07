@@ -1,68 +1,76 @@
 package test.integration.db.config;
 
+import app.config.LiquibaseConfigProperties;
+import jakarta.annotation.PostConstruct;
 import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import java.util.List;
+
+@Slf4j
 @Configuration
+@Profile("test")
+@RequiredArgsConstructor
+@EnableConfigurationProperties({LiquibaseConfigProperties.class, LiquibaseProperties.class})
 public class LiquibaseConfig {
 
-    private final Logger log = LoggerFactory.getLogger(LiquibaseConfig.class);
     private final JdbcTemplate jdbcTemplate;
-    private final AppProperties.LiquibaseProperties prop;
-    private final DriverManagerDataSource dataSource;
+    private final LiquibaseProperties prop;
+    private final LiquibaseConfigProperties liquibaseConfigProperties;
 
-    public LiquibaseConfig(JdbcTemplate jdbcTemplate, DriverManagerDataSource dataSource, AppProperties.LiquibaseProperties liquibaseProperties) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.dataSource = dataSource;
-        this.prop = liquibaseProperties;
+    @PostConstruct
+    public void initialize() {
+        createSchemas();
+        runLiquibase();
+        log.info("Migration completed successfully");
     }
 
-    public void initializeAndMigrate() {
-        createSchemasAndSetSearchPath();
-        runLiquibaseMigrations();
+    private void createSchemas() {
+
+        for (String schema : liquibaseConfigProperties.getCreateSchemaLocations()) {
+            jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
+        }
+        jdbcTemplate.execute("SET search_path TO metadata, business, public");
+        log.debug("Schemas created (if not exist) and search_path set");
     }
 
-    private void createSchemasAndSetSearchPath() {
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS public;");
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS metadata;");
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS business;");
-        jdbcTemplate.execute("SET search_path TO metadata, business, public;");
-
-        String searchPath = jdbcTemplate.queryForObject("SHOW search_path;", String.class);
-        log.debug("Current search_path: {}", searchPath);
-        log.info("Schemas created and search_path configured");
-    }
-
-    private void runLiquibaseMigrations() {
-        try (var connection = dataSource.getConnection()) {
+    private void runLiquibase() {
+        try (var connection = jdbcTemplate.getDataSource().getConnection()) {
             Database database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            database.setLiquibaseSchemaName(prop.getLiquibaseSchemaName());
+            database.setLiquibaseSchemaName(prop.getLiquibaseSchema());
 
-            Liquibase liquibase = new Liquibase(prop.getChangeLogFile(), new ClassLoaderResourceAccessor(), database);
-            liquibase.update();
-            log.info("Liquibase migration completed successfully");
+            try (Liquibase liquibase = new Liquibase(prop.getChangeLog(), new ClassLoaderResourceAccessor(), database)) {
+                liquibase.update();
+            }
         } catch (Exception e) {
-            throw new RuntimeException("Error running Liquibase migrations", e);
+            log.error("Error initializing Liquibase", e);
         }
     }
 
-    public void resetAndMigrate() {
-        cleanLiquibaseMetadata();
-        runLiquibaseMigrations();
+
+    public void dropSchemas() {
+        try (var connection = jdbcTemplate.getDataSource().getConnection()) {
+            var statement = connection.createStatement();
+            List<String> schemas = List.of("public", "metadata", "business");
+
+            for (String schema : schemas)
+                statement.execute("DROP SCHEMA " + schema + " CASCADE;");
+
+
+        } catch (Exception e) {
+            log.error("Error drop schemas" + e);
+        }
     }
 
-    private void cleanLiquibaseMetadata() {
-        jdbcTemplate.execute("DROP TABLE IF EXISTS metadata.databasechangelog CASCADE;");
-        jdbcTemplate.execute("DROP TABLE IF EXISTS metadata.databasechangeloglock CASCADE;");
-        log.info("Liquibase metadata tables dropped, ready for fresh migration");
-    }
 }

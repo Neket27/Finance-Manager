@@ -1,14 +1,8 @@
 package test.unit;
 
-import app.dto.finance.FinanceDto;
-import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
-import app.dto.transaction.UpdateTransactionDto;
-import app.entity.Role;
-import app.entity.Transaction;
-import app.entity.TypeTransaction;
-import app.entity.User;
+import app.entity.*;
 import app.mapper.TransactionMapper;
 import app.repository.TransactionRepository;
 import app.service.impl.TransactionServiceImpl;
@@ -27,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -39,10 +34,7 @@ class TransactionServiceImplTest {
     @Mock
     private TransactionRepository transactionRepository;
 
-    @Mock
-    private TransactionMapper transactionMapper;
-
-    private app.entity.Transaction transaction;
+    private Transaction transaction;
 
     private TransactionDto transactionDto;
 
@@ -52,7 +44,7 @@ class TransactionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        this.transaction = new app.entity.Transaction(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, financeId);
+        this.transaction = new Transaction(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, financeId);
         this.transactionDto = new TransactionDto(1L, BigDecimal.valueOf(100), "category", Instant.now(), "description", TypeTransaction.PROFIT, financeId);
         this.userContext = new UserContext();
 
@@ -71,40 +63,35 @@ class TransactionServiceImplTest {
 
     @Test
     void create() {
-        CreateTransactionDto createTransactionDto = new CreateTransactionDto(BigDecimal.valueOf(100), "category", "description", TypeTransaction.PROFIT);
-
         Transaction lunchTransaction = Transaction.builder()
                 .amount(BigDecimal.valueOf(1000))
                 .category("Food")
                 .description("Lunch")
                 .typeTransaction(TypeTransaction.EXPENSE)
-                .date(Instant.now()) // или конкретная дата, если нужно
+                .date(Instant.now())
                 .financeId(financeId)
                 .build();
 
-        when(transactionRepository.save(transaction)).thenReturn(transaction);
+        when(transactionRepository.save(lunchTransaction)).thenReturn(lunchTransaction);
         Transaction returnTransaction = transactionService.create(financeId, lunchTransaction);
 
-        assertEquals(transaction, returnTransaction);
-
+        assertEquals(lunchTransaction, returnTransaction);
     }
 
     @Test
     void getTransactionById() {
-        when(transactionRepository.findById(transaction.getId())).thenReturn(Optional.of(transaction));
-        when(transactionMapper.toDto(transaction)).thenReturn(transactionDto);
+        when(transactionRepository.findById(anyLong())).thenReturn(Optional.of(transaction));
 
         Transaction result = transactionService.getTransactionById(transaction.getId());
 
-        assertEquals(transactionDto, result);
+        assertEquals(transaction, result);
     }
 
     @Test
     void edit() {
-        UpdateTransactionDto updateTransactionDto = new UpdateTransactionDto(transaction.getId(), BigDecimal.valueOf(200), "newCategory", Instant.now(), "newDescription", TypeTransaction.EXPENSE);
-        Transaction updatedTransaction = new Transaction(1L, updateTransactionDto.amount(), updateTransactionDto.category(), updateTransactionDto.date(), updateTransactionDto.description(), updateTransactionDto.typeTransaction(), financeId);
+        Transaction updatedTransaction = new Transaction(1L, BigDecimal.valueOf(200), "newCategory", Instant.now(), "newDescription", TypeTransaction.EXPENSE, financeId);
         when(transactionRepository.findById(transaction.getId())).thenReturn(Optional.of(transaction));
-        when(transactionRepository.save(transaction)).thenReturn(transaction);
+        when(transactionRepository.save(transaction)).thenReturn(updatedTransaction);
 
         Transaction returnUpdatedTransaction = transactionService.edit(updatedTransaction);
 
@@ -123,12 +110,11 @@ class TransactionServiceImplTest {
 
     @Test
     void findAll() {
-        List<TransactionDto> transactionDtos = List.of(transactionDto);
-        FinanceDto financeDto = new FinanceDto(1L, BigDecimal.valueOf(1000), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(2000), List.of(1L));
+        List<Transaction> transactionDtos = List.of(transaction);
+        Finance finance = new Finance(1L, BigDecimal.valueOf(1000), BigDecimal.valueOf(500), BigDecimal.valueOf(600), BigDecimal.valueOf(2000), List.of(1L));
 
-        when(transactionMapper.toDto(transaction)).thenReturn(transactionDto);
         when(transactionRepository.findById(transactionDto.id())).thenReturn(Optional.of(transaction));
-        List<Transaction> result = transactionService.findAll(financeDto);
+        List<Transaction> result = transactionService.findAll(finance);
 
         assertEquals(transactionDtos, result);
     }
@@ -139,8 +125,6 @@ class TransactionServiceImplTest {
 
         when(transactionRepository.getFilteredTransactions(financeId, filterDto.startDate(), filterDto.endDate(), filterDto.category(), filterDto.typeTransaction()))
                 .thenReturn(List.of(transaction));
-
-        when(transactionMapper.toDtoList(List.of(transaction))).thenReturn(List.of(transactionDto));
 
         List<Transaction> filteredTransactions = transactionService.getFilteredTransactions(filterDto);
 

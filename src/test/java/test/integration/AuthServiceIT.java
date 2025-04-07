@@ -1,7 +1,6 @@
 package test.integration;
 
 import app.App;
-import app.config.LiquibaseConfig;
 import app.dto.auth.ResponseLogin;
 import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
@@ -14,11 +13,8 @@ import app.mapper.UserMapper;
 import app.service.AuthService;
 import neket27.context.UserContext;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
@@ -27,17 +23,14 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.util.List;
+import test.integration.db.config.LiquibaseConfig;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = App.class)
 @ActiveProfiles("test")
 @Testcontainers
-@TestInstance(TestInstance.Lifecycle.PER_METHOD)
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(LiquibaseConfig.class)
+@Import({LiquibaseConfig.class})
 class AuthServiceIT {
 
     @Autowired
@@ -47,13 +40,14 @@ class AuthServiceIT {
     private UserMapper userMapper;
 
     @Autowired
-    private app.config.LiquibaseConfig liquibaseConfig;
+    private LiquibaseConfig liquibaseConfig;
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("testdb")
             .withUsername("test")
-            .withPassword("test");
+            .withPassword("test")
+            .withInitScript("init.sql");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -69,74 +63,14 @@ class AuthServiceIT {
         registry.add("spring.liquibase.user", postgres::getUsername);
         registry.add("spring.liquibase.password", postgres::getPassword);
         registry.add("spring.liquibase.change-log", () -> "db/test-changelog/changelog-master.yml");
-
-        // Создание схем
-        try (var connection = postgres.createConnection("")) {
-            var statement = connection.createStatement();
-            List<String> schemas = List.of("public", "metadata", "business");
-
-            for (String schema : schemas)
-                statement.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
-
-            for (String schema : schemas)
-                statement.execute("SET search_path TO " + schema);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-//    @BeforeEach
-//    void setup() {
-//        TestDatabase database = TestDatabaseFactory.create();
-//        TransactionService transactionService = new TransactionServiceImpl(new TransactionJdbcRepository(database.jdbcTemplate()), Mappers.getMapper(TransactionMapper.class));
-//        FinanceService financeService = new FinanceServiceImpl(new FinanceJdbcRepository(database.jdbcTemplate()), transactionService, Mappers.getMapper(FinanceMapper.class));
-//        UserService userService = new UserServiceImpl(Mappers.getMapper(UserMapper.class), new UserJdbcRepository(database.jdbcTemplate()), financeService);
-//        TokenService tokenService = new TokenServiceImpl(new TokenJdbcRepository(database.jdbcTemplate()));
-//        authService = new AuthServiceImpl(userService, tokenService);
-//        userMapper = Mappers.getMapper(UserMapper.class);
-//
-//    }
-
-    @BeforeEach
-    void setUp() {
-
-        // Создание схем
-        try (var connection = postgres.createConnection("")) {
-            var statement = connection.createStatement();
-            List<String> schemas = List.of("public", "metadata", "business");
-
-            for (String schema : schemas)
-                statement.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
-
-            for (String schema : schemas)
-                statement.execute("SET search_path TO " + schema);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
     @AfterEach
     void tearDown() {
-        try (var connection = postgres.createConnection("")) {
-            var statement = connection.createStatement();
-            List<String> schemas = List.of("public", "metadata", "business");
-
-            for (String schema : schemas)
-                statement.execute("DROP SCHEMA " + schema + " CASCADE;");
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        liquibaseConfig.dropSchemas();
         liquibaseConfig.initialize();
         UserContext.clear();
     }
-
 
     @Test
     void registerSuccess() {

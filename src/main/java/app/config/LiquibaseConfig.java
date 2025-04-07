@@ -17,7 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 @Slf4j
 @Configuration
-//@Profile("!test")
+@Profile("!test")
 @RequiredArgsConstructor
 @EnableConfigurationProperties({LiquibaseConfigProperties.class, LiquibaseProperties.class})
 public class LiquibaseConfig {
@@ -60,4 +60,5 @@ public class LiquibaseConfig {
             throw new LiquibaseException("Error initializing Liquibase", e);
         }
     }
+
 }

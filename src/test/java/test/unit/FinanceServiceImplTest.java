@@ -96,7 +96,7 @@ class FinanceServiceImplTest {
                 .transactionsId(List.of(1L))
                 .build();
 
-        when(financeRepository.save(finance)).thenReturn(finance);
+        when(financeRepository.save(any(Finance.class))).thenReturn(finance);
 
         Long idFinance = financeService.createEmptyFinance(createFinance);
         assertNotNull(idFinance);
@@ -111,8 +111,19 @@ class FinanceServiceImplTest {
                 .typeTransaction(TypeTransaction.EXPENSE)
                 .build();
 
+        Transaction transaction = Transaction.builder()
+                .id(1L)
+                .amount(BigDecimal.valueOf(100))
+                .category("category")
+                .description("description")
+                .typeTransaction(TypeTransaction.EXPENSE)
+                .date(Instant.now())
+                .financeId(1L)
+                .build();
+
         when(financeRepository.findById(anyLong())).thenReturn(Optional.ofNullable(finance));
-        when(transactionService.create(anyLong(), any())).thenReturn(createTransaction);
+        when(transactionService.create(1L, createTransaction)).thenReturn(transaction);
+        when(financeRepository.save(finance)).thenReturn(finance);
 
         Transaction returnTransaction = financeService.createTransaction(1L, createTransaction);
 

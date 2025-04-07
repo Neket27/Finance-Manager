@@ -1,8 +1,7 @@
 package app.service.impl;
 
-import app.dto.finance.FinanceDto;
 import app.dto.transaction.FilterTransactionDto;
-import app.dto.transaction.TransactionDto;
+import app.entity.Finance;
 import app.entity.Transaction;
 import app.entity.User;
 import app.exception.common.CreateException;
@@ -23,7 +22,6 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Реализация сервиса управления транзакциями.
@@ -118,8 +116,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Auditable
     @Transactional
-    public List<Transaction> findAll(FinanceDto finance) {
-        return finance.transactionsId().stream().map(this::getTransactionById).toList();
+    public List<Transaction> findAll(Finance finance) {
+        return finance.getTransactionsId().stream().map(this::getTransactionById).toList();
     }
 
     /**

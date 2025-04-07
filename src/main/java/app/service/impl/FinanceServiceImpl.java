@@ -60,12 +60,12 @@ public class FinanceServiceImpl implements FinanceService {
             throw new CreateException("Недостаточно средств");
         }
 
-        Transaction _transaction = transactionService.create(financeId, transaction);
+        Transaction returnedTransaction = transactionService.create(financeId, transaction);
         finance.getTransactionsId().add(transaction.getId());
 
-        updateCurrentSavings(finance, _transaction.getAmount(), _transaction.getTypeTransaction());
+        updateCurrentSavings(finance, returnedTransaction.getAmount(), returnedTransaction.getTypeTransaction());
         financeRepository.save(finance);
-        return transaction;
+        return returnedTransaction;
     }
 
     private void updateCurrentSavings(app.entity.Finance finance, BigDecimal amount, TypeTransaction type) {
