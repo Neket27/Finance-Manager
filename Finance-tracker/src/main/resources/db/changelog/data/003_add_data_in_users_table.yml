@@ -1,0 +1,125 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006_insert_data_into_users
+      author: Nikita Kulga
+      changes:
+        - insert:
+            tableName: users
+            schemaName: business
+            columns:
+              - column:
+                  name: email
+                  value: 'john.doe@example.com'
+              - column:
+                  name: name
+                  value: 'John Doe'
+              - column:
+                  name: password
+                  value: 'password123'
+              - column:
+                  name: is_active
+                  value: true
+              - column:
+                  name: role
+                  value: 'USER'
+              - column:
+                  name: finance_id
+                  value: 1
+
+        - insert:
+            tableName: users
+            schemaName: business
+            columns:
+              - column:
+                  name: email
+                  value: 'jane.smith@example.com'
+              - column:
+                  name: name
+                  value: 'Jane Smith'
+              - column:
+                  name: password
+                  value: 'password456'
+              - column:
+                  name: is_active
+                  value: true
+              - column:
+                  name: role
+                  value: 'ADMIN'
+              - column:
+                  name: finance_id
+                  value: 2
+
+        - insert:
+            tableName: users
+            schemaName: business
+            columns:
+              - column:
+                  name: email
+                  value: 'bob.brown@example.com'
+              - column:
+                  name: name
+                  value: 'Bob Brown'
+              - column:
+                  name: password
+                  value: 'password789'
+              - column:
+                  name: is_active
+                  value: true
+              - column:
+                  name: role
+                  value: 'USER'
+              - column:
+                  name: finance_id
+                  value: 3
+
+        - insert:
+            tableName: users
+            schemaName: business
+            columns:
+              - column:
+                  name: email
+                  value: 'alice.jones@example.com'
+              - column:
+                  name: name
+                  value: 'Alice Jones'
+              - column:
+                  name: password
+                  value: 'password000'
+              - column:
+                  name: is_active
+                  value: false
+              - column:
+                  name: role
+                  value: 'USER'
+              - column:
+                  name: finance_id
+                  value: 4
+
+        - insert:
+            tableName: users
+            schemaName: business
+            columns:
+              - column:
+                  name: email
+                  value: 'charlie.davis@example.com'
+              - column:
+                  name: name
+                  value: 'Charlie Davis'
+              - column:
+                  name: password
+                  value: 'password111'
+              - column:
+                  name: is_active
+                  value: true
+              - column:
+                  name: role
+                  value: 'USER'
+              - column:
+                  name: finance_id
+                  value: 5
+
+      rollback:
+        - delete:
+            tableName: users
+            schemaName: business
+            where: "id IN (1, 2, 3, 4, 5)"

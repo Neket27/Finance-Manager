@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: Finance manager
+
+  liquibase:
+    change-log: db/changelog/changelog-master.yml
+    default-schema: metadata
+    enabled: false
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5434/db_finance_manager
+    username: db_finance_manager
+    password: db_finance_manager
+
+custom:
+  liquibase:
+    create-schema-locations:
+      - public
+      - metadata
+      - business
+
+springdoc:
+  swagger-ui:
+    path: /ui
+
+logging:
+  level:
+    app: debug
