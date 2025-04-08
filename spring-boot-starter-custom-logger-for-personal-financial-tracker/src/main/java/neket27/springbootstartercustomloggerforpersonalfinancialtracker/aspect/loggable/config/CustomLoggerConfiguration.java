@@ -2,8 +2,10 @@ package neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.
 
 import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.LoggableAspect;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
+@Configuration
 @EnableAspectJAutoProxy
 public class CustomLoggerConfiguration {
 

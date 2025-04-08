@@ -14,11 +14,11 @@ import app.exception.user.UserIsAlreadyLoggedInException;
 import app.service.AuthService;
 import app.service.TokenService;
 import app.service.UserService;
-import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
-import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import neket27.context.UserContext;
+import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;

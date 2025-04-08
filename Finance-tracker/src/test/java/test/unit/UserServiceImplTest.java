@@ -111,7 +111,7 @@ class UserServiceImplTest {
 
         boolean result = userService.blockUser(user.getEmail());
 
-        assertFalse(user.isActive());
+        assertFalse(user.getIsActive());
         assertTrue(result);
     }
 
