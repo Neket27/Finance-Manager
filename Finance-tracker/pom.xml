@@ -9,7 +9,7 @@
         <relativePath/>
     </parent>
     <groupId>app</groupId>
-    <artifactId>Personal-Financial-Trackert</artifactId>
+    <artifactId>Financial-Trackert</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
     <name>Personal-Financial-Tracker</name>

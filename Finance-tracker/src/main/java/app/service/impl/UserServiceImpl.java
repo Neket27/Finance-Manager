@@ -1,7 +1,5 @@
 package app.service.impl;
 
-import app.dto.finance.CreateFinanceDto;
-import app.dto.finance.FinanceDto;
 import app.entity.Finance;
 import app.entity.Role;
 import app.entity.User;
@@ -11,8 +9,8 @@ import app.mapper.UserMapper;
 import app.repository.UserRepository;
 import app.service.FinanceService;
 import app.service.UserService;
-import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
-import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
+import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable.Auditable;
+import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import neket27.context.UserContext;
@@ -45,7 +43,7 @@ public class UserServiceImpl implements UserService {
             throw new UserAlreadyExistsException(String.format("User with email %s already exists", user.getEmail()));
 
         user.setRole(userRepository.tableIsEmpty() ? Role.ADMIN : Role.USER);
-        user.setActive(true);
+        user.setIsActive(true);
 
         Finance finance = Finance.builder()
                 .currentSavings(BigDecimal.ZERO)
@@ -135,7 +133,7 @@ public class UserServiceImpl implements UserService {
     public boolean blockUser(String email) {
         try {
             app.entity.User user = this.find(email);
-            user.setActive(false);
+            user.setIsActive(false);
             userRepository.save(user);
             log.debug("Пользователь {} заблокирован.", email);
             return true;
@@ -157,7 +155,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public boolean changeUserRole(String email, Role role) {
         try {
-            app.entity.User user = this.find(email);
+            User user = this.find(email);
             user.setRole(role);
             userRepository.save(user);
             UserContext.setCurrentUser(user);

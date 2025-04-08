@@ -16,7 +16,6 @@ public class UserContext {
         currentUser.remove();
     }
 
-
     public void setUser(Object user) {
         currentUser.set(user);
     }

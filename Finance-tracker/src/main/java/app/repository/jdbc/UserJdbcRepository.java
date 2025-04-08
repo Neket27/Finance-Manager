@@ -84,7 +84,7 @@ public class UserJdbcRepository implements UserRepository {
             ps.setString(1, entity.getName());
             ps.setString(2, entity.getEmail());
             ps.setString(3, entity.getPassword());
-            ps.setBoolean(4, entity.isActive());
+            ps.setBoolean(4, entity.getIsActive());
             ps.setString(5, entity.getRole().toString());
             ps.setLong(6, entity.getFinanceId());
             return ps;

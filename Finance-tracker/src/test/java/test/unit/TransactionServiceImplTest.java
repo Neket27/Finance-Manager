@@ -92,17 +92,17 @@ class TransactionServiceImplTest {
         assertEquals(transaction, result);
     }
 
-//    @Test
-//    void edit() {
-//        Transaction updatedTransaction = new Transaction(1L, BigDecimal.valueOf(200), "newCategory", Instant.now(), "newDescription", TypeTransaction.EXPENSE, financeId);
-//        when(transactionRepository.findById(1L)).thenReturn(Optional.of(transaction));
-//        when(transactionMapper.updateEntity(transaction, updatedTransaction)).thenReturn(updatedTransaction);
-//        when(transactionRepository.save(updatedTransaction)).thenReturn(updatedTransaction);
-//
-//        Transaction returnUpdatedTransaction = transactionService.edit(updatedTransaction);
-//
-//        assertEquals(updatedTransaction, returnUpdatedTransaction);
-//    }
+    @Test
+    void edit() {
+        Transaction updatedTransaction = new Transaction(1L, BigDecimal.valueOf(200), "newCategory", Instant.now(), "newDescription", TypeTransaction.EXPENSE, financeId);
+        when(transactionRepository.findById(1L)).thenReturn(Optional.of(transaction));
+        when(transactionMapper.updateEntity(transaction, updatedTransaction)).thenReturn(updatedTransaction);
+        when(transactionRepository.save(updatedTransaction)).thenReturn(updatedTransaction);
+
+        Transaction returnUpdatedTransaction = transactionService.edit(updatedTransaction);
+
+        assertEquals(updatedTransaction, returnUpdatedTransaction);
+    }
 
     @Test
     void delete() {
@@ -110,7 +110,6 @@ class TransactionServiceImplTest {
 
         transactionService.delete(transaction.getId());
 
-        // Assuming delete operation doesn't throw exception if successful
         assertDoesNotThrow(() -> transactionService.delete(transaction.getId()));
     }
 

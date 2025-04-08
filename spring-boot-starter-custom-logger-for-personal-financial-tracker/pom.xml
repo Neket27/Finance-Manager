@@ -12,6 +12,7 @@
     <groupId>neket27</groupId>
     <artifactId>spring-boot-starter-custom-logger-for-personal-financial-tracker</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <name>spring-boot-starter-custom-logger-for-personal-financial-tracker</name>
     <description>spring-boot-starter-custom-logger-for-personal-financial-tracker</description>

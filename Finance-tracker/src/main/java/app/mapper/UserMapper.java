@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface UserMapper extends BaseMapper<app.entity.User, UserDto> {
+public interface UserMapper extends BaseMapper<User, UserDto> {
 
     @Mapping(source = "name", target = "name")
     @Mapping(source = "email", target = "email")

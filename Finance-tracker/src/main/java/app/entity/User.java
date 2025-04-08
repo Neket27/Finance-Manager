@@ -16,7 +16,7 @@ public class User implements UserDetails {
     private String name;
     private String email;
     private String password;
-    private boolean isActive;
+    private Boolean isActive;
     private Role role;
     private Long financeId;
 

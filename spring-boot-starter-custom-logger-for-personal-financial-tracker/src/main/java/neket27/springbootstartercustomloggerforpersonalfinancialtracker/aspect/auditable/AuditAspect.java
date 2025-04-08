@@ -1,4 +1,4 @@
-package app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable;
+package neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.auditable;
 
 import neket27.context.UserContext;
 import neket27.entity.UserDetails;

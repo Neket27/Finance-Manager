@@ -1,11 +1,11 @@
-package app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.config;
+package neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.config;
 
-import app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.LoggableAspect;
+import neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.LoggableAspect;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @EnableAspectJAutoProxy
-public class CustomLoggerAutoConfiguration {
+public class CustomLoggerConfiguration {
 
     @Bean
     public LoggableAspect loggableAspect() {

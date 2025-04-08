@@ -1,7 +1,11 @@
 spring:
+  application:
+    name: Finance manager
+
   liquibase:
     change-log: db/changelog/changelog-master.yml
     default-schema: metadata
+    enabled: false
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -16,7 +20,6 @@ custom:
       - metadata
       - business
 
-# swagger-ui custom path
 springdoc:
   swagger-ui:
     path: /ui

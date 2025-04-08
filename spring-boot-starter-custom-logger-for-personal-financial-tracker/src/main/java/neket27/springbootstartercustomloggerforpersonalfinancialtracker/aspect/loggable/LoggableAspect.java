@@ -1,4 +1,4 @@
-package app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable;
+package neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -12,7 +12,7 @@ public class LoggableAspect {
     private final Logger log = LoggerFactory.getLogger(LoggableAspect.class);
 
 
-    @Around("(@within(app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging) || @annotation(app.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging)) && execution(public * *(..))")
+    @Around("(@within(neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging) || @annotation(neket27.springbootstartercustomloggerforpersonalfinancialtracker.aspect.loggable.CustomLogging)) && execution(public * *(..))")
     public Object loggableAround(ProceedingJoinPoint joinPoint) throws Throwable {
         log.debug("Calling method: " + joinPoint.getSignature());
         long startTime = System.currentTimeMillis();
