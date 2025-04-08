@@ -1,89 +1,98 @@
 package app.service.impl;
 
-import app.auth.Authenticator;
-import app.config.AuthenticationConfig;
+import app.aspect.auditable.Auditable;
+import app.container.Component;
 import app.context.UserContext;
+import app.dto.auth.ResponseLogin;
+import app.dto.auth.SignIn;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UserDto;
-import app.exeption.NotFoundException;
-import app.exeption.UserIsAlreadyLoggedInException;
+import app.entity.Token;
+import app.exception.ErrorLogoutException;
+import app.exception.NotFoundException;
+import app.exception.UserAlreadyExistsException;
+import app.exception.UserIsAlreadyLoggedInException;
+import app.exception.auth.ErrorLoginExeption;
+import app.exception.auth.ErrorRegisterExeption;
 import app.service.AuthService;
+import app.service.TokenService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
+
 /**
  * Реализация сервиса аутентификации.
  */
+
+@Component
 public class AuthServiceImpl implements AuthService {
 
     private final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
-    private final AuthenticationConfig authenticationConfig;
-    private final Authenticator authenticator;
     private final UserService userService;
+    private TokenService tokenService;
 
     /**
      * Конструктор сервиса аутентификации.
-     *
-     * @param authenticationConfig конфигурация аутентификации
-     * @param authenticator        обработчик аутентификации
-     * @param userService          сервис пользователей
      */
-    public AuthServiceImpl(AuthenticationConfig authenticationConfig, Authenticator authenticator, UserService userService) {
-        this.authenticationConfig = authenticationConfig;
-        this.authenticator = authenticator;
+    public AuthServiceImpl(UserService userService, TokenService tokenService) {
         this.userService = userService;
+        this.tokenService = tokenService;
     }
 
     /**
      * Регистрирует нового пользователя.
      *
      * @param userDto данные пользователя для регистрации
-     * @return true, если регистрация успешна, иначе false
+     * @return userDto, если регистрация успешна
      */
     @Override
-    public boolean register(CreateUserDto userDto) {
+    @Auditable
+    public UserDto register(CreateUserDto userDto) {
         try {
-            userService.createUser(userDto);
+            UserDto user = userService.createUser(userDto);
             log.debug("Registered user: " + userDto);
-            return true;
-        } catch (UserIsAlreadyLoggedInException e) {
+            return user;
+        } catch (UserAlreadyExistsException | UserIsAlreadyLoggedInException e) {
             log.debug("User with email {} is already logged in", userDto.email());
-            return false;
+            throw new ErrorRegisterExeption("User with email " + userDto.email() + " is already logged in");
         }
     }
 
     /**
      * Выполняет вход пользователя.
-     *
-     * @param email    электронная почта пользователя
-     * @param password пароль пользователя
-     * @return true, если вход выполнен успешно, иначе false
      */
     @Override
-    public boolean login(String email, String password) {
+    @Auditable
+    public ResponseLogin login(SignIn signin) {
         UserDto user;
+
         try {
-            user = userService.getUserByEmail(email);
+            user = userService.getUserByEmail(signin.email());
+
         } catch (NotFoundException e) {
-            log.debug("User with email {} not found", email);
-            return false;
+            log.debug("User with email {} not found", signin.email());
+            throw new ErrorLoginExeption(e.getMessage());
         }
 
-        if (authenticator.checkCredentials(email, password)) {
+
+        if (signin.password().equals(user.password())) {
+            Integer key = new Random().nextInt(100);
+
+            Token token = new Token.Builder()
+                    .userId(user.id())
+                    .value(key.toString())
+                    .build();
+            tokenService.saveToken(token);
+
             UserContext.setCurrentUser(user);
-            return true;
+            log.debug("Authenticated user: " + signin.email());
+            return new ResponseLogin(user.id().toString());
         }
 
-        try {
-            authenticationConfig.addCredential(user);
-            UserContext.setCurrentUser(user);
-            log.debug("Authenticated user: " + email);
-            return true;
-        } catch (Exception e) {
-            log.debug("Invalid password or email", email);
-            return false;
-        }
+        log.debug("Invalid password or email", signin.email());
+        throw new ErrorLoginExeption("Invalid password or email");
     }
 
     /**
@@ -92,9 +101,14 @@ public class AuthServiceImpl implements AuthService {
      * @return true, если выход выполнен успешно, иначе false
      */
     @Override
-    public boolean logout() {
-        boolean userCredentialsDeleted = authenticator.clearCredentials(UserContext.getCurrentUser().email());
+    @Auditable
+    public void logout() {
+        UserDto user = UserContext.getCurrentUser();
+        if (user == null)
+            throw new ErrorLogoutException("You are not logged in");
+
+        tokenService.deleteTokenByUserId(user.id());
+
         UserContext.clear();
-        return userCredentialsDeleted;
     }
 }

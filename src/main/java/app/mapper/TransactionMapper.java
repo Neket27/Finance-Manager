@@ -1,5 +1,6 @@
 package app.mapper;
 
+import app.container.Component;
 import app.dto.transaction.CreateTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
@@ -7,6 +8,7 @@ import app.entity.Transaction;
 
 import java.util.List;
 
+@Component
 public class TransactionMapper implements BaseMapper<Transaction, TransactionDto> {
 
     @Override
@@ -18,6 +20,7 @@ public class TransactionMapper implements BaseMapper<Transaction, TransactionDto
                 .date(dto.date())
                 .description(dto.description())
                 .typeTransaction(dto.typeTransaction())
+                .financeId(dto.financeId())
                 .build();
     }
 
@@ -30,6 +33,7 @@ public class TransactionMapper implements BaseMapper<Transaction, TransactionDto
                 .date(entity.getDate())
                 .description(entity.getDescription())
                 .typeTransaction(entity.getTypeTransaction())
+                .financeId(entity.getFinanceId())
                 .build();
     }
 
@@ -47,7 +51,6 @@ public class TransactionMapper implements BaseMapper<Transaction, TransactionDto
         return new Transaction.Builder()
                 .amount(dto.amount())
                 .category(dto.category())
-                .date(dto.date())
                 .description(dto.description())
                 .typeTransaction(dto.typeTransaction())
                 .build();

@@ -1,17 +1,27 @@
 package app.entity;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Finance {
 
     private Long id;
-    private double monthlyBudget;
-    private double savingsGoal;
-    private double currentSavings;
-    private double totalExpenses;
-    private final List<Long> transactionsId;
+    private BigDecimal monthlyBudget;
+    private BigDecimal savingsGoal;
+    private BigDecimal currentSavings;
+    private BigDecimal totalExpenses;
+    private List<Long> transactionsId;
 
-    public Finance(Long id, double monthlyBudget, double savingsGoal, double currentSavings, double totalExpenses, List<Long> transactionsId) {
+    public Finance() {
+        transactionsId = new ArrayList<>();
+        monthlyBudget = BigDecimal.ZERO;
+        savingsGoal = BigDecimal.ZERO;
+        currentSavings = BigDecimal.ZERO;
+        totalExpenses = BigDecimal.ZERO;
+    }
+
+    public Finance(Long id, BigDecimal monthlyBudget, BigDecimal savingsGoal, BigDecimal currentSavings, BigDecimal totalExpenses, List<Long> transactionsId) {
         this.id = id;
         this.monthlyBudget = monthlyBudget;
         this.savingsGoal = savingsGoal;
@@ -32,67 +42,71 @@ public class Finance {
         return transactionsId;
     }
 
-    public double getMonthlyBudget() {
+    public void setTransactionsId(List<Long> transactionsId) {
+        this.transactionsId = transactionsId;
+    }
+
+    public BigDecimal getMonthlyBudget() {
         return monthlyBudget;
     }
 
-    public void setMonthlyBudget(double monthlyBudget) {
+    public void setMonthlyBudget(BigDecimal monthlyBudget) {
         this.monthlyBudget = monthlyBudget;
     }
 
-    public double getSavingsGoal() {
+    public BigDecimal getSavingsGoal() {
         return savingsGoal;
     }
 
-    public void setSavingsGoal(double savingsGoal) {
+    public void setSavingsGoal(BigDecimal savingsGoal) {
         this.savingsGoal = savingsGoal;
     }
 
-    public double getCurrentSavings() {
+    public BigDecimal getCurrentSavings() {
         return currentSavings;
     }
 
-    public void setCurrentSavings(double currentSavings) {
+    public void setCurrentSavings(BigDecimal currentSavings) {
         this.currentSavings = currentSavings;
     }
 
-    public double getTotalExpenses() {
+    public BigDecimal getTotalExpenses() {
         return totalExpenses;
     }
 
-    public void setTotalExpenses(double totalExpenses) {
+    public void setTotalExpenses(BigDecimal totalExpenses) {
         this.totalExpenses = totalExpenses;
     }
 
     public static class Builder {
         private Long id;
-        private double monthlyBudget;
-        private double savingsGoal;
-        private double currentSavings;
-        private double totalExpenses;
-        private List<Long> transactionsId;
+        private BigDecimal monthlyBudget = BigDecimal.ZERO;
+        private BigDecimal savingsGoal = BigDecimal.ZERO;
+        private BigDecimal currentSavings = BigDecimal.ZERO;
+        private BigDecimal totalExpenses = BigDecimal.ZERO;
+        private List<Long> transactionsId = new ArrayList<>();
 
         public Builder id(Long id) {
             this.id = id;
             return this;
         }
 
-        public Builder monthlyBudget(double monthlyBudget) {
+        public Builder monthlyBudget(BigDecimal monthlyBudget) {
             this.monthlyBudget = monthlyBudget;
             return this;
         }
 
-        public Builder savingsGoal(double savingsGoal) {
+        public Builder savingsGoal(BigDecimal savingsGoal) {
             this.savingsGoal = savingsGoal;
             return this;
         }
 
-        public Builder currentSavings(double currentSavings) {
+        public Builder currentSavings(BigDecimal currentSavings) {
             this.currentSavings = currentSavings;
             return this;
         }
 
-        public Builder totalExpenses(double totalExpenses) {
+        public Builder totalExpenses(BigDecimal totalExpenses) {
             this.totalExpenses = totalExpenses;
             return this;
         }
@@ -107,4 +121,3 @@ public class Finance {
         }
     }
 }
-

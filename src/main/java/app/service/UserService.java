@@ -4,7 +4,6 @@ import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.Role;
-import app.entity.User;
 
 import java.util.List;
 
@@ -23,4 +22,6 @@ public interface UserService {
     boolean blockUser (String email);
 
     boolean changeUserRole(String email, Role role);
+
+    UserDto getUserById(Long id);
 }

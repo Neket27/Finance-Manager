@@ -1,81 +1,65 @@
 package app.service.impl;
 
+import app.container.Component;
+import app.context.UserContext;
 import app.dto.finance.CreateFinanceDto;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
-import app.entity.Finance;
 import app.entity.Role;
 import app.entity.User;
-import app.exeption.NotFoundException;
-import app.exeption.UserExistException;
+import app.exception.NotFoundException;
+import app.exception.UserAlreadyExistsException;
 import app.mapper.FinanceMapper;
 import app.mapper.UserMapper;
-import app.repository.FinanceRepository;
 import app.repository.UserRepository;
+import app.service.FinanceService;
 import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Реализация сервиса управления пользователями.
  */
+
+@Component
 public class UserServiceImpl implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
     private final UserMapper userMapper;
     private final UserRepository userRepository;
-    private final FinanceRepository financeRepository;
-    private final FinanceMapper financeMapper;
+    private final FinanceService financeService;
 
-    /**
-     * Конструктор сервиса пользователей.
-     *
-     * @param userMapper        маппер пользователей
-     * @param userRepository    репозиторий пользователей
-     * @param financeRepository репозиторий финансов
-     * @param financeMapper     маппер финансов
-     */
-    public UserServiceImpl(UserMapper userMapper, UserRepository userRepository, FinanceRepository financeRepository, FinanceMapper financeMapper) {
+    public UserServiceImpl(UserMapper userMapper, UserRepository userRepository, FinanceService financeService) {
         this.userMapper = userMapper;
         this.userRepository = userRepository;
-        this.financeRepository = financeRepository;
-        this.financeMapper = financeMapper;
+        this.financeService = financeService;
     }
 
-    /**
-     * Создает нового пользователя.
-     *
-     * @param createUserDto объект с данными нового пользователя
-     * @param  role для первго пользователя устанавливается  Role.Admin
-     * @return DTO созданного пользователя
-     * @throws UserExistException если пользователь с таким email уже существует
-     */
     @Override
     public UserDto createUser(CreateUserDto createUserDto) {
         if (userRepository.existsByEmail(createUserDto.email()))
-            throw new UserExistException(String.format("User with email %s already exists", createUserDto.email()));
+            throw new UserAlreadyExistsException(String.format("User with email %s already exists", createUserDto.email()));
 
         User user = userMapper.toEntity(createUserDto);
+        user.setRole(userRepository.getAll().isEmpty() ? Role.ADMIN : Role.USER);
 
-        if (userRepository.getAll().isEmpty())
-            user.setRole(Role.Admin);
-        else
-            user.setRole(Role.User);
-
-        CreateFinanceDto dto = new CreateFinanceDto.Builder()
-                .currentSavings(0.0)
-                .monthlyBudget(0.0)
-                .savingsGoal(0.0)
-                .totalExpenses(0.0)
+        // создание пустого кошелька
+        CreateFinanceDto financeDto = new CreateFinanceDto.Builder()
+                .currentSavings(BigDecimal.ZERO)
+                .monthlyBudget(BigDecimal.ZERO)
+                .savingsGoal(BigDecimal.ZERO)
+                .totalExpenses(BigDecimal.ZERO)
                 .transactionsId(new ArrayList<>())
                 .build();
 
-        Finance finance = financeRepository.save(financeMapper.toEntity(dto));
-        user.setFinanceId(finance.getId());
+        Long financeId = financeService.createEmptyFinance(financeDto);
+        user.setFinanceId(financeId);
+
         user = userRepository.save(user);
         return userMapper.toDto(user);
     }
@@ -129,14 +113,26 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * Ищет пользователя по email.
+     * Ищет пользователя по id
      *
-     * @param email email пользователя
+     * @param id пользователя
+     * @return объект пользователя
+     * @throws NotFoundException если пользователь не найден
+     */
+    private User find(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("User with id %s not found", id)));
+    }
+
+    /**
+     * Ищет пользователя по email
+     *
+     * @param email пользователя
      * @return объект пользователя
      * @throws NotFoundException если пользователь не найден
      */
     private User find(String email) {
-        return userRepository.findById(email)
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException(String.format("User with email %s not found", email)));
     }
 
@@ -183,10 +179,16 @@ public class UserServiceImpl implements UserService {
             User user = this.find(email);
             user.setRole(role);
             userRepository.save(user);
+            UserContext.setCurrentUser(userMapper.toDto(user));
             return true;
         } catch (Exception e) {
             log.error(e.getMessage());
             return false;
         }
+    }
+
+    @Override
+    public UserDto getUserById(Long id) {
+        return userMapper.toDto(find(id));
     }
 }

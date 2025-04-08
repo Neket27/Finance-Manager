@@ -1,7 +1,9 @@
 package app.service.impl;
 
+import app.container.Component;
 import app.service.NotificationService;
 
+@Component
 public class NotificationServiceImpl implements NotificationService {
 
 

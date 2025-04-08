@@ -1,42 +1,44 @@
 package app.service;
 
+import app.dto.finance.CreateFinanceDto;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
+import app.dto.transaction.FilterTransactionDto;
 import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.entity.Finance;
-import app.entity.TypeTransaction;
 
-import java.time.Instant;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 public interface FinanceService {
 
-    TransactionDto addTransactionUser(CreateTransactionDto dto);
 
-    double getProgressTowardsGoal(String email);
+    Long createEmptyFinance(CreateFinanceDto dto);
 
-    List<TransactionDto> filterTransactions(Instant startDate, Instant endDate, String category, TypeTransaction typeTransaction, String email);
+    TransactionDto addTransaction(Long financeId, CreateTransactionDto dto);
 
-    Map<String, Double> getExpensesByCategory(String email);
+    BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId);
 
-    double getTotalIncome(LocalDate startDate, LocalDate endDate, String email);
+    BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, Long financeId);
 
-    double getTotalExpenses(LocalDate startDate, LocalDate endDate, String email);
+    Double getProgressTowardsGoal(Long financeId);
 
-    boolean removeTransactionUser(Long id);
+    List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto);
+
+    boolean removeTransactionUser(Long idTransaction, Long financeId);
 
     TransactionDto editTransaction(UpdateTransactionDto updateTransactionDto);
 
     Finance save(Finance finance);
 
-    List<TransactionDto> getTransactions(String userId);
-
-    void checkExpenseLimit(String email);
+    List<TransactionDto> getTransactions(Long financeId);
 
     FinanceDto getFinanceById(Long id);
 
     Finance findFinanceById(Long id);
+
+    Map<String, BigDecimal> getExpensesByCategory(Long financeId);
 }

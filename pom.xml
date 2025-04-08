@@ -1,24 +1,46 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>app</groupId>
-    <artifactId>Personal-Financial-Tracker</artifactId>
+    <artifactId>Personal-Financial-Trackert</artifactId>
+    <packaging>war</packaging>
     <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-
     <name>Personal-Financial-Tracker</name>
     <url>http://maven.apache.org</url>
 
     <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mockito>4.0.0</mockito>
         <junit-jupiter>5.7.0</junit-jupiter>
         <mockito-junit-jupiter>5.7.0</mockito-junit-jupiter>
         <logback-classic>1.4.8</logback-classic>
+        <liquibase-core>4.17.2</liquibase-core>
+        <postgresql>42.7.1</postgresql>
+        <testcontainers.version>1.19.8</testcontainers.version>
+        <postgresql-testcontainers>1.19.0</postgresql-testcontainers>
+        <snakeyaml>2.3</snakeyaml>
+        <jackson>2.17.0</jackson>
+        <org.projectlombok.version>1.18.30</org.projectlombok.version>
+        <jakarta.validation-api>3.1.0</jakarta.validation-api>
+        <aspectjweaver>1.9.22.1</aspectjweaver>
+        <jakarta.servlet-api>6.0.0</jakarta.servlet-api>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>${liquibase-core}</version>
+        </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -38,20 +60,78 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql-testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback-classic}</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${jackson}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>${aspectjweaver}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta.servlet-api}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${jakarta.validation-api}</version>
+        </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>aspectj-maven-plugin</artifactId>
+                <version>1.14.0</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <complianceLevel>16</complianceLevel>
+                    <source>16</source>
+                    <target>16</target>
+                    <showWeaveInfo>true</showWeaveInfo>
+                    <verbose>true</verbose>
+                    <Xlint>ignore</Xlint>
+                    <encoding>UTF-8</encoding>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
