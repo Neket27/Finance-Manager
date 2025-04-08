@@ -8,9 +8,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 1
-              - column:
                   name: email
                   value: 'john.doe@example.com'
               - column:
@@ -33,9 +30,6 @@ databaseChangeLog:
             tableName: users
             schemaName: business
             columns:
-              - column:
-                  name: id
-                  value: 2
               - column:
                   name: email
                   value: 'jane.smith@example.com'
@@ -60,9 +54,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 3
-              - column:
                   name: email
                   value: 'bob.brown@example.com'
               - column:
@@ -86,9 +77,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 4
-              - column:
                   name: email
                   value: 'alice.jones@example.com'
               - column:
@@ -111,9 +99,6 @@ databaseChangeLog:
             tableName: users
             schemaName: business
             columns:
-              - column:
-                  name: id
-                  value: 5
               - column:
                   name: email
                   value: 'charlie.davis@example.com'

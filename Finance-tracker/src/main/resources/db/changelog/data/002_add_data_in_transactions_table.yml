@@ -8,9 +8,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 1
-              - column:
                   name: amount
                   value: 200.00
               - column:
@@ -33,9 +30,6 @@ databaseChangeLog:
             tableName: transactions
             schemaName: business
             columns:
-              - column:
-                  name: id
-                  value: 2
               - column:
                   name: amount
                   value: 100.00
@@ -60,9 +54,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 3
-              - column:
                   name: amount
                   value: 50.00
               - column:
@@ -86,9 +77,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 4
-              - column:
                   name: amount
                   value: 150.00
               - column:
@@ -111,9 +99,6 @@ databaseChangeLog:
             tableName: transactions
             schemaName: business
             columns:
-              - column:
-                  name: id
-                  value: 5
               - column:
                   name: amount
                   value: 300.00

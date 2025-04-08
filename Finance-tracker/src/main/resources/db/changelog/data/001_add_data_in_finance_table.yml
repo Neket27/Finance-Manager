@@ -8,9 +8,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 1
-              - column:
                   name: monthly_budget
                   value: 5000.00
               - column:
@@ -27,9 +24,6 @@ databaseChangeLog:
             tableName: finances
             schemaName: business
             columns:
-              - column:
-                  name: id
-                  value: 2
               - column:
                   name: monthly_budget
                   value: 3000.00
@@ -48,9 +42,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 3
-              - column:
                   name: monthly_budget
                   value: 4500.00
               - column:
@@ -68,9 +59,6 @@ databaseChangeLog:
             schemaName: business
             columns:
               - column:
-                  name: id
-                  value: 4
-              - column:
                   name: monthly_budget
                   value: 6000.00
               - column:
@@ -87,9 +75,6 @@ databaseChangeLog:
             tableName: finances
             schemaName: business
             columns:
-              - column:
-                  name: id
-                  value: 5
               - column:
                   name: monthly_budget
                   value: 7000.00
