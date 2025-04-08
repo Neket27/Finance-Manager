@@ -1,10 +1,13 @@
 package app.entity;
 
+import org.springframework.data.annotation.Id;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
 public class Transaction {
 
+    @Id
     private Long id;
     private BigDecimal amount;
     private String category;

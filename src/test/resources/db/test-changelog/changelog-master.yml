@@ -1,0 +1,3 @@
+databaseChangeLog:
+  - includeAll:
+      path: db/test-changelog/0.0.1

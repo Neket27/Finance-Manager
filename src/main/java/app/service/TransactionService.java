@@ -10,6 +10,7 @@ import app.entity.TypeTransaction;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 public interface TransactionService {
 
@@ -17,7 +18,7 @@ public interface TransactionService {
 
     TransactionDto edit(UpdateTransactionDto updateTransactionDto);
 
-    TransactionDto create(CreateTransactionDto dto);
+    TransactionDto create(Long financeId, CreateTransactionDto dto);
 
     void delete(Long id);
 
@@ -25,5 +26,5 @@ public interface TransactionService {
 
     List<TransactionDto> getFilteredTransactions(FilterTransactionDto filterTransactionDto);
 
-    List<TransactionDto> getTransactionsByFinanceId(Long id);
+    Set<TransactionDto> getTransactionsByFinanceId(Long id);
 }

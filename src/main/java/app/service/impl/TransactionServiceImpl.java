@@ -1,6 +1,7 @@
 package app.service.impl;
 
-import app.container.Component;
+import app.aspect.auditable.Auditable;
+import app.aspect.loggable.CustomLogging;
 import app.context.UserContext;
 import app.dto.finance.FinanceDto;
 import app.dto.transaction.CreateTransactionDto;
@@ -9,38 +10,36 @@ import app.dto.transaction.TransactionDto;
 import app.dto.transaction.UpdateTransactionDto;
 import app.dto.user.UserDto;
 import app.entity.Transaction;
-import app.exception.NotFoundException;
-import app.exception.TransactionException;
+import app.exception.common.CreateException;
+import app.exception.common.DeleteException;
 import app.mapper.TransactionMapper;
 import app.repository.TransactionRepository;
 import app.service.TransactionService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Реализация сервиса управления транзакциями.
  */
 
-@Component
+@Slf4j
+@Service
+@CustomLogging
+@RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
-    private final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
 
-    /**
-     * Конструктор сервиса транзакций.
-     *
-     * @param transactionRepository репозиторий транзакций
-     * @param transactionMapper     маппер транзакций
-     */
-    public TransactionServiceImpl(TransactionRepository transactionRepository, TransactionMapper transactionMapper) {
-        this.transactionRepository = transactionRepository;
-        this.transactionMapper = transactionMapper;
-    }
 
     /**
      * Создает новую транзакцию.
@@ -49,19 +48,19 @@ public class TransactionServiceImpl implements TransactionService {
      * @return созданная транзакция
      */
     @Override
-    public TransactionDto create(CreateTransactionDto dto) {
+    @Auditable
+    @Transactional(rollbackFor = Exception.class)
+    public TransactionDto create(Long financeId, CreateTransactionDto dto) {
         try {
-            UserDto user = UserContext.getCurrentUser();
-
             Transaction transaction = transactionMapper.toEntity(dto);
             transaction.setDate(Instant.now());
-            transaction.setFinanceId(user.financeId());
+            transaction.setFinanceId(financeId);
             transaction = transactionRepository.save(transaction);
 
             log.debug("addTransaction: {}", transaction.toString());
             return transactionMapper.toDto(transaction);
         } catch (Exception e) {
-            throw new TransactionException("Error adding transaction", e);
+            throw new CreateException("Error create transaction", e);
         }
     }
 
@@ -72,6 +71,8 @@ public class TransactionServiceImpl implements TransactionService {
      * @return объект транзакции
      */
     @Override
+    @Auditable
+    @Transactional
     public TransactionDto getTransactionById(Long id) {
         return transactionMapper.toDto(find(id));
     }
@@ -81,10 +82,10 @@ public class TransactionServiceImpl implements TransactionService {
      *
      * @param id идентификатор транзакции
      * @return найденная транзакция
-     * @throws NotFoundException если транзакция не найдена
      */
     private Transaction find(Long id) {
-        return transactionRepository.findById(id).orElseThrow(() -> new NotFoundException("Transaction not found with id: " + id));
+        return transactionRepository.findById(id).orElseThrow(() -> new TransactionException("Transaction not found with id: " + id) {
+        });
     }
 
     /**
@@ -94,6 +95,8 @@ public class TransactionServiceImpl implements TransactionService {
      * @return обновленная транзакция
      */
     @Override
+    @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public TransactionDto edit(UpdateTransactionDto dto) {
         Transaction transaction = this.find(dto.id());
         transactionMapper.updateEntity(transaction, dto);
@@ -109,13 +112,15 @@ public class TransactionServiceImpl implements TransactionService {
      * @return true, если удаление прошло успешно, иначе false
      */
     @Override
+    @Auditable
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         try {
             transactionRepository.deleteById(id);
             log.debug("deleteTransaction with id: {}", id);
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new TransactionException("Error deleting transaction", e);
+            throw new DeleteException("Error deleting transaction", e);
         }
     }
 
@@ -126,6 +131,8 @@ public class TransactionServiceImpl implements TransactionService {
      * @return список транзакций
      */
     @Override
+    @Auditable
+    @Transactional
     public List<TransactionDto> findAll(FinanceDto finance) {
         return finance.transactionsId().stream().map(this::getTransactionById).toList();
     }
@@ -134,6 +141,8 @@ public class TransactionServiceImpl implements TransactionService {
      * Фильтрует транзакции по заданным параметрам.
      */
     @Override
+    @Auditable
+    @Transactional
     public List<TransactionDto> getFilteredTransactions(FilterTransactionDto f) {
         UserDto user = UserContext.getCurrentUser();
         return transactionMapper.toDtoList(transactionRepository.getFilteredTransactions(user.financeId(),
@@ -141,8 +150,10 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<TransactionDto> getTransactionsByFinanceId(Long id) {
-        return transactionMapper.toDtoList(transactionRepository.findByFinanceId(id));
+    @Auditable
+    @Transactional
+    public Set<TransactionDto> getTransactionsByFinanceId(Long id) {
+        return transactionMapper.toDtoSet(transactionRepository.findByFinanceId(id));
     }
 
 }

@@ -1,61 +1,62 @@
 package app.repository.jdbc;
 
-import app.container.Component;
 import app.entity.Finance;
 import app.exception.db.ErrorDeleteSqlException;
-import app.exception.db.ErrorInsertSqlException;
 import app.exception.db.ErrorSelectSqlException;
 import app.repository.FinanceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-@Component
+@Repository
 public class FinanceJdbcRepository implements FinanceRepository {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceJdbcRepository.class);
-    private final Connection connection;
+    private final JdbcTemplate jdbcTemplate;
 
-    public FinanceJdbcRepository(Connection connection) {
-        this.connection = connection;
+    public FinanceJdbcRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
+
+    private final RowMapper<Finance> financeRowMapper = (rs, rowNum) -> {
+        Finance finance = new Finance();
+        finance.setId(rs.getLong("id"));
+        finance.setMonthlyBudget(rs.getBigDecimal("monthly_budget"));
+        finance.setSavingsGoal(rs.getBigDecimal("savings_goal"));
+        finance.setCurrentSavings(rs.getBigDecimal("current_savings"));
+        finance.setTotalExpenses(rs.getBigDecimal("total_expenses"));
+        return finance;
+    };
 
     @Override
     public Optional<Finance> findById(Long id) {
-        String sql = "SELECT * FROM business.finances WHERE id = ?";
-
         try {
-            beginTransaction();
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setLong(1, id);
-                try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                    if (resultSet.next()) {
-                        commitTransaction();
-                        return Optional.of(mapFinance(resultSet));
-                    }
-                }
-                commitTransaction();
-            }
-        } catch (SQLException e) {
-            rollbackQuietly();
+            String sql = "SELECT * FROM business.finances WHERE id = ?";
+            return jdbcTemplate.query(sql, financeRowMapper, id)
+                    .stream()
+                    .findFirst();
+        } catch (Exception e) {
             log.error("Error executing findById: {}", e.getMessage());
             throw new ErrorSelectSqlException("Error finding finance record by ID", e);
-        } finally {
-            resetAutoCommit();
         }
-        return Optional.empty();
     }
 
     @Override
     public Finance save(Finance entity) {
-        String financeSql = """
-                    INSERT INTO business.finances (id, monthly_budget, savings_goal, current_savings, total_expenses)
-                    VALUES (COALESCE(?, NEXTVAL('finance_id_seq')), ?, ?, ?, ?)
+        String sql = """
+                    INSERT INTO business.finances (monthly_budget, savings_goal, current_savings, total_expenses)
+                    VALUES (?, ?, ?, ?)
                     ON CONFLICT (id)
                     DO UPDATE SET
                         monthly_budget = EXCLUDED.monthly_budget,
@@ -64,137 +65,57 @@ public class FinanceJdbcRepository implements FinanceRepository {
                         total_expenses = EXCLUDED.total_expenses
                     RETURNING id
                 """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        try {
-            beginTransaction();
-            if (entity.getId() == null || entity.getId() == 0) {
-                entity.setId(getNextFinanceId());
-            }
+        int update = jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setBigDecimal(1, entity.getMonthlyBudget());
+            ps.setBigDecimal(2, entity.getSavingsGoal());
+            ps.setBigDecimal(3, entity.getCurrentSavings());
+            ps.setBigDecimal(4, entity.getTotalExpenses());
+            return ps;
+        }, keyHolder);
 
-            try (PreparedStatement financeStmt = connection.prepareStatement(financeSql, Statement.RETURN_GENERATED_KEYS)) {
-                financeStmt.setLong(1, entity.getId());
-                financeStmt.setBigDecimal(2, entity.getMonthlyBudget());
-                financeStmt.setBigDecimal(3, entity.getSavingsGoal());
-                financeStmt.setBigDecimal(4, entity.getCurrentSavings());
-                financeStmt.setBigDecimal(5, entity.getTotalExpenses());
-
-                int affectedRows = financeStmt.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new ErrorInsertSqlException("Upserting finance record failed, no rows affected.");
+        if (update > 0) {
+            List<Map<String, Object>> keys = keyHolder.getKeyList();
+            if (!keys.isEmpty()) {
+                Map<String, Object> generatedKey = keys.get(0);
+                Number generatedId = (Number) generatedKey.get("id");
+                if (generatedId != null) {
+                    long id = generatedId.longValue();
+                    entity.setId(id);
+                    return entity;
                 }
-
-                try (ResultSet generatedKeys = financeStmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        entity.setId(generatedKeys.getLong(1));
-                    }
-                }
-
-                commitTransaction();
-                return entity;
             }
-        } catch (SQLException e) {
-            rollbackQuietly();
-            log.error("Error saving finance record: {}", e.getMessage());
-            throw new ErrorInsertSqlException("Error saving finance record into database", e);
-        } finally {
-            resetAutoCommit();
         }
+
+        return entity;
     }
+
 
     @Override
     public void delete(Finance entity) {
-        String sql = "DELETE FROM business.finances WHERE id = ?";
-
         try {
-            beginTransaction();
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setLong(1, entity.getId());
+            String sql = "DELETE FROM business.finances WHERE id = ?";
+            int affectedRows = jdbcTemplate.update(sql, entity.getId());
 
-                int affectedRows = preparedStatement.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new ErrorDeleteSqlException("Finance record not found, nothing deleted.");
-                }
-
-                commitTransaction();
+            if (affectedRows == 0) {
+                throw new ErrorDeleteSqlException("Finance record not found, nothing deleted.");
             }
-        } catch (SQLException e) {
-            rollbackQuietly();
+        } catch (Exception e) {
             log.error("Error deleting finance record: {}", e.getMessage());
             throw new ErrorDeleteSqlException("Error deleting finance record from database", e);
-        } finally {
-            resetAutoCommit();
         }
     }
 
     @Override
     public Collection<Finance> getAll() {
-        String sql = "SELECT * FROM business.finances";
-        List<Finance> finances = new ArrayList<>();
-
         try {
-            beginTransaction();
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-                 ResultSet resultSet = preparedStatement.executeQuery()) {
-
-                while (resultSet.next()) {
-                    finances.add(mapFinance(resultSet));
-                }
-
-                commitTransaction();
-            }
-        } catch (SQLException e) {
-            rollbackQuietly();
+            String sql = "SELECT * FROM business.finances";
+            return jdbcTemplate.query(sql, financeRowMapper);
+        } catch (Exception e) {
             log.error("Error fetching all finance records: {}", e.getMessage());
             throw new ErrorSelectSqlException("Error fetching all finance records from database", e);
-        } finally {
-            resetAutoCommit();
-        }
-        return finances;
-    }
-
-    private Finance mapFinance(ResultSet resultSet) throws SQLException {
-        Finance finance = new Finance();
-        finance.setId(resultSet.getLong("id"));
-        finance.setMonthlyBudget(resultSet.getBigDecimal("monthly_budget"));
-        finance.setSavingsGoal(resultSet.getBigDecimal("savings_goal"));
-        finance.setCurrentSavings(resultSet.getBigDecimal("current_savings"));
-        finance.setTotalExpenses(resultSet.getBigDecimal("total_expenses"));
-        return finance;
-    }
-
-
-    private Long getNextFinanceId() throws SQLException {
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT NEXTVAL('finance_id_seq')")) {
-            if (rs.next()) {
-                return rs.getLong(1);
-            } else {
-                throw new SQLException("Unable to get next value from sequence");
-            }
-        }
-    }
-
-    private void beginTransaction() throws SQLException {
-        connection.setAutoCommit(false);
-    }
-
-    private void commitTransaction() throws SQLException {
-        connection.commit();
-    }
-
-    private void rollbackQuietly() {
-        try {
-            connection.rollback();
-        } catch (SQLException ex) {
-            log.error("Rollback failed: {}", ex.getMessage());
-        }
-    }
-
-    private void resetAutoCommit() {
-        try {
-            connection.setAutoCommit(true);
-        } catch (SQLException e) {
-            log.error("Failed to reset auto-commit: {}", e.getMessage());
         }
     }
 }

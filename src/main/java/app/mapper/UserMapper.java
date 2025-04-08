@@ -1,54 +1,32 @@
 package app.mapper;
 
-import app.container.Component;
 import app.dto.user.CreateUserDto;
 import app.dto.user.UpdateUserDto;
 import app.dto.user.UserDto;
 import app.entity.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.Collection;
 import java.util.List;
 
-@Component
-public class UserMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface UserMapper extends BaseMapper<User, UserDto> {
 
-    public User toEntity(CreateUserDto userDto) {
-        return new User.Builder()
-                .setName(userDto.name())
-                .email(userDto.email())
-                .password(userDto.password())
-                .build();
-    }
+    @Mapping(source = "name", target = "name")
+    @Mapping(source = "email", target = "email")
+    @Mapping(source = "password", target = "password")
+    @Mapping(source = "role", target = "role")
+    @Mapping(source = "financeId", target = "financeId")
+    User updateEntity(UpdateUserDto userDto, @MappingTarget User user);
 
-    public User updateEntity(UpdateUserDto userDto, User user) {
-        user.setName(userDto.name());
-        user.setEmail(userDto.email());
-        user.setPassword(userDto.password());
-        user.setRole(userDto.role());
-        user.setFinanceId(userDto.financeId());
-        return user;
-    }
+    @Mapping(source = "name", target = "name")
+    @Mapping(source = "email", target = "email")
+    @Mapping(source = "password", target = "password")
+    User toEntity(CreateUserDto userDto);
 
-    public UserDto toDto(User user) {
-        return new UserDto(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getPassword(),
-                user.isActive(),
-                user.getRole(),
-                user.getFinanceId());
-    }
+    List<UserDto> toListDto(Collection<User> users);
 
-    public UserDto toDto(CreateUserDto userDto) {
-        return new UserDto.Builder()
-                .name(userDto.name())
-                .email(userDto.email())
-                .password(userDto.password())
-                .build();
-    }
-
-    public List<UserDto> toListDto(Collection<User> users) {
-        return users.stream().map(this::toDto).toList();
-    }
 }

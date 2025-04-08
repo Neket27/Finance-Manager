@@ -12,33 +12,34 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface FinanceService {
 
 
     Long createEmptyFinance(CreateFinanceDto dto);
 
-    TransactionDto addTransaction(Long financeId, CreateTransactionDto dto);
+    TransactionDto createTransaction(Long financeId, CreateTransactionDto dto);
 
     BigDecimal getTotalProfit(LocalDate startDate, LocalDate endDate, Long financeId);
 
     BigDecimal getTotalExpenses(LocalDate startDate, LocalDate endDate, Long financeId);
 
-    Double getProgressTowardsGoal(Long financeId);
+    List<TransactionDto> filterTransactions(Long financeId, FilterTransactionDto filterTransactionDto);
 
-    List<TransactionDto> filterTransactions(FilterTransactionDto filterTransactionDto);
-
-    boolean removeTransactionUser(Long idTransaction, Long financeId);
-
-    TransactionDto editTransaction(UpdateTransactionDto updateTransactionDto);
+    TransactionDto editTransaction(Long financeId, UpdateTransactionDto updateTransactionDto);
 
     Finance save(Finance finance);
 
-    List<TransactionDto> getTransactions(Long financeId);
+    Set<TransactionDto> list(Long financeId);
 
     FinanceDto getFinanceById(Long id);
 
     Finance findFinanceById(Long id);
 
     Map<String, BigDecimal> getExpensesByCategory(Long financeId);
+
+    void delete(Long financeId, Long id);
+
+    void updatetMonthlyBudget(Long financeId, BigDecimal budget);
 }

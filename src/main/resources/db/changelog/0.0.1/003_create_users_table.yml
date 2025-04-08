@@ -5,7 +5,7 @@ databaseChangeLog:
       changes:
         - createSequence:
             sequenceName: user_id_seq
-            startValue: 1
+            startValue: 6
             incrementBy: 1
 
         - createTable:
@@ -15,19 +15,20 @@ databaseChangeLog:
               - column:
                   name: id
                   type: bigint
+                  defaultValueSequenceNext: user_id_seq
                   constraints:
                     primaryKey: true
                     nullable: false
                     unique: true
+              - column:
+                  name: name
+                  type: varchar(255)
               - column:
                   name: email
                   type: varchar(255)
                   constraints:
                     nullable: false
                     unique: true
-              - column:
-                  name: name
-                  type: varchar(255)
               - column:
                   name: password
                   type: varchar(255)
